@@ -51,6 +51,7 @@ class Orchestrator:
             self._bus.publish(Event(run_id=run.id, type=type_, payload=payload or {}))
 
         run.status = RunStatus.RUNNING
+        self._store.persist(run)
         # Redact secrets before putting the spec on the (client-facing) event bus —
         # api_key lives in attack_config/target and must never reach a WS client.
         emit(EventType.RUN_STARTED, {"spec": _redact_secrets(deepcopy(run.spec.__dict__))})
@@ -83,6 +84,7 @@ class Orchestrator:
             results = await loop.run_in_executor(None, strategy.attack)
             run.results = results or []
             run.status = RunStatus.SUCCEEDED
+            self._store.persist(run)
             emit(
                 EventType.RUN_FINISHED,
                 {"status": run.status.value, "n_results": len(run.results)},
@@ -90,6 +92,7 @@ class Orchestrator:
         except Exception as exc:  # noqa: BLE001 - surface any failure to the UI
             run.status = RunStatus.FAILED
             run.error = f"{type(exc).__name__}: {exc}"
+            self._store.persist(run)
             # Full traceback stays server-side (logs); the client gets a clean message,
             # never a raw stack trace (which can carry endpoints/paths).
             logger.error("Run %s failed:\n%s", run.id, traceback.format_exc())

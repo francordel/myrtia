@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import time
 import uuid
+from copy import deepcopy
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 from typing import Any
@@ -94,11 +95,41 @@ class Run:
 class RunStore:
     def __init__(self) -> None:
         self._runs: dict[str, Run] = {}
+        self._load()
+
+    def _load(self) -> None:
+        """Restore runs from SQLite on startup so history survives restarts."""
+        from myrtia.store import db
+        for row in db.load_runs():
+            spec_data = row.get("spec") or {}
+            spec = RunSpec(
+                attack_id=spec_data.get("attack_id", "?"),
+                attack_config=spec_data.get("attack_config", {}),
+                target=spec_data.get("target", {}),
+                goals=spec_data.get("goals", []),
+                judge_id=spec_data.get("judge_id"),
+                theme=spec_data.get("theme", ""),
+            )
+            try:
+                status = RunStatus(row.get("status", "pending"))
+            except ValueError:
+                status = RunStatus.PENDING
+            run = Run(id=row["id"], spec=spec, status=status,
+                      created_at=row.get("created_at") or time.time(),
+                      error=row.get("error"), results=row.get("results") or [])
+            self._runs[run.id] = run
 
     def create(self, spec: RunSpec) -> Run:
         run = Run(id=uuid.uuid4().hex, spec=spec)
         self._runs[run.id] = run
+        self.persist(run)
         return run
+
+    def persist(self, run: Run) -> None:
+        """Write a run through to SQLite (spec redacted; results have no secrets)."""
+        from myrtia.store import db
+        spec = _redact_secrets(deepcopy(run.spec.__dict__))
+        db.save_run(run.id, run.created_at, run.status.value, run.error, spec, run.results)
 
     def get(self, run_id: str) -> Run | None:
         return self._runs.get(run_id)
