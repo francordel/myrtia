@@ -38,6 +38,7 @@ class RunStatus(str, Enum):
     WAITING_APPROVAL = "waiting_approval"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 @dataclass

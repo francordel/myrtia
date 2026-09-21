@@ -366,6 +366,7 @@ class CouncilAttack(AttackStrategy):
         # No-op by default, so hosting outside Myrtia (and all existing
         # experiments) is unaffected.
         self._on_event: Any = None
+        self._should_stop: Any = None
 
     # ------------------------------------------------------------------
     # Myrtia integration seam (optional; no-op unless a host wires it)
@@ -374,6 +375,16 @@ class CouncilAttack(AttackStrategy):
     def set_event_emitter(self, emit: Any) -> None:
         """Install a `(event_type: str, payload: dict) -> None` live-event sink."""
         self._on_event = emit
+
+    def set_cancel_check(self, fn: Any) -> None:
+        """Install a `() -> bool` predicate; when it returns True the run stops."""
+        self._should_stop = fn
+
+    def _cancelled(self) -> bool:
+        try:
+            return bool(self._should_stop and self._should_stop())
+        except Exception:  # noqa: BLE001
+            return False
 
     def _emit(self, event_type: str, **payload: Any) -> None:
         """Emit a live event if a sink is installed; never raise into the loop."""
@@ -503,6 +514,9 @@ class CouncilAttack(AttackStrategy):
         # path (raw goal dicts as stubs broke serialization on a fresh start).
         results: list[dict] = []
         for i, sample in enumerate(self.attack_results):
+            if self._cancelled():
+                logger.info("Run cancelled — stopping before goal %d.", i + 1)
+                break
             if i in prev_by_index:
                 results.append(prev_by_index[i])
                 continue
@@ -586,6 +600,9 @@ class CouncilAttack(AttackStrategy):
                 logger.info("│  MEMORY: %d strategy entries loaded.", strategy_memory_str.count("[✓") + strategy_memory_str.count("[✗"))
 
         for turn in range(self.max_turns):
+            if self._cancelled():
+                logger.info("Run cancelled — stopping at turn %d.", turn + 1)
+                break
             _turn_t0 = time.time()   # timestamp de inicio del turno
             logger.info(
                 "┌─ TURN %d/%d — goal: %s…",

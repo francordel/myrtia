@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Myrtia — live deliberation</title>
-<link rel="icon" type="image/png" href="/assets/icon-light.png" />
+<link rel="icon" type="image/png" href="/assets/icon-light.png?v=3" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -37,8 +37,8 @@
     backdrop-filter:blur(10px); border-bottom:1px solid var(--border); padding:0 24px; height:60px;
     display:flex; align-items:center; gap:16px; }
   .brand { display:flex; align-items:center; gap:11px; }
-  .shield { display:inline-block; width:44px; height:44px; flex:none; background-position:center; background-size:contain; background-repeat:no-repeat; background-image:url("/assets/icon-dark.png"); }
-  :root[data-theme="light"] .shield { background-image:url("/assets/icon-light.png"); }
+  .shield { display:inline-block; width:44px; height:44px; flex:none; background-position:center; background-size:contain; background-repeat:no-repeat; background-image:url("/assets/icon-dark.png?v=3"); }
+  :root[data-theme="light"] .shield { background-image:url("/assets/icon-light.png?v=3"); }
   h1 { font-size:18px; margin:0; font-weight:500; letter-spacing:-.2px; }
   h1 b { font-weight:700; }
   h1 span { color:var(--muted); font-weight:400; font-size:14px; }
@@ -225,6 +225,7 @@
     <input id="themeTag" placeholder="e.g. misinformation, cyber, chemical" />
     <details class="adv" id="advwrap"><summary>Advanced configuration</summary><div id="adv"></div></details>
     <button class="primary" id="launch">Launch attack</button>
+    <button class="primary" id="stop" style="display:none;background:var(--red);margin-top:8px">Stop run</button>
   </section>
 
   <section>
@@ -491,7 +492,7 @@ function connectRun(runId, keepEvents){
       wsRetries++; setTimeout(()=>connectRun(runId,false), Math.min(500*wsRetries,4000)); }
   };
   ws.onmessage=(m)=>{ let ev; try{ ev=JSON.parse(m.data); }catch(e){ return; } events.push(ev);
-    if(ev.type==="run.finished"){ wsFinished=true; const st=ev.payload.status; setStatus(st==="succeeded"?"ok":"err",st); loadHistory(); loadStats(); }
+    if(ev.type==="run.finished"){ wsFinished=true; const st=ev.payload.status; setStatus(st==="succeeded"?"ok":(st==="cancelled"?"run":"err"),st); loadHistory(); loadStats(); $("stop").style.display="none"; $("stop").disabled=false; $("stop").textContent="Stop run"; }
     render(); };
 }
 
@@ -510,8 +511,14 @@ $("launch").onclick = async () => {
     const data=await res.json();
     if(!data.run_id){ setStatus("err","no run id"); return; }
     connectRun(data.run_id);
+    $("stop").style.display="block";
   } catch(e){ setStatus("err","launch failed"); }
   finally { $("launch").disabled=false; $("launch").textContent="Launch attack"; }
+};
+$("stop").onclick = async () => {
+  if(!wsRunId) return;
+  $("stop").disabled=true; $("stop").textContent="Stopping…";
+  try { await fetch($("base").value.replace(/\/$/,"")+`/runs/${wsRunId}/stop`,{method:"POST"}); } catch(e){}
 };
 
 // ---- history & search ----

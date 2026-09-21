@@ -27,13 +27,27 @@ from myrtia.store.runs import Run, RunStatus, RunStore, STORE, _redact_secrets
 logger = logging.getLogger(__name__)
 
 
+import threading as _threading
+
+
 class Orchestrator:
     def __init__(self, bus: EventBus = BUS, store: RunStore = STORE) -> None:
         self._bus = bus
         self._store = store
+        self._cancels: dict[str, _threading.Event] = {}
+
+    def cancel(self, run_id: str) -> bool:
+        """Request cooperative cancellation of a running attack."""
+        ev = self._cancels.get(run_id)
+        if ev is None:
+            return False
+        ev.set()
+        return True
 
     async def run(self, run: Run) -> None:
         loop = asyncio.get_running_loop()
+        cancel_ev = _threading.Event()
+        self._cancels[run.id] = cancel_ev
 
         def emit_sync(event_type: str, payload: dict[str, Any]) -> None:
             # Called from the worker thread with primitive (type, payload). The bus is
@@ -74,6 +88,8 @@ class Orchestrator:
 
             if hasattr(strategy, "set_event_emitter"):
                 strategy.set_event_emitter(emit_sync)
+            if hasattr(strategy, "set_cancel_check"):
+                strategy.set_cancel_check(cancel_ev.is_set)
 
             # Feed goals from the run spec. Plugins expose `load_goals` (Myrtia's
             # goal-ingestion seam) rather than each having a bespoke input file.
@@ -83,7 +99,7 @@ class Orchestrator:
             # Blocking strategy call off the event loop.
             results = await loop.run_in_executor(None, strategy.attack)
             run.results = results or []
-            run.status = RunStatus.SUCCEEDED
+            run.status = RunStatus.CANCELLED if cancel_ev.is_set() else RunStatus.SUCCEEDED
             self._store.persist(run)
             emit(
                 EventType.RUN_FINISHED,
