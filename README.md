@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src="docs/logo.png" alt="MYRTIA" width="360" />
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/logo-dark.png" />
+  <img alt="MYRTIA" src="docs/logo-light.png" width="360" />
+</picture>
 
 # MYRTIA
 

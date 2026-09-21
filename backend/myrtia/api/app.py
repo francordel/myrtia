@@ -47,7 +47,8 @@ app.add_middleware(
 _STANDALONE = Path(__file__).resolve().parents[3] / "frontend" / "standalone.html"
 
 
-_ICON = Path(__file__).resolve().parents[3] / "frontend" / "icon.png"
+_FRONTEND = Path(__file__).resolve().parents[3] / "frontend"
+_ASSETS = {"icon.png", "icon-light.png", "icon-dark.png"}
 
 
 @app.get("/")
@@ -55,9 +56,12 @@ async def index() -> FileResponse:
     return FileResponse(_STANDALONE)
 
 
-@app.get("/icon.png")
-async def icon() -> FileResponse:
-    return FileResponse(_ICON)
+@app.get("/assets/{name}")
+async def asset(name: str) -> FileResponse:
+    # Serve a small whitelist of brand images (no path traversal, no route shadowing).
+    if name not in _ASSETS:
+        return JSONResponse({"error": "not found"}, status_code=404)  # type: ignore[return-value]
+    return FileResponse(_FRONTEND / name)
 
 
 @app.get("/health")

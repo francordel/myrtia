@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Myrtia — live deliberation</title>
-<link rel="icon" type="image/png" href="/icon.png" />
+<link rel="icon" type="image/png" href="/assets/icon-light.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -37,7 +37,8 @@
     backdrop-filter:blur(10px); border-bottom:1px solid var(--border); padding:0 24px; height:60px;
     display:flex; align-items:center; gap:16px; }
   .brand { display:flex; align-items:center; gap:11px; }
-  .shield { width:30px; height:30px; flex:none; border-radius:6px; object-fit:cover; }
+  .shield { width:30px; height:30px; flex:none; background:center/contain no-repeat url("/assets/icon-dark.png"); }
+  :root[data-theme="light"] .shield { background-image:url("/assets/icon-light.png"); }
   h1 { font-size:18px; margin:0; font-weight:500; letter-spacing:-.2px; }
   h1 b { font-weight:700; }
   h1 span { color:var(--muted); font-weight:400; font-size:14px; }
@@ -185,7 +186,7 @@
 <body>
 <header>
   <div class="brand">
-    <img class="shield" src="/icon.png" alt="Myrtia" />
+    <span class="shield" role="img" aria-label="Myrtia"></span>
     <h1><b>Myrtia</b> <span>· live deliberation</span></h1>
   </div>
   <div class="spacer"></div>
