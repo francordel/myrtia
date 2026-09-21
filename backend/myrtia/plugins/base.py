@@ -56,11 +56,14 @@ class PluginSpec:
 
     def __init__(self, plugin_id: str, factory: Callable[..., AttackStrategyLike],
                  description: str = "",
-                 config_schema: list[dict] | None = None) -> None:
+                 config_schema: list[dict] | None = None,
+                 paper: str = "", how: list[str] | None = None) -> None:
         self.id = plugin_id
         self.factory = factory
         self.description = description
         self.config_schema = config_schema or []
+        self.paper = paper            # URL to the paper/reference, if any
+        self.how = how or []          # ordered "how it works" steps for the info panel
 
 
 # Populated by plugin modules at import time (e.g. plugins/council.py).

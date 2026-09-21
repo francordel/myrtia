@@ -57,6 +57,14 @@
   .chip.err{ color:var(--red); } .chip.err .dot{ background:var(--red); }
   @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.3} }
 
+  .rail { position:fixed; left:0; top:60px; bottom:0; width:56px; z-index:9;
+    background:var(--surface); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 0; }
+  .railbtn { width:40px; height:40px; border-radius:10px; border:0; background:transparent;
+    color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; margin:0; transition:background .15s,color .15s; }
+  .railbtn:hover { background:var(--surface2); color:var(--accent); }
+  .railbtn svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  body { padding-left:56px; }
   main { max-width:1400px; margin:0 auto; display:grid; grid-template-columns:360px 1fr;
     gap:24px; padding:24px; align-items:start; }
   .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); }
@@ -156,6 +164,16 @@
   .bar .v { width:40px; text-align:right; color:var(--fg); font-weight:600; }
   .barsub { font-size:10.5px; color:var(--faint); margin:-2px 0 4px 128px; }
 
+  .infolink { display:inline-block; margin-top:8px; font-size:12.5px; color:var(--accent); cursor:pointer; }
+  .modal { position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; max-width:560px; width:100%; padding:24px; box-shadow:var(--shadow-h); max-height:80vh; overflow:auto; }
+  .modal-h { display:flex; align-items:center; justify-content:space-between; font-size:18px; font-weight:700; }
+  .modal-x { width:auto; background:transparent; border:0; color:var(--muted); font-size:18px; cursor:pointer; }
+  .modal-desc { color:var(--muted); font-size:14px; }
+  .modal-steps { margin:14px 0 0; padding-left:20px; }
+  .modal-steps li { margin:8px 0; font-size:14px; }
+  #infoPaper a { display:inline-block; margin-top:14px; }
+
   .hist { margin-bottom:16px; }
   .hist-h { padding:14px 18px; display:flex; align-items:center; justify-content:space-between;
     cursor:pointer; font-weight:600; font-size:14px; }
@@ -178,6 +196,7 @@
 
   @media (max-width:820px){
     header{ padding:0 14px; gap:8px; } h1 span{ display:none; }
+    .rail{ display:none; } body{ padding-left:0; }
     main{ grid-template-columns:1fr; padding:14px; gap:14px; } .launch{ position:static; }
     .filters { grid-template-columns:1fr; }
   }
@@ -195,15 +214,33 @@
   <button class="icon-btn" id="theme" title="Toggle light / dark">◐</button>
 </header>
 
+<aside class="rail">
+  <button class="railbtn" data-to="sec-launch" title="New run"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button class="railbtn" data-to="stream" title="Live deliberation"><svg viewBox="0 0 24 24"><path d="M4 12h4l3 7 4-14 3 7h2"/></svg></button>
+  <button class="railbtn" data-to="stats" title="Statistics"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></button>
+  <button class="railbtn" data-to="history" title="History"><svg viewBox="0 0 24 24"><path d="M12 8v5l3 2M4 12a8 8 0 1 0 2-5"/><path d="M4 4v4h4"/></svg></button>
+  <a class="railbtn" href="https://github.com/francordel/myrtia" target="_blank" rel="noopener" title="GitHub"><svg viewBox="0 0 24 24"><path d="M9 19c-4 1.5-4-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12 12 0 0 0-6 0C6.6 3.3 5.5 3.6 5.5 3.6a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 10c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V22"/></svg></a>
+</aside>
+
 <main>
-  <section class="card launch">
+  <section class="card launch" id="sec-launch">
     <h2>Launch a run</h2>
     <input type="hidden" id="base" value="" />
     <label>Attack</label>
     <select id="attack"></select>
     <div class="desc" id="attackdesc"></div>
+    <a href="#" id="attackInfo" class="infolink">ⓘ How this attack works</a>
+    <label>Provider</label>
+    <select id="provider">
+      <option value="ollama">Local Ollama</option>
+      <option value="openai">OpenAI</option>
+      <option value="anthropic">Anthropic</option>
+      <option value="custom">Custom (OpenAI-compatible)</option>
+    </select>
     <label>Target base URL (OpenAI-compatible)</label>
     <input id="turl" value="http://127.0.0.1:11434/v1" />
+    <label>API key <span style="color:var(--faint)">(for frontier targets; stored only in this browser)</span></label>
+    <input id="apikey" type="password" placeholder="sk-… / sk-ant-…" autocomplete="off" />
     <label>Target model</label>
     <input id="tmodel" value="qwen2.5:1.5b" />
     <label>Council models (comma-separated)</label>
@@ -277,6 +314,15 @@
   </section>
 </main>
 
+<div id="infoModal" class="modal" style="display:none">
+  <div class="modal-card">
+    <div class="modal-h"><span id="infoTitle"></span><button class="modal-x" id="infoClose">✕</button></div>
+    <p class="modal-desc" id="infoDesc"></p>
+    <ol class="modal-steps" id="infoSteps"></ol>
+    <div id="infoPaper"></div>
+  </div>
+</div>
+
 <script>
 const $ = (id) => document.getElementById(id);
 $("base").value = location.origin;
@@ -296,6 +342,15 @@ $("theme").onclick = () => {
   document.documentElement.setAttribute("data-theme", cur);
   try { localStorage.setItem("myrtia-theme", cur); } catch(e){}
 };
+
+// provider presets + per-provider API key (stored only in this browser)
+const PROVIDERS={ollama:"http://127.0.0.1:11434/v1",openai:"https://api.openai.com/v1",anthropic:"https://api.anthropic.com/v1",custom:""};
+function keyGet(p){try{return localStorage.getItem("myrtia-key-"+p)||"";}catch(e){return "";}}
+function keySet(p,v){try{localStorage.setItem("myrtia-key-"+p,v);}catch(e){}}
+function onProvider(){const p=$("provider").value; if(PROVIDERS[p]) $("turl").value=PROVIDERS[p]; $("apikey").value=keyGet(p);}
+$("provider").addEventListener("change",onProvider);
+$("apikey").addEventListener("input",()=>keySet($("provider").value,$("apikey").value));
+onProvider();
 
 async function loadPlugins() {
   try { PLUGINS = (await (await fetch($("base").value + "/plugins")).json()).plugins || []; }
@@ -338,6 +393,20 @@ function collectAdvanced(){
   return cfg;
 }
 $("attack").addEventListener("change", onAttackChange);
+
+// ---- attack info modal ----
+function openInfo(){
+  const p=currentPlugin(); if(!p) return;
+  $("infoTitle").textContent=p.id;
+  $("infoDesc").textContent=p.description||"";
+  const steps=$("infoSteps"); steps.innerHTML="";
+  (p.how||[]).forEach(s=>{ const li=document.createElement("li"); li.textContent=s; steps.appendChild(li); });
+  $("infoPaper").innerHTML = p.paper ? `<a class="btn" style="border:1px solid var(--border);padding:8px 14px;border-radius:8px" href="${esc(p.paper)}" target="_blank" rel="noopener">Read the paper ›</a>` : "";
+  $("infoModal").style.display="flex";
+}
+$("attackInfo").addEventListener("click",(e)=>{e.preventDefault();openInfo();});
+$("infoClose").addEventListener("click",()=>$("infoModal").style.display="none");
+$("infoModal").addEventListener("click",(e)=>{ if(e.target.id==="infoModal") $("infoModal").style.display="none"; });
 
 // ---- behaviour library (selectable malicious behaviours) ----
 const SELECTED = new Map();  // goal -> theme
@@ -500,10 +569,13 @@ $("launch").onclick = async () => {
   const base=$("base").value.replace(/\/$/,"");
   const goals = SELECTED.size ? [...SELECTED.keys()] : [$("goal").value.trim()].filter(Boolean);
   if(!goals.length){ setStatus("err","no goal selected"); return; }
+  const key=$("apikey").value.trim();
   const attack_config=Object.assign(
     { council_models:$("cmodels").value.split(",").map(s=>s.trim()).filter(Boolean) }, collectAdvanced());
-  const body={ attack_id:$("attack").value, attack_config, theme:$("themeTag").value.trim(),
-    target:{ kind:"openai_chat", base_url:$("turl").value.trim(), model:$("tmodel").value.trim() }, goals };
+  if(key) attack_config.api_key=key;
+  const target={ kind:"openai_chat", base_url:$("turl").value.trim(), model:$("tmodel").value.trim() };
+  if(key) target.api_key=key;
+  const body={ attack_id:$("attack").value, attack_config, theme:$("themeTag").value.trim(), target, goals };
   setStatus("run","running"); $("launch").disabled=true; $("launch").textContent="Running…";
   try {
     const res=await fetch(base+"/runs",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
@@ -587,6 +659,10 @@ let histT=null;
   $(id).addEventListener("input",()=>{ clearTimeout(histT); histT=setTimeout(loadHistory,200); });
 });
 $("histToggle").onclick=()=>{ const b=$("histBody"); b.style.display = b.style.display==="none"?"block":"none"; };
+
+document.querySelectorAll(".railbtn[data-to]").forEach(b=>{
+  b.addEventListener("click",()=>{ const el=$(b.dataset.to); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); });
+});
 
 loadPlugins();
 loadHistory();

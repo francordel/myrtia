@@ -64,5 +64,10 @@ register(
         factory=_factory,
         description="DirectRequests: send each behaviour straight to the target "
         "(ARES core baseline, no judge).",
+        how=[
+            "Send — each behaviour is sent to the target model verbatim.",
+            "Observe — the target's raw response is recorded (no judge / no scoring).",
+            "Use as a baseline to compare against the council attacks.",
+        ],
     )
 )

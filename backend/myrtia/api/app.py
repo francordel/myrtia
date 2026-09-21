@@ -32,6 +32,9 @@ from myrtia.store.runs import RunSpec, STORE
 # Import side effect: register the bundled plugins.
 import myrtia.plugins.council  # noqa: F401
 import myrtia.plugins.direct  # noqa: F401
+import myrtia.plugins.human_jailbreak  # noqa: F401
+import myrtia.plugins.obfuscation  # noqa: F401
+import myrtia.plugins.payload_splitting  # noqa: F401
 
 app = FastAPI(title="Myrtia", version="0.0.1")
 
@@ -87,7 +90,8 @@ async def behaviors(theme: str = "", q: str = "") -> dict[str, Any]:
 async def plugins() -> dict[str, Any]:
     return {
         "plugins": [
-            {"id": s.id, "description": s.description, "config_schema": s.config_schema}
+            {"id": s.id, "description": s.description, "config_schema": s.config_schema,
+             "paper": getattr(s, "paper", ""), "how": getattr(s, "how", [])}
             for s in PLUGINS.values()
         ]
     }
