@@ -63,6 +63,11 @@ class Orchestrator:
             # Lazy: connector import pulls in ARES only when a run actually launches.
             from myrtia.connectors.factory import build_target_connector
 
+            # Surface the target model to the plugin so it can label events.
+            if isinstance(run.spec.attack_config, dict):
+                run.spec.attack_config.setdefault(
+                    "target_model", (run.spec.target or {}).get("model"))
+
             target = build_target_connector(run.spec.target)
             strategy = spec.factory(run.spec.attack_config, target)
 

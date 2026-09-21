@@ -47,9 +47,17 @@ app.add_middleware(
 _STANDALONE = Path(__file__).resolve().parents[3] / "frontend" / "standalone.html"
 
 
+_ICON = Path(__file__).resolve().parents[3] / "frontend" / "icon.png"
+
+
 @app.get("/")
 async def index() -> FileResponse:
     return FileResponse(_STANDALONE)
+
+
+@app.get("/icon.png")
+async def icon() -> FileResponse:
+    return FileResponse(_ICON)
 
 
 @app.get("/health")

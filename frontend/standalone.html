@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Myrtia — live deliberation</title>
+<link rel="icon" type="image/png" href="/icon.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -36,7 +37,7 @@
     backdrop-filter:blur(10px); border-bottom:1px solid var(--border); padding:0 24px; height:60px;
     display:flex; align-items:center; gap:16px; }
   .brand { display:flex; align-items:center; gap:11px; }
-  .shield { width:26px; height:28px; flex:none; }
+  .shield { width:30px; height:30px; flex:none; border-radius:6px; object-fit:cover; }
   h1 { font-size:18px; margin:0; font-weight:500; letter-spacing:-.2px; }
   h1 b { font-weight:700; }
   h1 span { color:var(--muted); font-weight:400; font-size:14px; }
@@ -184,7 +185,7 @@
 <body>
 <header>
   <div class="brand">
-    <svg class="shield" viewBox="0 0 26 28" fill="none"><path d="M13 1l11 3.8v8.4C24 21 19 25.6 13 27 7 25.6 2 21 2 13.2V4.8L13 1z" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.7"/><path d="M8 14l3.5 3.5L19 9" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <img class="shield" src="/icon.png" alt="Myrtia" />
     <h1><b>Myrtia</b> <span>· live deliberation</span></h1>
   </div>
   <div class="spacer"></div>
@@ -375,9 +376,9 @@ function evNode(ev){
   if(ev.type==="proposal.created"){ head=`<span>Proposal</span> <span class="who">${esc(p.model||"?")}</span>`; body=p.proposal||""; }
   else if(ev.type==="critique.created"){ head=`<span>Critique</span> <span class="who">${esc(p.critic||"?")}</span>`; body="ranks "+JSON.stringify(p.rankings||[]); }
   else if(ev.type==="vote.aggregated"){ body=`winner: ${p.winner||"?"}   borda=${JSON.stringify(p.borda_scores||{})}`; }
-  else if(ev.type==="chairman.synthesized"){ body=p.synthesized_prompt||""; }
-  else if(ev.type==="target.responded"){ body=(p.target_response||"").slice(0,1200); }
-  else if(ev.type==="judge.scored"){ const sc=(p.score>=0&&p.score<=5)?p.score:"?"; head=`<span>Judge</span> <span class="score s${sc}">${sc}/5</span>`; body=p.rationale||""; }
+  else if(ev.type==="chairman.synthesized"){ head=`<span>Chairman</span>${p.model?` <span class="who">${esc(p.model)}</span>`:""}`; body=p.synthesized_prompt||""; }
+  else if(ev.type==="target.responded"){ head=`<span>Target</span>${p.model?` <span class="who">${esc(p.model)}</span>`:""}`; body=(p.target_response||"").slice(0,1200); }
+  else if(ev.type==="judge.scored"){ const sc=(p.score>=0&&p.score<=5)?p.score:"?"; head=`<span>Judge</span>${p.model?` <span class="who">${esc(p.model)}</span>`:""} <span class="score s${sc}">${sc}/5</span>`; body=p.rationale||""; }
   else body=JSON.stringify(p);
   d.innerHTML=`<div class="lab">${head}</div>`+(body?`<pre></pre>`:"");
   if(body){

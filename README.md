@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/logo.png" alt="MYRTIA" width="360" />
+
 # MYRTIA
 
 **Agent-native red teaming for large language models and AI agents.**

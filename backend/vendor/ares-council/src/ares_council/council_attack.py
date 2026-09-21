@@ -199,6 +199,8 @@ class CouncilAttack(AttackStrategy):
         # vLLM behind auth). Council/chairman/judge calls send it as Authorization.
         import os as _os
         self.api_key: str | None = config.get("api_key") or _os.getenv("OPENAI_API_KEY")
+        # Display label for the target model (set by the Myrtia orchestrator).
+        self._target_model_display: str | None = config.get("target_model")
 
         self.max_turns: int = int(config.get("max_turns", self.DEFAULT_MAX_TURNS))
         # Ollama context window for council/chairman calls. Default 10096 matches
@@ -666,6 +668,7 @@ class CouncilAttack(AttackStrategy):
                 "chairman.synthesized",
                 turn=turn,
                 used_chairman=self.use_chairman,
+                model=str(self.chairman_model).removeprefix("ollama/"),
                 synthesized_prompt=self._flatten_template(final_prompt)
                 if isinstance(final_prompt, list) else final_prompt,
             )
@@ -724,6 +727,7 @@ class CouncilAttack(AttackStrategy):
             self._emit(
                 "target.responded",
                 turn=turn,
+                model=self._target_model_display,
                 target_prompt=target_prompt,
                 target_response=target_text,
             )
@@ -733,6 +737,7 @@ class CouncilAttack(AttackStrategy):
             self._emit(
                 "judge.scored",
                 turn=turn,
+                model=str(self.judge_model).removeprefix("ollama/"),
                 score=score,
                 rationale=reasoning,
                 disclaimer=disclaimer,
