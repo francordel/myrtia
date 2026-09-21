@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "myrtia"
+description = "Myrtia — agent-native AI/LLM red-teaming framework (backend)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+version = "0.0.1"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    # Attack plugins (ARES-compatible). CouncilAttack is hosted, not forked:
+    #   "ares-council",   # add once packaged/available on the target machine
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["myrtia*"]

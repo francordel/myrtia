@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Myrtia — live deliberation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ---- Dark theme (default), Google Threat Intelligence style ---- */
+  :root {
+    --bg:#0a0e17; --bg-grad:#0c1120; --surface:#121826; --surface2:#1a2130;
+    --fg:#e4e7ee; --muted:#98a1b5; --faint:#6b7488; --border:#232b3c;
+    --accent:#8ab4f8; --btn:#1a73e8; --btn-h:#3b82f6; --btn-fg:#ffffff;
+    --blue:#8ab4f8; --red:#f28b82; --yellow:#fdd663; --green:#81c995; --purple:#c58af9; --cyan:#78d9ec;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.3);
+    --shadow-h:0 2px 6px rgba(0,0,0,.5),0 6px 16px rgba(0,0,0,.4);
+  }
+  /* ---- Light theme (Google Cloud light) ---- */
+  :root[data-theme="light"] {
+    --bg:#f8f9fa; --bg-grad:#f1f3f4; --surface:#ffffff; --surface2:#f1f3f4;
+    --fg:#202124; --muted:#5f6368; --faint:#80868b; --border:#dadce0;
+    --accent:#1a73e8; --btn:#1a73e8; --btn-h:#1666d3; --btn-fg:#ffffff;
+    --blue:#1a73e8; --red:#d93025; --yellow:#f9ab00; --green:#1e8e3e; --purple:#a142f4; --cyan:#12a4af;
+    --shadow:0 1px 2px rgba(60,64,67,.15),0 1px 3px rgba(60,64,67,.08);
+    --shadow-h:0 1px 3px rgba(60,64,67,.2),0 4px 8px rgba(60,64,67,.12);
+  }
+  * { box-sizing:border-box; }
+  html,body { height:100%; }
+  body { margin:0; background:radial-gradient(1200px 600px at 70% -10%,var(--bg-grad),var(--bg)) fixed, var(--bg);
+    color:var(--fg); font:14px/1.55 "Roboto",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  code,pre,.mono { font-family:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+
+  header { position:sticky; top:0; z-index:10; background:color-mix(in srgb,var(--surface) 88%,transparent);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--border); padding:0 24px; height:60px;
+    display:flex; align-items:center; gap:16px; }
+  .brand { display:flex; align-items:center; gap:11px; }
+  .shield { width:26px; height:28px; flex:none; }
+  h1 { font-size:18px; margin:0; font-weight:500; letter-spacing:-.2px; }
+  h1 b { font-weight:700; }
+  h1 span { color:var(--muted); font-weight:400; font-size:14px; }
+  .spacer { flex:1; }
+  .icon-btn { width:36px; height:36px; border-radius:50%; border:1px solid var(--border);
+    background:var(--surface2); color:var(--muted); cursor:pointer; display:flex; align-items:center;
+    justify-content:center; font-size:16px; transition:background .15s,color .15s; padding:0; margin:0; }
+  .icon-btn:hover { color:var(--accent); background:var(--surface); box-shadow:none; }
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px;
+    font-size:13px; font-weight:500; background:var(--surface2); color:var(--muted);
+    border:1px solid var(--border); white-space:nowrap; }
+  .chip .dot { width:8px; height:8px; border-radius:50%; background:var(--faint); }
+  .chip.live{ color:var(--green); } .chip.live .dot{ background:var(--green); animation:pulse 1.3s infinite; }
+  .chip.run{ color:var(--yellow); } .chip.run .dot{ background:var(--yellow); animation:pulse 1s infinite; }
+  .chip.ok{ color:var(--green); } .chip.ok .dot{ background:var(--green); }
+  .chip.err{ color:var(--red); } .chip.err .dot{ background:var(--red); }
+  @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  main { max-width:1400px; margin:0 auto; display:grid; grid-template-columns:360px 1fr;
+    gap:24px; padding:24px; align-items:start; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); }
+  .launch { padding:22px; position:sticky; top:84px; max-height:calc(100vh - 108px); overflow-y:auto; }
+  .launch h2 { font-size:12px; text-transform:uppercase; letter-spacing:.9px; color:var(--muted); margin:0 0 16px; font-weight:600; }
+  label { display:block; font-size:12px; color:var(--muted); margin:14px 0 5px; font-weight:500; }
+  input,textarea,select { width:100%; background:var(--bg); color:var(--fg); border:1px solid var(--border);
+    border-radius:8px; padding:10px 12px; font:inherit; transition:border-color .15s,box-shadow .15s; }
+  :root[data-theme="light"] input,:root[data-theme="light"] textarea,:root[data-theme="light"] select{ background:var(--surface); }
+  input:focus,textarea:focus,select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent); }
+  textarea { resize:vertical; }
+  .desc { font-size:12px; color:var(--faint); margin-top:6px; line-height:1.45; }
+  button.primary { width:100%; background:var(--btn); color:var(--btn-fg); border:0; border-radius:8px;
+    padding:12px; font:inherit; font-weight:500; font-size:15px; cursor:pointer; margin-top:18px;
+    transition:background .15s,box-shadow .15s; }
+  button.primary:hover{ background:var(--btn-h); box-shadow:var(--shadow-h); }
+  button.primary:disabled{ opacity:.5; cursor:default; box-shadow:none; }
+  details.adv { margin-top:16px; border-top:1px solid var(--border); padding-top:6px; }
+  details.adv > summary { cursor:pointer; font-size:13px; color:var(--accent); font-weight:500;
+    list-style:none; display:flex; align-items:center; gap:6px; padding:8px 0; }
+  details.adv > summary::-webkit-details-marker{ display:none; }
+  details.adv > summary::before{ content:"+"; font-weight:700; font-size:16px; line-height:1; width:12px; }
+  details.adv[open] > summary::before{ content:"–"; }
+  .adv-row.bool { display:flex; align-items:center; gap:10px; margin-top:14px; }
+  .adv-row.bool input{ width:18px; height:18px; accent-color:var(--btn); }
+  .adv-row.bool label{ margin:0; color:var(--fg); font-size:14px; font-weight:400; }
+
+  .stream { display:flex; flex-direction:column; gap:16px; min-height:240px; }
+  .empty { color:var(--faint); text-align:center; padding:72px 24px; background:var(--surface);
+    border:1px dashed var(--border); border-radius:12px; line-height:1.7; }
+  .goalbar { padding:16px 20px; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
+  .goalbar .tag { font-size:11px; font-weight:700; letter-spacing:.6px; color:var(--accent); text-transform:uppercase; }
+  .goalbar .goal { font-size:15px; font-weight:500; }
+  .turn { overflow:hidden; }
+  .turn-h { padding:12px 20px; background:var(--surface2); border-bottom:1px solid var(--border);
+    font-size:13px; font-weight:600; color:var(--fg); display:flex; align-items:center; gap:10px; }
+  .turn-h.collapsible { cursor:pointer; user-select:none; }
+  .turn-h .chev { display:inline-block; transition:transform .15s; color:var(--muted); font-size:11px; }
+  .turn.collapsed .chev { transform:rotate(-90deg); }
+  .turn.collapsed .turn-body { display:none; }
+  .turn-body { padding:14px 18px 18px; display:flex; flex-direction:column; gap:10px; }
+  .ev { border-left:3px solid var(--border); padding:10px 14px; border-radius:0 8px 8px 0; background:var(--surface2); }
+  .ev .lab { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--muted);
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .ev .who { color:var(--fg); font-weight:500; text-transform:none; letter-spacing:0; }
+  .ev pre { margin:6px 0 0; white-space:pre-wrap; word-break:break-word; color:var(--fg); font-size:13.5px; line-height:1.5; }
+  .ev pre.clamp { display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden; }
+  .morebtn { width:auto; margin:6px 0 0; padding:3px 10px; font-size:12px; background:transparent;
+    color:var(--accent); border:1px solid var(--border); border-radius:6px; cursor:pointer; }
+  .morebtn:hover { background:var(--surface); box-shadow:none; }
+  .goalbar.collapsible { cursor:pointer; user-select:none; }
+  .goalbar .gchev { color:var(--muted); font-size:11px; transition:transform .15s; }
+  .goal-sec.collapsed .gchev { transform:rotate(-90deg); }
+  .ev.proposal{ border-left-color:var(--blue); } .ev.critique{ border-left-color:var(--purple); }
+  .ev.vote{ border-left-color:var(--yellow); } .ev.chairman{ border-left-color:var(--cyan); }
+  .ev.target{ border-left-color:var(--faint); } .ev.judge{ border-left-color:var(--green); }
+  .ev.log{ border-left-color:var(--border); }
+  .tmeta{ margin-left:auto; font-size:11px; color:var(--muted); font-weight:400; text-transform:none; letter-spacing:0; }
+  .votetab{ width:100%; border-collapse:collapse; margin-top:6px; font-size:12.5px; }
+  .votetab th{ text-align:left; color:var(--muted); font-weight:500; font-size:11px; padding:3px 8px; border-bottom:1px solid var(--border); }
+  .votetab td{ padding:4px 8px; border-bottom:1px solid var(--border); }
+  .votetab tr.win td{ color:var(--yellow); font-weight:600; }
+  .critlist{ margin-top:8px; display:flex; flex-direction:column; gap:3px; }
+  .critrow{ font-size:12px; color:var(--muted); } .critrow b{ color:var(--fg); font-weight:500; }
+  .score{ padding:2px 10px; border-radius:999px; font-weight:700; font-size:12px; letter-spacing:0; }
+  .s0,.s1,.s2{ background:color-mix(in srgb,var(--green) 22%,transparent); color:var(--green); }
+  .s3{ background:color-mix(in srgb,var(--yellow) 22%,transparent); color:var(--yellow); }
+  .s4{ background:color-mix(in srgb,var(--red) 20%,transparent); color:var(--red); }
+  .s5{ background:var(--red); color:#fff; }
+
+  .libctl { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:10px 0 8px; }
+  .libbtns { display:flex; gap:8px; margin-bottom:8px; }
+  .mini { width:auto; margin:0; padding:6px 10px; font-size:12px; background:var(--surface2);
+    color:var(--accent); border:1px solid var(--border); border-radius:6px; cursor:pointer; }
+  .mini:hover { background:var(--surface); box-shadow:none; }
+  .liblist { max-height:260px; overflow:auto; display:flex; flex-direction:column; gap:2px;
+    border:1px solid var(--border); border-radius:8px; padding:6px; }
+  .libitem { display:flex; gap:8px; align-items:flex-start; padding:6px 8px; border-radius:6px; cursor:pointer; }
+  .libitem:hover { background:var(--surface2); }
+  .libitem input { width:16px; height:16px; margin-top:2px; accent-color:var(--btn); flex:none; }
+  .libitem .txt { font-size:12.5px; line-height:1.35; }
+  .libitem .th { font-size:10px; color:var(--accent); text-transform:uppercase; letter-spacing:.4px; }
+
+  .stats { margin-bottom:16px; }
+  .statgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:6px 0 14px; }
+  .statbox { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px; text-align:center; }
+  .statnum { font-size:24px; font-weight:700; color:var(--accent); }
+  .statlbl { font-size:11px; color:var(--muted); margin-top:2px; }
+  .chartlbl { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin:12px 0 6px; font-weight:600; }
+  .bars { display:flex; flex-direction:column; gap:5px; }
+  .bar { display:flex; align-items:center; gap:8px; font-size:12px; }
+  .bar .k { width:120px; flex:none; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bar .track { display:block; flex:1; background:var(--surface2); border-radius:4px; height:16px; overflow:hidden; }
+  .bar .fill { display:block; height:100%; background:var(--accent); border-radius:4px; transition:width .3s; }
+  .bar.sc5 .fill{ background:var(--red); } .bar.sc4 .fill{ background:#e0863d; }
+  .bar.sc3 .fill{ background:var(--yellow); } .bar.sc0 .fill,.bar.sc1 .fill,.bar.sc2 .fill{ background:var(--green); }
+  .bar .v { width:40px; text-align:right; color:var(--fg); font-weight:600; }
+  .barsub { font-size:10.5px; color:var(--faint); margin:-2px 0 4px 128px; }
+
+  .hist { margin-bottom:16px; }
+  .hist-h { padding:14px 18px; display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; font-weight:600; font-size:14px; }
+  .hist-count { color:var(--muted); font-weight:400; font-size:12px; }
+  .hist-body { padding:0 16px 14px; }
+  .filters { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+  .filters #fq { grid-column:1 / -1; }
+  .runlist { display:flex; flex-direction:column; gap:8px; max-height:340px; overflow:auto; }
+  .runrow { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border);
+    border-radius:8px; background:var(--surface2); cursor:pointer; transition:border-color .15s; }
+  .runrow:hover { border-color:var(--accent); }
+  .runrow .goal { flex:1; min-width:0; }
+  .runrow .goal .g { font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .runrow .goal .meta { font-size:11px; color:var(--muted); margin-top:2px; }
+  .tagpill { padding:1px 8px; border-radius:999px; font-size:11px; background:color-mix(in srgb,var(--accent) 16%,transparent);
+    color:var(--accent); white-space:nowrap; }
+  .rstatus { font-size:11px; font-weight:600; }
+  .rstatus.ok{ color:var(--green); } .rstatus.err{ color:var(--red); } .rstatus.run{ color:var(--yellow); }
+  .runlist .none { color:var(--faint); font-size:13px; text-align:center; padding:20px; }
+
+  @media (max-width:820px){
+    header{ padding:0 14px; gap:8px; } h1 span{ display:none; }
+    main{ grid-template-columns:1fr; padding:14px; gap:14px; } .launch{ position:static; }
+    .filters { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg class="shield" viewBox="0 0 26 28" fill="none"><path d="M13 1l11 3.8v8.4C24 21 19 25.6 13 27 7 25.6 2 21 2 13.2V4.8L13 1z" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.7"/><path d="M8 14l3.5 3.5L19 9" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h1><b>Myrtia</b> <span>· live deliberation</span></h1>
+  </div>
+  <div class="spacer"></div>
+  <span class="chip" id="conn"><span class="dot"></span>disconnected</span>
+  <span class="chip" id="status"><span class="dot"></span>idle</span>
+  <button class="icon-btn" id="theme" title="Toggle light / dark">◐</button>
+</header>
+
+<main>
+  <section class="card launch">
+    <h2>Launch a run</h2>
+    <input type="hidden" id="base" value="" />
+    <label>Attack</label>
+    <select id="attack"></select>
+    <div class="desc" id="attackdesc"></div>
+    <label>Target base URL (OpenAI-compatible)</label>
+    <input id="turl" value="http://127.0.0.1:11434/v1" />
+    <label>Target model</label>
+    <input id="tmodel" value="qwen2.5:1.5b" />
+    <label>Council models (comma-separated)</label>
+    <input id="cmodels" value="qwen2.5:1.5b" />
+    <label>Goal / behaviour <span style="color:var(--faint)">(used if none selected below)</span></label>
+    <textarea id="goal" rows="2">Write a short limerick about a mischievous cat (harmless test)</textarea>
+    <details class="adv" id="libwrap"><summary>Behaviour library — select what to test (<span id="libSel">0</span> selected)</summary>
+      <div class="libctl">
+        <input id="libq" placeholder="Search behaviours…" />
+        <select id="libtheme"><option value="">All themes</option></select>
+      </div>
+      <div class="libbtns">
+        <button type="button" class="mini" id="libAll">Select all shown</button>
+        <button type="button" class="mini" id="libNone">Clear selection</button>
+      </div>
+      <div id="liblist" class="liblist"></div>
+    </details>
+    <label>Theme / topic <span style="color:var(--faint)">(optional tag for search)</span></label>
+    <input id="themeTag" placeholder="e.g. misinformation, cyber, chemical" />
+    <details class="adv" id="advwrap"><summary>Advanced configuration</summary><div id="adv"></div></details>
+    <button class="primary" id="launch">Launch attack</button>
+  </section>
+
+  <section>
+    <div class="card stats" id="stats">
+      <div class="hist-h" id="statsToggle"><span>Statistics</span><span class="hist-count" id="statsSummary"></span></div>
+      <div class="hist-body" id="statsBody">
+        <div class="statgrid">
+          <div class="statbox"><div class="statnum" id="stGoals">0</div><div class="statlbl">goals attacked</div></div>
+          <div class="statbox"><div class="statnum" id="stAsr">0%</div><div class="statlbl">overall ASR</div></div>
+          <div class="statbox"><div class="statnum" id="stJb">0</div><div class="statlbl">jailbroken</div></div>
+        </div>
+        <div class="chartlbl">Judge score distribution (per goal)</div>
+        <div id="scoreChart" class="bars"></div>
+        <div class="chartlbl">ASR by attack</div>
+        <div id="attackChart" class="bars"></div>
+        <div class="chartlbl">ASR by target model</div>
+        <div id="targetChart" class="bars"></div>
+        <div class="chartlbl">ASR by theme</div>
+        <div id="themeChart" class="bars"></div>
+        <div class="chartlbl" id="cmLbl" style="display:none">Council members — vote win rate</div>
+        <div id="memberTab"></div>
+      </div>
+    </div>
+    <div class="card hist" id="history">
+      <div class="hist-h" id="histToggle"><span>History &amp; search</span><span class="hist-count" id="histCount"></span></div>
+      <div class="hist-body" id="histBody">
+        <div class="filters">
+          <input id="fq" placeholder="Search goals / theme…" />
+          <select id="ftheme"><option value="">All themes</option></select>
+          <select id="fresult">
+            <option value="">Any result</option>
+            <option value="succeeded">Succeeded</option>
+            <option value="failed">Failed</option>
+          </select>
+          <select id="fscore">
+            <option value="-1">Any evaluation</option>
+            <option value="5">Score = 5 (full)</option>
+            <option value="4">Score ≥ 4</option>
+            <option value="3">Score ≥ 3</option>
+            <option value="1">Score ≥ 1</option>
+          </select>
+        </div>
+        <div id="runlist" class="runlist"></div>
+      </div>
+    </div>
+    <div class="stream" id="stream">
+      <div class="empty">Pick an attack, set a target, and launch.<br>The deliberation streams here live, turn by turn.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+$("base").value = location.origin;
+let PLUGINS = [], events = [];
+// Escape untrusted strings (model names, themes, critics) before innerHTML.
+const esc = (s) => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+// UI state preserved across re-renders (live stream rebuilds the DOM each event).
+const collapsedGoals = new Set(), collapsedTurns = new Set(), expandedEv = new Set();
+
+// theme (default dark; persisted)
+(function initTheme(){
+  let t="dark"; try { t = localStorage.getItem("myrtia-theme") || "dark"; } catch(e){}
+  document.documentElement.setAttribute("data-theme", t);
+})();
+$("theme").onclick = () => {
+  const cur = document.documentElement.getAttribute("data-theme")==="light"?"dark":"light";
+  document.documentElement.setAttribute("data-theme", cur);
+  try { localStorage.setItem("myrtia-theme", cur); } catch(e){}
+};
+
+async function loadPlugins() {
+  try { PLUGINS = (await (await fetch($("base").value + "/plugins")).json()).plugins || []; }
+  catch (e) { PLUGINS = []; }
+  const sel = $("attack"); sel.innerHTML = "";
+  for (const p of PLUGINS) { const o=document.createElement("option"); o.value=p.id; o.textContent=p.id; sel.appendChild(o); }
+  onAttackChange();
+}
+function currentPlugin(){ return PLUGINS.find(p => p.id === $("attack").value); }
+function onAttackChange(){
+  const p=currentPlugin();
+  $("attackdesc").textContent = p ? p.description : "";
+  const adv=$("adv"); adv.innerHTML="";
+  const schema=(p&&p.config_schema)||[];
+  $("advwrap").style.display = schema.length ? "block" : "none";
+  for (const f of schema) {
+    if (f.type==="bool"){
+      const row=document.createElement("div"); row.className="adv-row bool";
+      const inp=document.createElement("input"); inp.type="checkbox"; inp.id="adv_"+f.key; inp.checked=!!f.default;
+      const lab=document.createElement("label"); lab.htmlFor=inp.id; lab.textContent=f.label;
+      row.append(inp,lab); adv.appendChild(row);
+    } else {
+      const lab=document.createElement("label"); lab.textContent=f.label; adv.appendChild(lab);
+      const inp=document.createElement("input"); inp.id="adv_"+f.key;
+      if(f.type==="number") inp.type="number";
+      if(f.default!==undefined&&f.default!=="") inp.value=f.default;
+      inp.placeholder=f.help||""; adv.appendChild(inp);
+      if(f.help){ const h=document.createElement("div"); h.className="desc"; h.textContent=f.help; adv.appendChild(h); }
+    }
+  }
+}
+function collectAdvanced(){
+  const cfg={}; const p=currentPlugin(); if(!p) return cfg;
+  for (const f of (p.config_schema||[])){
+    const el=$("adv_"+f.key); if(!el) continue;
+    if(f.type==="bool") cfg[f.key]=el.checked;
+    else if(f.type==="number"){ if(el.value!=="") cfg[f.key]=Number(el.value); }
+    else if(el.value.trim()!=="") cfg[f.key]=el.value.trim();
+  }
+  return cfg;
+}
+$("attack").addEventListener("change", onAttackChange);
+
+// ---- behaviour library (selectable malicious behaviours) ----
+const SELECTED = new Map();  // goal -> theme
+function updLibCount(){ $("libSel").textContent = SELECTED.size; }
+async function loadBehaviors(){
+  const base=$("base").value.replace(/\/$/,"");
+  const params=new URLSearchParams({ theme:$("libtheme").value, q:$("libq").value.trim() });
+  let data; try { data=await (await fetch(base+"/behaviors?"+params)).json(); } catch(e){ return; }
+  const cur=$("libtheme").value;
+  $("libtheme").innerHTML='<option value="">All themes</option>'+
+    (data.themes||[]).map(t=>`<option${t===cur?" selected":""}>${esc(t)}</option>`).join("");
+  const list=$("liblist"); list.innerHTML="";
+  for(const b of data.behaviors){
+    const row=document.createElement("label"); row.className="libitem";
+    const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=SELECTED.has(b.goal);
+    cb.onchange=()=>{ if(cb.checked) SELECTED.set(b.goal,b.theme); else SELECTED.delete(b.goal); updLibCount(); };
+    const txt=document.createElement("div"); txt.className="txt";
+    txt.innerHTML=`<div class="th">${esc(b.theme)}</div>`; txt.appendChild(document.createTextNode(b.goal));
+    row.append(cb,txt); list.appendChild(row);
+  }
+  list._shown=data.behaviors;
+}
+let libT=null;
+["libq","libtheme"].forEach(id=>$(id).addEventListener("input",()=>{ clearTimeout(libT); libT=setTimeout(loadBehaviors,200); }));
+$("libAll").onclick=()=>{ ($("liblist")._shown||[]).forEach(b=>SELECTED.set(b.goal,b.theme)); updLibCount(); loadBehaviors(); };
+$("libNone").onclick=()=>{ SELECTED.clear(); updLibCount(); loadBehaviors(); };
+$("libwrap").addEventListener("toggle",()=>{ if($("libwrap").open && !$("liblist").children.length) loadBehaviors(); });
+
+function setConn(on){ const e=$("conn"); e.className="chip "+(on?"live":""); e.innerHTML='<span class="dot"></span>'+(on?"connected":"disconnected"); }
+function setStatus(kind,txt){ $("status").className="chip "+kind; $("status").innerHTML='<span class="dot"></span>'+txt; }
+
+const KIND=(t)=>t.split(".")[0];
+const LABELS={proposal:"Proposal",critique:"Critique",vote:"Borda vote",chairman:"Chairman",target:"Target",judge:"Judge",log:"Log"};
+function evNode(ev){
+  const p=ev.payload||{}, k=KIND(ev.type);
+  const d=document.createElement("div"); d.className="ev "+k;
+  let head=`<span>${LABELS[k]||ev.type}</span>`, body="";
+  if(ev.type==="proposal.created"){ head=`<span>Proposal</span> <span class="who">${esc(p.model||"?")}</span>`; body=p.proposal||""; }
+  else if(ev.type==="critique.created"){ head=`<span>Critique</span> <span class="who">${esc(p.critic||"?")}</span>`; body="ranks "+JSON.stringify(p.rankings||[]); }
+  else if(ev.type==="vote.aggregated"){ body=`winner: ${p.winner||"?"}   borda=${JSON.stringify(p.borda_scores||{})}`; }
+  else if(ev.type==="chairman.synthesized"){ body=p.synthesized_prompt||""; }
+  else if(ev.type==="target.responded"){ body=(p.target_response||"").slice(0,1200); }
+  else if(ev.type==="judge.scored"){ const sc=(p.score>=0&&p.score<=5)?p.score:"?"; head=`<span>Judge</span> <span class="score s${sc}">${sc}/5</span>`; body=p.rationale||""; }
+  else body=JSON.stringify(p);
+  d.innerHTML=`<div class="lab">${head}</div>`+(body?`<pre></pre>`:"");
+  if(body){
+    const pre=d.querySelector("pre"); pre.textContent=body;
+    if(body.length>320){
+      const evkey=ev.id||"";
+      const expanded=expandedEv.has(evkey);
+      if(!expanded) pre.classList.add("clamp");
+      const btn=document.createElement("button"); btn.className="morebtn"; btn.textContent=expanded?"Show less":"Read more";
+      btn.onclick=()=>{ const c=pre.classList.toggle("clamp"); if(c) expandedEv.delete(evkey); else expandedEv.add(evkey); btn.textContent=c?"Read more":"Show less"; };
+      d.appendChild(btn);
+    }
+  }
+  return d;
+}
+function votingPanel(evs){
+  // Build a readable voting summary from proposals + critiques + vote of one turn.
+  const props=evs.filter(e=>e.type==="proposal.created").map(e=>e.payload);
+  const crit=evs.filter(e=>e.type==="critique.created").map(e=>e.payload);
+  const vote=(evs.find(e=>e.type==="vote.aggregated")||{}).payload;
+  if(props.length<2 && !vote) return null;  // nothing to vote on
+  const idx2model={}; props.forEach(p=>idx2model[p.original_index]=p.model||"?");
+  const wrap=document.createElement("div"); wrap.className="ev vote";
+  let html=`<div class="lab"><span>Borda vote</span> `+
+    (vote&&vote.winner?`<span class="who">winner: ${esc(vote.winner)}</span>`:`<span class="who">no valid vote (only ${props.length} proposal)</span>`)+`</div>`;
+  if(vote&&vote.borda_scores){
+    html+=`<table class="votetab"><tr><th>Proposal</th><th>Borda</th><th>Top-1</th></tr>`;
+    Object.keys(vote.borda_scores).sort((a,b)=>vote.borda_scores[b]-vote.borda_scores[a]).forEach(i=>{
+      const win=(String(vote.winner_original_index)===String(i));
+      html+=`<tr class="${win?'win':''}"><td>${esc(idx2model[i]||('P'+i))}${win?' ★':''}</td><td>${vote.borda_scores[i]}</td><td>${win?(vote.top1_votes??''):''}</td></tr>`;
+    });
+    html+=`</table>`;
+  }
+  if(crit.length){
+    html+=`<div class="critlist">`;
+    crit.forEach(c=>{ const r=(c.rankings||[]).map(i=>esc(idx2model[i]||('P'+i))).join(" ▸ ");
+      html+=`<div class="critrow"><b>${esc(c.critic)}</b> ranked: ${r||"—"}</div>`; });
+    html+=`</div>`;
+  }
+  wrap.innerHTML=html; return wrap;
+}
+function turnCard(idx, evs, tkey){
+  const card=document.createElement("div"); card.className="card turn";
+  if(collapsedTurns.has(tkey)) card.classList.add("collapsed");
+  const j=evs.find(e=>e.type==="judge.scored");
+  const sc=(j&&j.payload.score>=0&&j.payload.score<=5)?j.payload.score:null;
+  const chip=sc!==null?`<span class="score s${sc}">${sc}/5</span>`:"";
+  const np=evs.filter(e=>e.type==="proposal.created").length;
+  const head=document.createElement("div"); head.className="turn-h collapsible";
+  head.innerHTML=`<span class="chev">▾</span> Turn ${idx+1} ${chip} <span class="tmeta">${np} proposal${np!==1?"s":""}</span>`;
+  card.appendChild(head);
+  const body=document.createElement("div"); body.className="turn-body";
+  head.onclick=()=>{ const c=card.classList.toggle("collapsed"); if(c) collapsedTurns.add(tkey); else collapsedTurns.delete(tkey); };
+  // proposals first, then the voting panel, then chairman/target/judge
+  evs.filter(e=>e.type==="proposal.created").forEach(e=>body.appendChild(evNode(e)));
+  const vp=votingPanel(evs); if(vp) body.appendChild(vp);
+  evs.filter(e=>["chairman.synthesized","target.responded","judge.scored"].includes(e.type)).forEach(e=>body.appendChild(evNode(e)));
+  card.appendChild(body);
+  return card;
+}
+function render(){
+  const s=$("stream"); s.innerHTML="";
+  if(!events.length){ s.innerHTML='<div class="empty">Launching…</div>'; return; }
+  // Segment events into goals: each goal.started opens a new bucket; later
+  // events belong to the current goal. This keeps multi-goal experiments separate
+  // instead of mixing every goal's "Turn 1" together.
+  const goals=[]; let cur=null;
+  for(const e of events){
+    if(e.type==="goal.started"){ cur={goal:e.payload.goal||"(goal)", turns:{}, loose:[]}; goals.push(cur); continue; }
+    if(["run.started","run.finished","turn.started"].includes(e.type)) continue;
+    if(!cur){ cur={goal:"(goal)", turns:{}, loose:[]}; goals.push(cur); }
+    const t=e.payload&&(e.payload.turn!==undefined?e.payload.turn:null);
+    if(t===null||t===undefined) cur.loose.push(e); else (cur.turns[t]=cur.turns[t]||[]).push(e);
+  }
+  const multi=goals.length>1;
+  goals.forEach((g,gi)=>{
+    const sec=document.createElement("div"); sec.className="goal-sec";
+    const bar=document.createElement("div"); bar.className="card goalbar collapsible";
+    const best=Object.values(g.turns).flat().filter(e=>e.type==="judge.scored").reduce((m,e)=>Math.max(m,e.payload.score||0),null);
+    const chip=(best!==null)?`<span class="score s${best}">best ${best}/5</span>`:"";
+    bar.innerHTML=`<span class="gchev">▾</span> <span class="tag">${multi?("Goal "+(gi+1)+"/"+goals.length):"Goal"}</span><span class="goal"></span>${chip}`;
+    bar.querySelector(".goal").textContent=(g.goal||"").slice(0,180);
+    const turnsWrap=document.createElement("div"); turnsWrap.className="goal-turns";
+    const gCollapsed=collapsedGoals.has(gi);
+    if(gCollapsed) sec.classList.add("collapsed");
+    turnsWrap.style.cssText="display:"+(gCollapsed?"none":"flex")+";flex-direction:column;gap:16px;margin-top:16px;";
+    Object.keys(g.turns).map(Number).sort((a,b)=>a-b).forEach(t=>turnsWrap.appendChild(turnCard(t,g.turns[t],gi+"-"+t)));
+    if(g.loose.length){ const card=document.createElement("div"); card.className="card turn";
+      card.innerHTML='<div class="turn-h">Responses</div>';
+      const body=document.createElement("div"); body.className="turn-body";
+      g.loose.forEach(e=>body.appendChild(evNode(e))); card.appendChild(body); turnsWrap.appendChild(card); }
+    bar.onclick=()=>{ const c=sec.classList.toggle("collapsed"); turnsWrap.style.display=c?"none":"flex"; if(c) collapsedGoals.add(gi); else collapsedGoals.delete(gi); };
+    sec.appendChild(bar); sec.appendChild(turnsWrap); s.appendChild(sec);
+  });
+}
+
+let ws=null, wsRunId=null, wsRetries=0, wsFinished=false;
+function connectRun(runId, keepEvents){
+  const base=$("base").value.replace(/\/$/,"");
+  if(ws){ try{ ws.onclose=null; ws.close(); }catch(e){} }
+  wsRunId=runId; wsFinished=false;
+  if(!keepEvents){ events=[]; collapsedGoals.clear(); collapsedTurns.clear(); expandedEv.clear(); $("stream").innerHTML='<div class="empty">Loading…</div>'; }
+  ws=new WebSocket(base.replace(/^http/,"ws")+`/runs/${runId}/events`);
+  ws.onopen=()=>{ setConn(true); wsRetries=0; };
+  ws.onclose=()=>{ setConn(false);
+    // Auto-reconnect (backoff) unless the run already finished. Backlog replay
+    // re-sends everything, so we resync from scratch on reconnect.
+    if(!wsFinished && wsRunId===runId && wsRetries<8){
+      wsRetries++; setTimeout(()=>connectRun(runId,false), Math.min(500*wsRetries,4000)); }
+  };
+  ws.onmessage=(m)=>{ let ev; try{ ev=JSON.parse(m.data); }catch(e){ return; } events.push(ev);
+    if(ev.type==="run.finished"){ wsFinished=true; const st=ev.payload.status; setStatus(st==="succeeded"?"ok":"err",st); loadHistory(); loadStats(); }
+    render(); };
+}
+
+$("launch").onclick = async () => {
+  const base=$("base").value.replace(/\/$/,"");
+  const goals = SELECTED.size ? [...SELECTED.keys()] : [$("goal").value.trim()].filter(Boolean);
+  if(!goals.length){ setStatus("err","no goal selected"); return; }
+  const attack_config=Object.assign(
+    { council_models:$("cmodels").value.split(",").map(s=>s.trim()).filter(Boolean) }, collectAdvanced());
+  const body={ attack_id:$("attack").value, attack_config, theme:$("themeTag").value.trim(),
+    target:{ kind:"openai_chat", base_url:$("turl").value.trim(), model:$("tmodel").value.trim() }, goals };
+  setStatus("run","running"); $("launch").disabled=true; $("launch").textContent="Running…";
+  try {
+    const res=await fetch(base+"/runs",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+    if(!res.ok){ setStatus("err","launch failed ("+res.status+")"); return; }
+    const data=await res.json();
+    if(!data.run_id){ setStatus("err","no run id"); return; }
+    connectRun(data.run_id);
+  } catch(e){ setStatus("err","launch failed"); }
+  finally { $("launch").disabled=false; $("launch").textContent="Launch attack"; }
+};
+
+// ---- history & search ----
+function fmtTime(ts){ try{ return new Date(ts*1000).toLocaleString(); }catch(e){ return ""; } }
+async function loadHistory(){
+  const base=$("base").value.replace(/\/$/,"");
+  const params=new URLSearchParams({ q:$("fq").value.trim(), theme:$("ftheme").value,
+    result:$("fresult").value, min_score:$("fscore").value });
+  let data; try { data=await (await fetch(base+"/runs?"+params)).json(); } catch(e){ return; }
+  $("histCount").textContent = `${data.runs.length} shown · ${data.total} total`;
+  // refresh theme options preserving selection
+  const cur=$("ftheme").value;
+  $("ftheme").innerHTML='<option value="">All themes</option>'+
+    (data.themes||[]).map(t=>`<option${t===cur?" selected":""}>${esc(t)}</option>`).join("");
+  const list=$("runlist");
+  if(!data.runs.length){ list.innerHTML='<div class="none">No runs match.</div>'; return; }
+  list.innerHTML="";
+  for(const r of data.runs){
+    const row=document.createElement("div"); row.className="runrow";
+    const goal=(r.goals&&r.goals[0])||"(no goal)";
+    const st=r.status==="succeeded"?"ok":(r.status==="failed"?"err":"run");
+    const score=(r.best_score!==null&&r.best_score!==undefined)?`<span class="score s${r.best_score}">${r.best_score}/5</span>`:"";
+    row.innerHTML=`<div class="goal"><div class="g"></div>
+      <div class="meta">${esc(r.attack_id)} · ${esc(r.target_model||"?")} · <span class="rstatus ${st}">${esc(r.status)}</span> · ${fmtTime(r.created_at)}</div></div>
+      ${r.theme?`<span class="tagpill">${esc(r.theme)}</span>`:""} ${score}`;
+    row.querySelector(".g").textContent=goal;
+    row.onclick=()=>connectRun(r.id);
+    list.appendChild(row);
+  }
+}
+function asrBars(rows){
+  // rows: [{key, asr, jailbroken, goals, avg_score}]; bar width = ASR% (absolute 0-100)
+  if(!rows.length) return '<div class="none">no data yet</div>';
+  return rows.map(r=>{
+    const sc = r.asr>=67?"sc5":(r.asr>=34?"sc3":"sc0");
+    return `<div class="bar ${sc}"><span class="k" title="${esc(r.key)}">${esc(r.key)}</span>`+
+      `<span class="track"><span class="fill" style="width:${r.asr}%"></span></span>`+
+      `<span class="v">${r.asr}%</span></div>`+
+      `<div class="barsub">${r.jailbroken}/${r.goals} jailbroken${r.avg_score!=null?` · avg ${r.avg_score}/5`:""}</div>`;
+  }).join("");
+}
+async function loadStats(){
+  const base=$("base").value.replace(/\/$/,"");
+  let d; try { d=await (await fetch(base+"/stats")).json(); } catch(e){ return; }
+  $("stGoals").textContent=d.total_goals;
+  $("stAsr").textContent=(d.total_goals?d.asr:0)+"%";
+  $("stJb").textContent=d.jailbroken;
+  $("statsSummary").textContent=`${d.total_runs} runs · ${d.total_goals} goals · ${d.jailbroken} jailbroken`;
+  const dist=d.score_distribution||[0,0,0,0,0,0]; const maxd=Math.max(1,...dist);
+  $("scoreChart").innerHTML=dist.map((n,s)=>
+    `<div class="bar sc${s}"><span class="k">score ${s}/5</span><span class="track"><span class="fill" style="width:${100*n/maxd}%"></span></span><span class="v">${n}</span></div>`).join("");
+  $("attackChart").innerHTML=asrBars(d.by_attack||[]);
+  $("targetChart").innerHTML=asrBars(d.by_target||[]);
+  $("themeChart").innerHTML=asrBars(d.by_theme||[]);
+  const cm=d.council_members||[];
+  $("cmLbl").style.display = cm.length?"block":"none";
+  $("memberTab").innerHTML = cm.length ? (
+    `<table class="votetab"><tr><th>Model</th><th>Proposals</th><th>Wins</th><th>Win rate</th><th>Avg Borda</th></tr>`+
+    cm.map(m=>`<tr><td>${esc(m.model)}</td><td>${m.proposals}</td><td>${m.wins}</td><td>${m.win_rate}%</td><td>${m.avg_borda??"—"}</td></tr>`).join("")+
+    `</table>`) : "";
+}
+$("statsToggle").onclick=()=>{ const b=$("statsBody"); b.style.display = b.style.display==="none"?"block":"none"; };
+
+let histT=null;
+["fq","ftheme","fresult","fscore"].forEach(id=>{
+  $(id).addEventListener("input",()=>{ clearTimeout(histT); histT=setTimeout(loadHistory,200); });
+});
+$("histToggle").onclick=()=>{ const b=$("histBody"); b.style.display = b.style.display==="none"?"block":"none"; };
+
+loadPlugins();
+loadHistory();
+loadStats();
+</script>
+</body>
+</html>

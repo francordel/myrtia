@@ -1,0 +1,25 @@
+# deps / builds
+node_modules/
+dist/
+build/
+bin/
+*.log
+
+# python
+__pycache__/
+*.egg-info/
+.venv/
+*.pyc
+
+# env / secrets  (never commit LLM keys)
+.env
+.env.*
+*.local
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/
+
+# do NOT vendor the reference clone into this repo
+pentagi-reference/
