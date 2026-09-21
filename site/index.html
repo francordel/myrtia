@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Myrtia — Agent-native red teaming for LLMs</title>
+<meta name="description" content="Myrtia is an open-source, agent-native red-teaming framework for LLMs and AI agents. A council of models deliberates, votes and strikes — and you watch it live." />
+<link rel="icon" type="image/png" href="assets/icon-light.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#080b12; --bg2:#0c1120; --surface:#111827; --surface2:#161f2e; --border:#232b3c;
+    --fg:#e7eaf0; --muted:#98a1b5; --faint:#6b7488;
+    --accent:#8ab4f8; --accent2:#1a73e8; --green:#81c995; --red:#f28b82; --yellow:#fdd663;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font:16px/1.6 "Roboto",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+  code,pre,.mono{font-family:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;}
+  a{color:var(--accent);text-decoration:none;}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px;}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:8px;
+    font-weight:500;font-size:15px;transition:transform .12s,background .15s,border-color .15s;border:1px solid transparent;}
+  .btn.primary{background:var(--accent2);color:#fff;}
+  .btn.primary:hover{background:#3b82f6;transform:translateY(-1px);}
+  .btn.ghost{background:transparent;color:var(--fg);border-color:var(--border);}
+  .btn.ghost:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:20;background:rgba(8,11,18,.8);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);}
+  nav .wrap{display:flex;align-items:center;gap:18px;height:66px;}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px;letter-spacing:.5px;}
+  .brand img{width:34px;height:34px;}
+  nav .links{margin-left:auto;display:flex;gap:26px;align-items:center;}
+  nav .links a{color:var(--muted);font-size:14px;font-weight:500;}
+  nav .links a:hover{color:var(--fg);}
+  @media(max-width:720px){nav .links a:not(.btn){display:none;}}
+
+  /* hero */
+  header.hero{position:relative;overflow:hidden;padding:96px 0 84px;text-align:center;
+    background:radial-gradient(900px 460px at 50% -8%,#12203f 0%,transparent 60%),var(--bg);}
+  .hero img.mark{width:120px;height:120px;margin-bottom:26px;filter:drop-shadow(0 8px 30px rgba(26,115,232,.25));}
+  .hero h1{font-size:clamp(34px,6vw,60px);line-height:1.05;margin:0 0 18px;font-weight:700;letter-spacing:-1px;}
+  .hero h1 .grad{background:linear-gradient(90deg,#8ab4f8,#c58af9);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .hero p.sub{font-size:clamp(17px,2.4vw,21px);color:var(--muted);max-width:720px;margin:0 auto 34px;}
+  .hero .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+  .tagline{margin-top:26px;color:var(--faint);font-size:14px;font-style:italic;}
+
+  section{padding:76px 0;border-top:1px solid var(--border);}
+  .eyebrow{color:var(--accent);font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+  h2{font-size:clamp(26px,4vw,38px);margin:10px 0 14px;font-weight:700;letter-spacing:-.5px;}
+  .lead{color:var(--muted);max-width:760px;font-size:17px;}
+
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px;}
+  @media(max-width:860px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;transition:border-color .15s,transform .15s;}
+  .card:hover{border-color:#33415c;transform:translateY(-2px);}
+  .card h3{margin:6px 0 8px;font-size:18px;}
+  .card p{color:var(--muted);font-size:14.5px;margin:0;}
+  .card .ic{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#1a73e8,#8ab4f8);display:flex;align-items:center;justify-content:center;font-weight:700;color:#04101f;}
+
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:40px;}
+  @media(max-width:860px){.steps{grid-template-columns:1fr 1fr;}}
+  .step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 14px;text-align:center;}
+  .step .n{width:30px;height:30px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:var(--accent);font-weight:700;font-size:14px;}
+  .step b{display:block;font-size:14px;}
+  .step span{color:var(--muted);font-size:12px;}
+
+  /* code */
+  pre.code{background:#0a0f19;border:1px solid var(--border);border-radius:12px;padding:20px 22px;overflow:auto;
+    font-size:13.5px;line-height:1.7;color:#cdd3dd;margin-top:28px;}
+  pre.code .c{color:var(--faint);} pre.code .k{color:var(--accent);}
+
+  table.cmp{width:100%;border-collapse:collapse;margin-top:34px;font-size:14.5px;}
+  table.cmp th,table.cmp td{padding:12px 14px;border-bottom:1px solid var(--border);text-align:left;}
+  table.cmp th{color:var(--muted);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+  table.cmp td:first-child{color:var(--fg);font-weight:500;}
+  .yes{color:var(--green);font-weight:700;} .no{color:var(--faint);}
+
+  .callout{background:linear-gradient(135deg,#101a30,#0b1220);border:1px solid var(--border);border-radius:16px;
+    padding:44px;text-align:center;margin-top:20px;}
+  .callout h2{margin-top:0;}
+
+  footer{border-top:1px solid var(--border);padding:40px 0;color:var(--faint);font-size:14px;}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center;}
+  .badge{display:inline-block;padding:2px 10px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:12px;}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand"><img src="assets/icon-dark.png" alt="" /> MYRTIA</div>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#compare">Why Myrtia</a>
+      <a href="#start">Quick start</a>
+      <a class="btn ghost" href="https://github.com/francordel/myrtia">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <img class="mark" src="assets/icon-dark.png" alt="Myrtia" />
+    <h1>Agent-native <span class="grad">red teaming</span><br>for LLMs and AI agents.</h1>
+    <p class="sub">A council of attacker models deliberates, cross-critiques and votes to craft
+      adversarial prompts, strikes the target, and grades the result with an in-loop judge —
+      and you watch every turn happen live.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/francordel/myrtia">Get started</a>
+      <a class="btn ghost" href="#how">See how it works</a>
+    </div>
+    <div class="tagline">Myrtia — from Myrtea, the ancient root of Murcia. A tool from the huerta, aimed at the frontier.</div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <div class="eyebrow">Capabilities</div>
+    <h2>Not a single attacker. A council.</h2>
+    <p class="lead">Where library and CLI tools such as IBM ARES and NVIDIA garak are the reference
+      for LLM red teaming, Myrtia is built around autonomous multi-agent attackers, with a real
+      front-end and analytics.</p>
+    <div class="grid">
+      <div class="card"><div class="ic">C</div><h3>Live CouncilAttack</h3><p>N models propose, cross-critique, vote (Borda), a chairman synthesises, and an in-loop judge grades — streamed live, turn by turn.</p></div>
+      <div class="card"><div class="ic">A</div><h3>Multiple attacks</h3><p>Council, crescendo (multi-turn escalation) and a direct baseline, each with its own configurable schema.</p></div>
+      <div class="card"><div class="ic">B</div><h3>Behaviour library</h3><p>278 HarmBench behaviours across five themes, selectable by theme and search — or your own goals.</p></div>
+      <div class="card"><div class="ic">P</div><h3>Any provider</h3><p>OpenAI, Anthropic, self-hosted vLLM and local Ollama, mixed freely across council, chairman, judge and target.</p></div>
+      <div class="card"><div class="ic">S</div><h3>ASR analytics</h3><p>Attack Success Rate by attack, target and theme; score distributions; per-council-member vote win-rates.</p></div>
+      <div class="card"><div class="ic">H</div><h3>Searchable history</h3><p>Every run is persisted, searchable and filterable, and replays its full deliberation on demand.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="eyebrow">How it works</div>
+    <h2>Deliberate. Vote. Strike. Judge.</h2>
+    <p class="lead">For each behaviour, every turn:</p>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><b>Propose</b><span>each council member drafts an attack</span></div>
+      <div class="step"><div class="n">2</div><b>Critique</b><span>members rank each other</span></div>
+      <div class="step"><div class="n">3</div><b>Vote</b><span>Borda picks the winner</span></div>
+      <div class="step"><div class="n">4</div><b>Synthesise</b><span>chairman refines the prompt</span></div>
+      <div class="step"><div class="n">5</div><b>Strike</b><span>send it to the target</span></div>
+      <div class="step"><div class="n">6</div><b>Judge</b><span>graded 0–5; ≥5 is a jailbreak</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="compare">
+  <div class="wrap">
+    <div class="eyebrow">Why Myrtia</div>
+    <h2>The realistic threat model, made observable.</h2>
+    <p class="lead">Safety-aligned frontier models refuse to author jailbreaks, so Myrtia pairs a
+      permissive open-model council with the frontier target under test — and shows every step.</p>
+    <table class="cmp">
+      <tr><th>&nbsp;</th><th>Library / CLI tools</th><th>Myrtia</th></tr>
+      <tr><td>Multi-agent attacker council</td><td class="no">—</td><td class="yes">Yes</td></tr>
+      <tr><td>Live deliberation UI</td><td class="no">—</td><td class="yes">Yes</td></tr>
+      <tr><td>Borda voting + chairman synthesis</td><td class="no">—</td><td class="yes">Yes</td></tr>
+      <tr><td>ASR analytics dashboard</td><td class="no">partial</td><td class="yes">Yes</td></tr>
+      <tr><td>Provider-agnostic (OpenAI/Anthropic/vLLM/Ollama)</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+      <tr><td>Self-hosted, Apache-2.0</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="start">
+  <div class="wrap">
+    <div class="eyebrow">Quick start</div>
+    <h2>Running in three commands.</h2>
+    <pre class="code"><span class="c"># install</span>
+cd backend && pip install -e . && pip install -e vendor/ares-council
+
+<span class="c"># run the server (API + web UI)</span>
+<span class="k">uvicorn</span> myrtia.api.app:app --port 8000
+
+<span class="c"># open the console</span>
+open http://127.0.0.1:8000/</pre>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="callout">
+      <h2>Red team the frontier.</h2>
+      <p class="lead" style="margin:0 auto 24px;">Open-source, agent-native, and built to be watched.</p>
+      <a class="btn primary" href="https://github.com/francordel/myrtia">Star on GitHub</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="brand" style="font-size:16px;"><img src="assets/icon-dark.png" style="width:26px;height:26px;" alt="" /> MYRTIA</div>
+    <div>
+      <span class="badge">Apache-2.0</span>
+      &nbsp; Built on <a href="https://github.com/IBM/ares">ARES</a>, inspired by <a href="https://github.com/NVIDIA/garak">garak</a>.
+      &nbsp; For authorised AI safety and security testing only.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
