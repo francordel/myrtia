@@ -174,6 +174,29 @@
   .modal-steps li { margin:8px 0; font-size:14px; }
   #infoPaper a { display:inline-block; margin-top:14px; }
 
+  /* chat assistant */
+  #chatFab { position:fixed; right:22px; bottom:22px; z-index:60; width:56px; height:56px; border-radius:50%;
+    border:0; background:var(--btn); color:#fff; cursor:pointer; box-shadow:var(--shadow-h);
+    display:flex; align-items:center; justify-content:center; margin:0; padding:0; transition:transform .12s,background .15s; }
+  #chatFab:hover { background:var(--btn-h); transform:translateY(-2px); }
+  #chatPanel { position:fixed; right:22px; bottom:88px; z-index:60; width:380px; max-width:calc(100vw - 44px);
+    height:520px; max-height:calc(100vh - 120px); background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; box-shadow:var(--shadow-h); display:flex; flex-direction:column; overflow:hidden; }
+  .chat-h { display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--border); }
+  .chat-h strong { font-size:14px; margin-right:auto; }
+  .chat-h select, .chat-h input { width:auto; padding:5px 8px; font-size:12px; }
+  .chat-h #chatModel { width:120px; }
+  .chat-x { width:auto; background:transparent; border:0; color:var(--muted); cursor:pointer; font-size:15px; padding:0 4px; margin:0; }
+  .chat-msgs { flex:1; overflow:auto; padding:14px; display:flex; flex-direction:column; gap:10px; }
+  .cmsg { max-width:85%; padding:9px 12px; border-radius:12px; font-size:13.5px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+  .cmsg.user { align-self:flex-end; background:var(--btn); color:#fff; border-bottom-right-radius:4px; }
+  .cmsg.bot { align-self:flex-start; background:var(--surface2); color:var(--fg); border:1px solid var(--border); border-bottom-left-radius:4px; }
+  .cmsg.err { align-self:stretch; background:color-mix(in srgb,var(--red) 15%,transparent); color:var(--red); }
+  .chat-in { display:flex; gap:8px; padding:10px; border-top:1px solid var(--border); }
+  .chat-in textarea { flex:1; resize:none; max-height:120px; }
+  .chat-in button { width:auto; margin:0; padding:8px 16px; background:var(--btn); color:#fff; border:0; border-radius:8px; cursor:pointer; font-weight:500; }
+  .chat-in button:disabled { opacity:.5; }
+
   .hist { margin-bottom:16px; }
   .hist-h { padding:14px 18px; display:flex; align-items:center; justify-content:space-between;
     cursor:pointer; font-weight:600; font-size:14px; }
@@ -320,6 +343,26 @@
     <p class="modal-desc" id="infoDesc"></p>
     <ol class="modal-steps" id="infoSteps"></ol>
     <div id="infoPaper"></div>
+  </div>
+</div>
+
+<button id="chatFab" title="Ask the assistant" aria-label="Open chat">
+  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+</button>
+<div id="chatPanel" style="display:none">
+  <div class="chat-h">
+    <strong>Assistant</strong>
+    <select id="chatProvider" title="Provider">
+      <option value="ollama">Ollama</option><option value="openai">OpenAI</option>
+      <option value="anthropic">Anthropic</option><option value="custom">Custom</option>
+    </select>
+    <input id="chatModel" title="Model" placeholder="model" />
+    <button class="chat-x" id="chatClose" title="Close">✕</button>
+  </div>
+  <div id="chatMsgs" class="chat-msgs"></div>
+  <div class="chat-in">
+    <textarea id="chatInput" rows="1" placeholder="Ask anything…"></textarea>
+    <button id="chatSend">Send</button>
   </div>
 </div>
 
@@ -663,6 +706,32 @@ $("histToggle").onclick=()=>{ const b=$("histBody"); b.style.display = b.style.d
 document.querySelectorAll(".railbtn[data-to]").forEach(b=>{
   b.addEventListener("click",()=>{ const el=$(b.dataset.to); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); });
 });
+
+// ---- chat assistant (bottom-right) ----
+const CHAT_DEFAULT_MODEL={ollama:"qwen2.5:3b",openai:"gpt-4o-mini",anthropic:"claude-haiku-4-5-20251001",custom:""};
+let chatHistory=[];
+function chatProviderChanged(){ const p=$("chatProvider").value; if(!$("chatModel").value || CHAT_DEFAULT_MODEL[p]) $("chatModel").value=CHAT_DEFAULT_MODEL[p]||$("chatModel").value; }
+$("chatProvider").addEventListener("change",chatProviderChanged);
+$("chatFab").onclick=()=>{ const v=$("chatPanel").style.display==="none"; $("chatPanel").style.display=v?"flex":"none"; if(v && !$("chatModel").value) chatProviderChanged(); if(v) $("chatInput").focus(); };
+$("chatClose").onclick=()=>{ $("chatPanel").style.display="none"; };
+function chatAdd(role,text){ const d=document.createElement("div"); d.className="cmsg "+(role==="user"?"user":role==="error"?"err":"bot"); d.textContent=text; $("chatMsgs").appendChild(d); $("chatMsgs").scrollTop=$("chatMsgs").scrollHeight; return d; }
+async function chatSend(){
+  const text=$("chatInput").value.trim(); if(!text) return;
+  const p=$("chatProvider").value; const base=PROVIDERS[p]||$("turl").value; const model=$("chatModel").value.trim()||CHAT_DEFAULT_MODEL[p];
+  if(!base){ chatAdd("error","Set a provider/base URL first."); return; }
+  chatAdd("user",text); chatHistory.push({role:"user",content:text}); $("chatInput").value="";
+  $("chatSend").disabled=true; const pending=chatAdd("bot","…");
+  try{
+    const r=await fetch($("base").value.replace(/\/$/,"")+"/chat",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({base_url:base,model,messages:chatHistory.slice(-12),api_key:keyGet(p)||undefined})});
+    const d=await r.json();
+    if(d.error){ pending.className="cmsg err"; pending.textContent=d.error; }
+    else { pending.textContent=d.reply||"(empty)"; chatHistory.push({role:"assistant",content:d.reply||""}); }
+  }catch(e){ pending.className="cmsg err"; pending.textContent="request failed"; }
+  finally{ $("chatSend").disabled=false; $("chatMsgs").scrollTop=$("chatMsgs").scrollHeight; }
+}
+$("chatSend").onclick=chatSend;
+$("chatInput").addEventListener("keydown",(e)=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); chatSend(); } });
 
 loadPlugins();
 loadHistory();

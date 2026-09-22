@@ -72,6 +72,40 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.post("/chat")
+def chat(body: dict[str, Any]) -> dict[str, Any]:
+    """Proxy a chat completion to any OpenAI-compatible provider.
+
+    Powers the in-app assistant. The key is used only to call the provider and is
+    never stored or logged. Body: {base_url, model, messages, api_key?, max_tokens?}.
+    """
+    import requests
+
+    base = str(body.get("base_url", "")).rstrip("/")
+    if not base or not body.get("model") or not body.get("messages"):
+        return {"error": "base_url, model and messages are required"}
+    url = base + ("/chat/completions" if base.endswith("/v1") else "/v1/chat/completions")
+    headers = {"Content-Type": "application/json"}
+    key = body.get("api_key")
+    if key:
+        headers["Authorization"] = f"Bearer {key}"
+    payload = {
+        "model": body["model"],
+        "messages": body["messages"],
+        "max_tokens": int(body.get("max_tokens", 1024)),
+        "stream": False,
+    }
+    try:
+        r = requests.post(url, json=payload, headers=headers, timeout=120)
+        if r.status_code // 100 != 2:
+            return {"error": f"provider {r.status_code}: {r.text[:300]}"}
+        data = r.json()
+        reply = (data.get("choices") or [{}])[0].get("message", {}).get("content", "")
+        return {"reply": reply}
+    except Exception as exc:  # noqa: BLE001
+        return {"error": str(exc)[:300]}
+
+
 @app.get("/behaviors")
 async def behaviors(theme: str = "", q: str = "") -> dict[str, Any]:
     """Malicious-behaviour library, filterable by theme and text, for run config."""
