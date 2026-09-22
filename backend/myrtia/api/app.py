@@ -33,9 +33,11 @@ from myrtia.store.runs import RunSpec, STORE
 import myrtia.plugins.council  # noqa: F401
 import myrtia.plugins.crescendo  # noqa: F401
 import myrtia.plugins.direct  # noqa: F401
+import myrtia.plugins.garak_probes  # noqa: F401
 import myrtia.plugins.human_jailbreak  # noqa: F401
 import myrtia.plugins.obfuscation  # noqa: F401
 import myrtia.plugins.payload_splitting  # noqa: F401
+import myrtia.plugins.tap  # noqa: F401
 
 app = FastAPI(title="Myrtia", version="0.0.1")
 

@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Myrtia · Adversarial security for AI</title>
-<meta name="description" content="Myrtia is an open-source, agent-native red-teaming console for LLMs and AI agents: seven attack strategies, a deliberating council of attacker models, a behaviour library, live deliberation, ASR analytics and a built-in assistant." />
+<meta name="description" content="Myrtia is an open-source, agent-native red-teaming console for LLMs and AI agents: thirteen attack strategies, a deliberating council of attacker models, a behaviour library, live deliberation, ASR analytics and a built-in assistant." />
 <link rel="icon" type="image/png" href="assets/mark-light.png" media="(prefers-color-scheme: light)" />
 <link rel="icon" type="image/png" href="assets/mark-dark.png" media="(prefers-color-scheme: dark)" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -207,7 +207,7 @@
       <div class="hero-tag">Adversarial security for AI</div>
     </div>
     <h1>Red team the frontier.<br>Watch every move.</h1>
-    <p class="sub">Open-source red teaming for LLMs and AI agents: seven attack strategies, a deliberating council of attacker models, and every turn streamed live.</p>
+    <p class="sub">Open-source red teaming for LLMs and AI agents: thirteen attack strategies, a deliberating council of attacker models, and every turn streamed live.</p>
     <div class="cta">
       <a class="btn primary" href="#start">Get started</a>
       <a class="btn ghost" href="https://github.com/francordel/myrtia">GitHub</a>
@@ -247,6 +247,12 @@
       <tr><td><span class="mono">human-jailbreak</span></td><td class="c">Wraps each behaviour in known persona templates (DAN, AIM, dev-mode and others).</td><td><span class="pill raw">raw response</span></td></tr>
       <tr><td><span class="mono">obfuscation</span></td><td class="c">Encodes the behaviour with the full ARES/garak encoding family (base64, base32, base16, hex, ascii85, uu, ROT13, Morse, NATO, Braille, binary, leetspeak, reversed) and asks the target to decode and comply.</td><td><span class="pill raw">raw response</span></td></tr>
       <tr><td><span class="mono">payload-splitting</span></td><td class="c">Splits the behaviour into innocuous fragments the target is asked to reassemble.</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">tap</span></td><td class="c">Tree of Attacks with Pruning / PAIR (garak): an attacker LLM iteratively proposes and refines adversarial prompts, a judge scores each answer 1-10, and the best branch is kept and improved.</td><td><span class="pill judge">judge 1-10</span></td></tr>
+      <tr><td><span class="mono">promptinject</span></td><td class="c">Goal-hijacking directives that try to override the system prompt and prior context (garak).</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">grandma</span></td><td class="c">Emotional / nostalgia framing that asks the model to role-play a sympathetic figure reciting the content (garak).</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">smuggling</span></td><td class="c">Disguises the request as a hypothetical fiction or a function to evaluate, so intent detection misses it (garak).</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">phrasing</span></td><td class="c">Temporal reframing of the request into past or future tense to distance it from a direct instruction (garak).</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">latent-injection</span></td><td class="c">Hides the request inside a benign document (CV, report, translation) the model is asked to process: indirect prompt injection (garak).</td><td><span class="pill raw">raw response</span></td></tr>
     </table>
     <div class="split">
       <div class="panel">

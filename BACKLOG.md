@@ -29,13 +29,23 @@ Status: ✅ done · 🚧 in progress · ⬜ todo.
 - ⬜ Download local models from the UI (Ollama pull); (later) browse HuggingFace
 - ✅ Integrate the ARES attack strategies as plugins. Black-box, end-to-end verified:
   `direct`, `human-jailbreak`, `obfuscation` (now the full ARES/garak Encoding family:
-  base64/base32/base16/hex/ascii85/uu/ROT13/Morse/NATO/Braille/binary/leetspeak/reversed),
-  `crescendo` (ARES/PyRIT dual-LLM multi-turn escalation), plus Myrtia's own
-  `council` / `council-crescendo` / `payload-splitting`.
-- ⬜ [white-box] `gcg` (Greedy Coordinate Gradient) + `autodan`: ARES ships these but they
+  base64/base32/base16/hex/ascii85/uu/ROT13/Morse/NATO/Braille/binary/leetspeak/reversed/
+  atbash/quoted-printable/zalgo/unicode-tag), `crescendo` (ARES/PyRIT dual-LLM multi-turn
+  escalation), plus Myrtia's own `council` / `council-crescendo` / `payload-splitting`.
+- ✅ Integrate the NVIDIA garak black-box probes as plugins (end-to-end verified):
+  `promptinject` (goal hijacking), `grandma` (emotional framing), `smuggling` (hypothetical /
+  function masking), `phrasing` (past/future tense), `latent-injection` (indirect injection in
+  a benign doc), and `tap` (TAP / PAIR adaptive attacker+judge loop, width 1 = PAIR). 13
+  attacks total now.
+- ⬜ [white-box] `gcg` (Greedy Coordinate Gradient) + `autodan`: ARES/garak ship these but they
   need model weights + gradients (GPU), so they are NOT black-box compatible and cannot run
   against an API target. Add only behind a HuggingFace/white-box target connector; until then
   they stay out of the runnable registry (would never complete end-to-end otherwise).
+- ⬜ [needs a special target/sink] remaining garak probes that do not fit a plain chat API:
+  `visual_jailbreak` (needs a vision-language target), `web_injection` / `exploitation`
+  (markdown/XSS/SQL/Jinja — need a rendering or execution sink downstream), `atkgen` (needs a
+  fine-tuned toxic-prompt generator), `glitch` / `dra` (tokenizer-specific), `ansiescape`
+  (terminal control codes). Port when Myrtia grows the matching connector types.
 - ⬜ **Upload your own behaviour dataset** (like HarmBench): let the operator upload a file of
   goals instead of only the bundled HarmBench 278. Requirements shown in the UI: a parseable
   format — CSV in the HarmBench shape (a `Behavior` column, comma-separated, one goal per row;

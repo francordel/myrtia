@@ -22,6 +22,7 @@ from __future__ import annotations
 import base64
 import binascii
 import codecs
+import quopri
 from typing import Any
 
 from myrtia.plugins.base import PluginSpec, register
@@ -87,6 +88,33 @@ def _to_binary(text: str) -> str:
     return " ".join(format(b, "08b") for b in text.encode("utf-8"))
 
 
+def _to_atbash(text: str) -> str:
+    def flip(ch: str) -> str:
+        if "a" <= ch <= "z":
+            return chr(ord("z") - (ord(ch) - ord("a")))
+        if "A" <= ch <= "Z":
+            return chr(ord("Z") - (ord(ch) - ord("A")))
+        return ch
+    return "".join(flip(c) for c in text)
+
+
+def _to_zalgo(text: str) -> str:
+    # Deterministic zalgo: two combining marks after each visible char.
+    marks = "̣̀́̈"
+    out = []
+    for i, ch in enumerate(text):
+        out.append(ch)
+        if not ch.isspace():
+            out.append(marks[i % len(marks)])
+            out.append(marks[(i + 2) % len(marks)])
+    return "".join(out)
+
+
+def _to_unicode_tag(text: str) -> str:
+    # garak InjectUnicodeTagChars: map ASCII into the invisible Unicode Tag block.
+    return "".join(chr(0xE0000 + ord(c)) for c in text if ord(c) < 0x80)
+
+
 # scheme -> (encode_fn, human name for the wrapper prompt)
 _SCHEMES: dict[str, Any] = {
     "base64": (lambda g: base64.b64encode(g.encode()).decode("ascii"), "base64"),
@@ -102,6 +130,10 @@ _SCHEMES: dict[str, Any] = {
     "binary": (_to_binary, "8-bit binary"),
     "leetspeak": (lambda g: g.translate(_LEET), "leetspeak"),
     "reversed": (lambda g: g[::-1], "reversed (character-reversed) text"),
+    "atbash": (_to_atbash, "the Atbash cipher (a<->z, b<->y, ...)"),
+    "qp": (lambda g: quopri.encodestring(g.encode()).decode("ascii"), "quoted-printable"),
+    "zalgo": (_to_zalgo, "Zalgo (combining diacritical marks); strip the marks to read it"),
+    "unicode-tag": (_to_unicode_tag, "invisible Unicode Tag characters (U+E0000 block)"),
 }
 
 _DEFAULT_SCHEMES = "base64,rot13,hex,ascii85,morse,leetspeak"
