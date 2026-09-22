@@ -182,7 +182,7 @@ class CouncilAttack(AttackStrategy):
         self.use_pasarea: bool = bool(config.get("use_pasarea", False))
         self.ollama_endpoint: str = config.get(
             "ollama_endpoint",
-            "http://10.0.0.4:11434" if self.use_pasarea else "http://10.0.0.1:11434"
+            "http://127.0.0.1:11434" if self.use_pasarea else "http://127.0.0.1:11434"
         )
         self.chairman_endpoint: str = config.get("chairman_endpoint", self.ollama_endpoint)
         self.judge_endpoint: str = config.get("judge_endpoint", self.ollama_endpoint)
@@ -197,8 +197,10 @@ class CouncilAttack(AttackStrategy):
 
         # Bearer key for OpenAI-compatible endpoints (OpenAI, Anthropic OpenAI-compat,
         # vLLM behind auth). Council/chairman/judge calls send it as Authorization.
-        import os as _os
-        self.api_key: str | None = config.get("api_key") or _os.getenv("OPENAI_API_KEY")
+        # Only use an explicitly-supplied key. Do NOT fall back to the server's
+        # OPENAI_API_KEY env var — that would let a caller-chosen endpoint exfiltrate
+        # the host's key (SSRF credential theft).
+        self.api_key: str | None = config.get("api_key")
         # Display label for the target model (set by the Myrtia orchestrator).
         self._target_model_display: str | None = config.get("target_model")
 
@@ -320,25 +322,13 @@ class CouncilAttack(AttackStrategy):
         self.blind_mode: bool = bool(config.get("blind_mode", False))
 
         # Optional override for the council system prompt (e.g. Hagendorff 2026).
-        # Accepts a YAML file path (with a `system_prompt` key) or inline string.
-        # Falls back to the built-in _COUNCIL_SYSTEM.
+        # Treated ALWAYS as an inline string. It is NOT read from the filesystem:
+        # this value can arrive over the unauthenticated API, and reading arbitrary
+        # paths from it would be an arbitrary-file-read primitive.
         # Supports {harmful_request} and {conversation_partner} placeholders.
         custom_system = config.get("council_system_prompt", None)
         if custom_system:
-            p = Path(custom_system)
-            if p.exists():
-                raw = p.read_text(encoding="utf-8").strip()
-                # If the file is YAML with a system_prompt key, extract it
-                try:
-                    import yaml as _yaml
-                    parsed = _yaml.safe_load(raw)
-                    if isinstance(parsed, dict) and "system_prompt" in parsed:
-                        raw = parsed["system_prompt"].strip()
-                except Exception:
-                    pass
-                self._council_system_template: str = raw
-            else:
-                self._council_system_template = custom_system.strip()
+            self._council_system_template: str = str(custom_system).strip()
         else:
             self._council_system_template = self._COUNCIL_SYSTEM
 
@@ -409,7 +399,7 @@ class CouncilAttack(AttackStrategy):
             "type": "ares_council.CouncilAttack",
             "input_path": "assets/attack_goals.json",
             "output_path": "results/council_attacks.json",
-            "ollama_endpoint": "http://10.0.0.1:11434",
+            "ollama_endpoint": "http://127.0.0.1:11434",
             "max_turns": 10,
             # "auto" = query Ollama and pick best reasoning models.
             # Alternatively supply an explicit list, e.g.:
@@ -2208,6 +2198,14 @@ class CouncilAttack(AttackStrategy):
             req_headers = {}
             if is_openai and self.api_key:
                 req_headers["Authorization"] = f"Bearer {self.api_key}"
+            try:
+                from myrtia.security import url_block_reason
+                _b = url_block_reason(full_url)
+                if _b:
+                    logger.warning("Blocked model endpoint (%s): %s", _b, redact(full_url))
+                    return ""
+            except Exception:  # noqa: BLE001 - security helper unavailable outside Myrtia
+                pass
             try:
                 resp = requests.post(
                     full_url,

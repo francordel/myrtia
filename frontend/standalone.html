@@ -483,7 +483,8 @@ function openInfo(){
   $("infoDesc").textContent=p.description||"";
   const steps=$("infoSteps"); steps.innerHTML="";
   (p.how||[]).forEach(s=>{ const li=document.createElement("li"); li.textContent=s; steps.appendChild(li); });
-  $("infoPaper").innerHTML = p.paper ? `<a class="btn" style="border:1px solid var(--border);padding:8px 14px;border-radius:8px" href="${esc(p.paper)}" target="_blank" rel="noopener">Read the paper ›</a>` : "";
+  const safePaper = (p.paper && /^https?:\/\//i.test(p.paper)) ? p.paper : "";
+  $("infoPaper").innerHTML = safePaper ? `<a class="btn" style="border:1px solid var(--border);padding:8px 14px;border-radius:8px" href="${esc(safePaper)}" target="_blank" rel="noopener">Read the paper ›</a>` : "";
   $("infoModal").style.display="flex";
 }
 $("attackInfo").addEventListener("click",(e)=>{e.preventDefault();openInfo();});

@@ -42,6 +42,10 @@ def _connect() -> sqlite3.Connection:
     if _conn is None:
         _PATH.parent.mkdir(parents=True, exist_ok=True)
         _conn = sqlite3.connect(str(_PATH), check_same_thread=False)
+        try:  # not world-readable (contains attack goals/history)
+            os.chmod(_PATH, 0o600)
+        except OSError:
+            pass
         _conn.execute("PRAGMA journal_mode=WAL")
         _conn.execute(
             "CREATE TABLE IF NOT EXISTS runs("

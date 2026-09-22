@@ -38,13 +38,37 @@ import myrtia.plugins.payload_splitting  # noqa: F401
 
 app = FastAPI(title="Myrtia", version="0.0.1")
 
-# Local-dev convenience: allow the standalone viewer (any origin) to call the API.
+# The UI is served same-origin, so CORS only needs to cover the local origins the
+# operator uses. Restricting it (vs "*") blocks drive-by pages from reading the API
+# cross-origin. Extra origins can be added via MYRTIA_ALLOW_ORIGINS (comma-separated).
+import os as _os
+_allowed = ["http://localhost:8000", "http://127.0.0.1:8000"]
+_allowed += [o.strip() for o in _os.getenv("MYRTIA_ALLOW_ORIGINS", "").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
+    allow_origins=_allowed,
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    resp = await call_next(request)
+    # Clickjacking + defense-in-depth. Inline styles/scripts are used by the single-file
+    # UI, so script/style allow 'unsafe-inline'; framing is denied; connections are same-origin.
+    resp.headers["X-Frame-Options"] = "DENY"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src https://fonts.gstatic.com; "
+        "img-src 'self' data:; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'"
+    )
+    return resp
 
 # Serve the zero-build viewer at / so it shares the backend origin (no CORS/WS issues).
 _STANDALONE = Path(__file__).resolve().parents[3] / "frontend" / "standalone.html"
@@ -85,6 +109,10 @@ def chat(body: dict[str, Any]) -> dict[str, Any]:
     base = str(body.get("base_url", "")).rstrip("/")
     if not base or not body.get("model") or not body.get("messages"):
         return {"error": "base_url, model and messages are required"}
+    from myrtia.security import url_block_reason
+    blocked = url_block_reason(base)
+    if blocked:
+        return {"error": f"blocked base_url: {blocked}"}
     url = base + ("/chat/completions" if base.endswith("/v1") else "/v1/chat/completions")
     headers = {"Content-Type": "application/json"}
     key = body.get("api_key")
@@ -124,9 +152,15 @@ def chat_stream(body: dict[str, Any]) -> StreamingResponse:
         "max_tokens": int(body.get("max_tokens", 1024)), "stream": True,
     }
 
+    from myrtia.security import url_block_reason
+    _blocked = url_block_reason(base) if base else "missing base_url"
+
     def gen():
         if not base or not payload["model"] or not payload["messages"]:
             yield "data: " + _json.dumps({"error": "base_url, model and messages required"}) + "\n\n"
+            return
+        if _blocked:
+            yield "data: " + _json.dumps({"error": f"blocked base_url: {_blocked}"}) + "\n\n"
             return
         try:
             with requests.post(url, json=payload, headers=headers, stream=True, timeout=120) as r:
@@ -182,11 +216,23 @@ async def plugins() -> dict[str, Any]:
 
 @app.post("/runs")
 async def create_run(body: dict[str, Any]) -> dict[str, Any]:
+    attack_id = body.get("attack_id")
+    if not attack_id or attack_id not in PLUGINS:
+        return JSONResponse({"error": f"unknown attack_id: {attack_id!r}"}, status_code=400)  # type: ignore[return-value]
+    goals = body.get("goals") or []
+    if not isinstance(goals, list) or not goals:
+        return JSONResponse({"error": "goals must be a non-empty list"}, status_code=400)  # type: ignore[return-value]
+    if len(goals) > 500:
+        return JSONResponse({"error": "too many goals (max 500)"}, status_code=400)  # type: ignore[return-value]
+    from myrtia.security import url_block_reason
+    tb = (body.get("target") or {}).get("base_url")
+    if tb and url_block_reason(tb):
+        return JSONResponse({"error": f"blocked target base_url: {url_block_reason(tb)}"}, status_code=400)  # type: ignore[return-value]
     spec = RunSpec(
-        attack_id=body["attack_id"],
+        attack_id=attack_id,
         attack_config=body.get("attack_config", {}),
         target=body.get("target", {}),
-        goals=body.get("goals", []),
+        goals=goals,
         judge_id=body.get("judge_id"),
         theme=(body.get("theme") or "").strip(),
     )

@@ -66,6 +66,27 @@ Status: ✅ done · 🚧 in progress · ⬜ todo.
 - ⬜ Live progress / ETA (goals done / total, elapsed)
 - ⬜ Tests (backend + frontend) — zero today
 
+## Security review (3 audit agents, 2026-09-22)
+
+### Fixed ✅
+- ✅ SSRF/metadata: block link-local (169.254.x) + metadata hosts on /chat, /chat/stream, target connector, and council model calls (loopback/LAN still allowed — legit targets)
+- ✅ Council no longer falls back to the server's OPENAI_API_KEY env var (was exfiltratable via a caller-chosen endpoint)
+- ✅ council_system_prompt no longer read from the filesystem (was arbitrary file read over the API)
+- ✅ CORS restricted to local origins (was "*"); GET/POST only
+- ✅ Security headers: CSP, X-Frame-Options: DENY, X-Content-Type-Options: nosniff
+- ✅ /runs input validation: unknown attack_id / empty goals / >500 goals / blocked target → 400
+- ✅ Frontend: "Read the paper" link validates http(s) scheme (was a javascript:-URL key-theft vector)
+- ✅ Scrubbed internal cluster IPs (10.0.0.x / "pasarea") from vendored council source
+- ✅ SQLite file chmod 600; untracked committed run outputs (results/) + gitignored
+- ✅ (already good, verified) secret redaction on REST/WS/disk, git history clean, no eval/exec, SQL parametrized, target output rendered via textContent (no XSS)
+
+### Remaining ⬜
+- ⬜ [High] Optional backend auth token (no auth today; fine for local single-operator, needed before shared/public hosting)
+- ⬜ [Med] Pydantic request models for all endpoints (replace dict[str,Any])
+- ⬜ [Med] DoS caps: max concurrent runs, request body-size limit, bound in-memory backlog, per-call timeout
+- ⬜ [Med] Broaden redaction to credential-in-URL and more field names (authorization/password/secret)
+- ⬜ [Low] Generic client error messages (avoid echoing endpoints); remove unused React scaffold (frontend/src); coerce numeric UI interpolations; consider self-hosting fonts / SRI
+
 ## Backlog (later) ⬜
 - ⬜ GraphQL + subscriptions (scale beyond raw WS)
 - ⬜ More target connectors (agent endpoints, guarded connectors)

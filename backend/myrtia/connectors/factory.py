@@ -29,6 +29,10 @@ def build_target_connector(spec: dict[str, Any]) -> Any:
         raise ValueError(f"Unsupported target kind for MVP: {kind!r}")
 
     base_url = spec["base_url"].rstrip("/")
+    from myrtia.security import url_block_reason
+    reason = url_block_reason(base_url)
+    if reason:
+        raise ValueError(f"blocked target base_url: {reason}")
     endpoint = f"{base_url}/chat/completions"
     model = spec["model"]
     api_key = spec.get("api_key")
