@@ -77,7 +77,10 @@
   /* hero */
   header.hero { position:relative; padding:88px 0 56px; text-align:center;
     background:radial-gradient(1000px 520px at 50% -10%,var(--bg-grad),transparent 65%),var(--bg); }
-  .hero .mark { width:96px; height:96px; margin-bottom:22px; }
+  .hero .logo-lockup { display:flex; flex-direction:column; align-items:center; margin-bottom:34px; }
+  .hero .mark { width:104px; height:104px; margin-bottom:18px; }
+  .hero .hero-wm { font-size:clamp(30px,5vw,46px); line-height:1; color:var(--text-1); margin-right:-.28em; }
+  .hero .hero-tag { font-family:"Montserrat","Avenir Next","Helvetica Neue",sans-serif; font-weight:400; font-size:clamp(11px,1.4vw,13px); letter-spacing:.42em; text-transform:uppercase; color:var(--text-2); margin:12px 0 0; margin-right:-.42em; }
   .hero h1 { font-size:clamp(34px,6vw,60px); line-height:1.05; margin:0 0 18px; font-weight:700; letter-spacing:-1px; }
   .hero h1 span { color:var(--accent); }
   .hero p.sub { font-size:clamp(17px,2.2vw,20px); color:var(--text-2); max-width:760px; margin:0 auto 30px; }
@@ -201,9 +204,13 @@
 
 <header class="hero">
   <div class="wrap">
-    <span class="mark" role="img" aria-label="Myrtia leaf"></span>
+    <div class="logo-lockup">
+      <span class="mark" role="img" aria-label="Myrtia leaf"></span>
+      <div class="hero-wm wordmark">Myrtia</div>
+      <div class="hero-tag">Adversarial security for AI</div>
+    </div>
     <div class="overline">Open source · Apache-2.0 · agent-native</div>
-    <h1>Adversarial security<br>for <span>AI</span>.</h1>
+    <h1>Red team the frontier.<br>Watch every <span>move</span>.</h1>
     <p class="sub">Myrtia red-teams LLMs and AI agents from one console: six attack strategies, from a deliberating council of attacker models to classic jailbreak templates, a 278-behaviour library, live deliberation, Attack Success Rate analytics and a built-in assistant that knows your numbers.</p>
     <div class="cta">
       <a class="btn primary" href="#start">Get started</a>
