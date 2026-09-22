@@ -187,6 +187,10 @@
   .chat-h select, .chat-h input { width:auto; padding:5px 8px; font-size:12px; }
   .chat-h #chatModel { width:120px; }
   .chat-x { width:auto; background:transparent; border:0; color:var(--muted); cursor:pointer; font-size:15px; padding:0 4px; margin:0; }
+  .chat-sub { display:flex; gap:6px; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border); }
+  .chat-sub select { flex:1; min-width:0; padding:5px 8px; font-size:12px; }
+  .chat-sub #chatNew { width:auto; margin:0; padding:5px 8px; font-size:12px; background:var(--surface2); color:var(--accent); border:1px solid var(--border); border-radius:6px; cursor:pointer; white-space:nowrap; }
+  .chat-sub #chatKey { width:110px; padding:5px 8px; font-size:12px; }
   .chat-msgs { flex:1; overflow:auto; padding:14px; display:flex; flex-direction:column; gap:10px; }
   .cmsg { max-width:85%; padding:9px 12px; border-radius:12px; font-size:13.5px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
   .cmsg.user { align-self:flex-end; background:var(--btn); color:#fff; border-bottom-right-radius:4px; }
@@ -358,6 +362,11 @@
     </select>
     <input id="chatModel" title="Model" placeholder="model" />
     <button class="chat-x" id="chatClose" title="Close">✕</button>
+  </div>
+  <div class="chat-sub">
+    <select id="chatList" title="Conversations"></select>
+    <button id="chatNew" title="New chat">+ New</button>
+    <input id="chatKey" type="password" title="API key (saved in this browser)" placeholder="API key" autocomplete="off" />
   </div>
   <div id="chatMsgs" class="chat-msgs"></div>
   <div class="chat-in">
@@ -707,31 +716,63 @@ document.querySelectorAll(".railbtn[data-to]").forEach(b=>{
   b.addEventListener("click",()=>{ const el=$(b.dataset.to); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); });
 });
 
-// ---- chat assistant (bottom-right) ----
+// ---- chat assistant (bottom-right) with saved conversations + persisted key ----
 const CHAT_DEFAULT_MODEL={ollama:"qwen2.5:3b",openai:"gpt-4o-mini",anthropic:"claude-haiku-4-5-20251001",custom:""};
-let chatHistory=[];
-function chatProviderChanged(){ const p=$("chatProvider").value; if(!$("chatModel").value || CHAT_DEFAULT_MODEL[p]) $("chatModel").value=CHAT_DEFAULT_MODEL[p]||$("chatModel").value; }
+let CHATS=[]; let curChat=null;
+function chatsLoad(){ try{ CHATS=JSON.parse(localStorage.getItem("myrtia-chats")||"[]"); }catch(e){ CHATS=[]; } }
+function chatsSave(){ try{ localStorage.setItem("myrtia-chats",JSON.stringify(CHATS.slice(0,50))); }catch(e){} }
+function renderChatList(){
+  const sel=$("chatList"); sel.innerHTML="";
+  CHATS.forEach(c=>{ const o=document.createElement("option"); o.value=c.id; o.textContent=(c.title||"New chat").slice(0,40); sel.appendChild(o); });
+  if(curChat) sel.value=curChat.id;
+}
+function renderChatMsgs(){
+  $("chatMsgs").innerHTML="";
+  (curChat?curChat.messages:[]).forEach(m=>chatAdd(m.role==="user"?"user":"bot",m.content,false));
+  $("chatMsgs").scrollTop=$("chatMsgs").scrollHeight;
+}
+function newChat(){
+  const p=$("chatProvider").value;
+  curChat={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),title:"New chat",
+    provider:p,model:$("chatModel").value.trim()||CHAT_DEFAULT_MODEL[p],messages:[]};
+  CHATS.unshift(curChat); chatsSave(); renderChatList(); renderChatMsgs();
+}
+function loadChat(id){
+  const c=CHATS.find(x=>x.id===id); if(!c) return; curChat=c;
+  $("chatProvider").value=c.provider||"ollama"; $("chatModel").value=c.model||CHAT_DEFAULT_MODEL[c.provider]||"";
+  $("chatKey").value=keyGet($("chatProvider").value); renderChatMsgs();
+}
+function chatProviderChanged(){ const p=$("chatProvider").value; $("chatModel").value=CHAT_DEFAULT_MODEL[p]||$("chatModel").value; $("chatKey").value=keyGet(p); if(curChat){curChat.provider=p;curChat.model=$("chatModel").value;chatsSave();} }
 $("chatProvider").addEventListener("change",chatProviderChanged);
-$("chatFab").onclick=()=>{ const v=$("chatPanel").style.display==="none"; $("chatPanel").style.display=v?"flex":"none"; if(v && !$("chatModel").value) chatProviderChanged(); if(v) $("chatInput").focus(); };
+$("chatModel").addEventListener("input",()=>{ if(curChat){curChat.model=$("chatModel").value;chatsSave();} });
+$("chatKey").addEventListener("input",()=>keySet($("chatProvider").value,$("chatKey").value));
+$("chatList").addEventListener("change",()=>loadChat($("chatList").value));
+$("chatNew").onclick=newChat;
+$("chatFab").onclick=()=>{ const v=$("chatPanel").style.display==="none"; $("chatPanel").style.display=v?"flex":"none";
+  if(v){ if(!CHATS.length) newChat(); else if(!curChat){ curChat=CHATS[0]; loadChat(curChat.id); } $("chatKey").value=keyGet($("chatProvider").value); $("chatInput").focus(); } };
 $("chatClose").onclick=()=>{ $("chatPanel").style.display="none"; };
-function chatAdd(role,text){ const d=document.createElement("div"); d.className="cmsg "+(role==="user"?"user":role==="error"?"err":"bot"); d.textContent=text; $("chatMsgs").appendChild(d); $("chatMsgs").scrollTop=$("chatMsgs").scrollHeight; return d; }
+function chatAdd(role,text,scroll=true){ const d=document.createElement("div"); d.className="cmsg "+(role==="user"?"user":role==="error"?"err":"bot"); d.textContent=text; $("chatMsgs").appendChild(d); if(scroll)$("chatMsgs").scrollTop=$("chatMsgs").scrollHeight; return d; }
 async function chatSend(){
   const text=$("chatInput").value.trim(); if(!text) return;
+  if(!curChat) newChat();
   const p=$("chatProvider").value; const base=PROVIDERS[p]||$("turl").value; const model=$("chatModel").value.trim()||CHAT_DEFAULT_MODEL[p];
   if(!base){ chatAdd("error","Set a provider/base URL first."); return; }
-  chatAdd("user",text); chatHistory.push({role:"user",content:text}); $("chatInput").value="";
+  chatAdd("user",text); curChat.messages.push({role:"user",content:text});
+  if(curChat.title==="New chat"){ curChat.title=text.slice(0,40); renderChatList(); }
+  $("chatInput").value=""; chatsSave();
   $("chatSend").disabled=true; const pending=chatAdd("bot","…");
   try{
     const r=await fetch($("base").value.replace(/\/$/,"")+"/chat",{method:"POST",headers:{"content-type":"application/json"},
-      body:JSON.stringify({base_url:base,model,messages:chatHistory.slice(-12),api_key:keyGet(p)||undefined})});
+      body:JSON.stringify({base_url:base,model,messages:curChat.messages.slice(-12),api_key:keyGet(p)||undefined})});
     const d=await r.json();
     if(d.error){ pending.className="cmsg err"; pending.textContent=d.error; }
-    else { pending.textContent=d.reply||"(empty)"; chatHistory.push({role:"assistant",content:d.reply||""}); }
+    else { pending.textContent=d.reply||"(empty)"; curChat.messages.push({role:"assistant",content:d.reply||""}); chatsSave(); }
   }catch(e){ pending.className="cmsg err"; pending.textContent="request failed"; }
   finally{ $("chatSend").disabled=false; $("chatMsgs").scrollTop=$("chatMsgs").scrollHeight; }
 }
 $("chatSend").onclick=chatSend;
 $("chatInput").addEventListener("keydown",(e)=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); chatSend(); } });
+chatsLoad(); renderChatList();
 
 loadPlugins();
 loadHistory();
