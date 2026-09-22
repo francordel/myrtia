@@ -196,6 +196,11 @@
   .cmsg.user { align-self:flex-end; background:var(--btn); color:#fff; border-bottom-right-radius:4px; }
   .cmsg.bot { align-self:flex-start; background:var(--surface2); color:var(--fg); border:1px solid var(--border); border-bottom-left-radius:4px; }
   .cmsg.err { align-self:stretch; background:color-mix(in srgb,var(--red) 15%,transparent); color:var(--red); }
+  .chat-chips { display:flex; flex-direction:column; gap:8px; margin-top:auto; }
+  .chips-intro { color:var(--muted); font-size:12.5px; margin-bottom:2px; }
+  .chip-sug { width:100%; text-align:left; background:var(--surface2); color:var(--fg); border:1px solid var(--border);
+    border-radius:10px; padding:10px 12px; font-size:13px; cursor:pointer; margin:0; transition:border-color .15s; }
+  .chip-sug:hover { border-color:var(--accent); color:var(--accent); }
   .chat-in { display:flex; gap:8px; padding:10px; border-top:1px solid var(--border); }
   .chat-in textarea { flex:1; resize:none; max-height:120px; }
   .chat-in button { width:auto; margin:0; padding:8px 16px; background:var(--btn); color:#fff; border:0; border-radius:8px; cursor:pointer; font-weight:500; }
@@ -726,10 +731,29 @@ function renderChatList(){
   CHATS.forEach(c=>{ const o=document.createElement("option"); o.value=c.id; o.textContent=(c.title||"New chat").slice(0,40); sel.appendChild(o); });
   if(curChat) sel.value=curChat.id;
 }
+const SUGGESTIONS=["Help me configure an attack","Help me understand the statistics","How does CouncilAttack work?"];
+function getSystemPrompt(){
+  const attacks=(PLUGINS||[]).map(p=>`- ${p.id}: ${p.description}`).join("\n");
+  return "You are the assistant built into Myrtia, an open-source, agent-native red-teaming tool for LLMs and AI agents. "+
+  "Help the user configure attacks, understand results and statistics, and explain how Myrtia works. Be concise and practical.\n"+
+  "How it works: a council of attacker models propose adversarial prompts, cross-critique, vote (Borda Top-1); a chairman synthesises the winning prompt; it is sent to the target; an in-loop judge grades the response 0-5 (>=5 = full jailbreak). ASR = fraction of goals whose best score is >=5.\n"+
+  "To configure a run: choose an attack, a target (OpenAI-compatible base URL + model + optional API key), and behaviours (the built-in HarmBench library by theme, or your own goal). Recommended setup: a permissive open-model council (e.g. local Ollama models) attacking a frontier target, with a capable judge; frontier models refuse to author jailbreaks, so they make poor council members.\n"+
+  "The statistics dashboard shows ASR by attack/target/theme, the judge-score distribution, and per-council-member vote win-rates.\n"+
+  "Available attacks:\n"+attacks+"\n"+
+  "Only assist with authorised AI safety and security testing.";
+}
+function renderChips(){
+  const wrap=document.createElement("div"); wrap.className="chat-chips";
+  const intro=document.createElement("div"); intro.className="chips-intro"; intro.textContent="Not sure what to ask? Try:"; wrap.appendChild(intro);
+  SUGGESTIONS.forEach(s=>{ const c=document.createElement("button"); c.className="chip-sug"; c.textContent=s; c.onclick=()=>{ $("chatInput").value=s; chatSend(); }; wrap.appendChild(c); });
+  $("chatMsgs").appendChild(wrap);
+}
 function renderChatMsgs(){
-  $("chatMsgs").innerHTML="";
-  (curChat?curChat.messages:[]).forEach(m=>chatAdd(m.role==="user"?"user":"bot",m.content,false));
-  $("chatMsgs").scrollTop=$("chatMsgs").scrollHeight;
+  const box=$("chatMsgs"); box.innerHTML="";
+  const msgs=curChat?curChat.messages:[];
+  if(!msgs.length) renderChips();
+  else msgs.forEach(m=>chatAdd(m.role==="user"?"user":"bot",m.content,false));
+  box.scrollTop=box.scrollHeight;
 }
 function newChat(){
   const p=$("chatProvider").value;
@@ -757,16 +781,28 @@ async function chatSend(){
   if(!curChat) newChat();
   const p=$("chatProvider").value; const base=PROVIDERS[p]||$("turl").value; const model=$("chatModel").value.trim()||CHAT_DEFAULT_MODEL[p];
   if(!base){ chatAdd("error","Set a provider/base URL first."); return; }
+  const chips=$("chatMsgs").querySelector(".chat-chips"); if(chips) chips.remove();
   chatAdd("user",text); curChat.messages.push({role:"user",content:text});
   if(curChat.title==="New chat"){ curChat.title=text.slice(0,40); renderChatList(); }
   $("chatInput").value=""; chatsSave();
-  $("chatSend").disabled=true; const pending=chatAdd("bot","…");
+  $("chatSend").disabled=true; const pending=chatAdd("bot","…"); let acc="";
+  const msgs=[{role:"system",content:getSystemPrompt()}].concat(curChat.messages.slice(-12));
   try{
-    const r=await fetch($("base").value.replace(/\/$/,"")+"/chat",{method:"POST",headers:{"content-type":"application/json"},
-      body:JSON.stringify({base_url:base,model,messages:curChat.messages.slice(-12),api_key:keyGet(p)||undefined})});
-    const d=await r.json();
-    if(d.error){ pending.className="cmsg err"; pending.textContent=d.error; }
-    else { pending.textContent=d.reply||"(empty)"; curChat.messages.push({role:"assistant",content:d.reply||""}); chatsSave(); }
+    const res=await fetch($("base").value.replace(/\/$/,"")+"/chat/stream",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({base_url:base,model,messages:msgs,api_key:keyGet(p)||undefined})});
+    const reader=res.body.getReader(); const dec=new TextDecoder(); let buf="";
+    while(true){
+      const {value,done}=await reader.read(); if(done) break;
+      buf+=dec.decode(value,{stream:true}); let idx;
+      while((idx=buf.indexOf("\n\n"))>=0){
+        const line=buf.slice(0,idx).replace(/^data: /,""); buf=buf.slice(idx+2);
+        if(!line) continue; let d; try{ d=JSON.parse(line); }catch(e){ continue; }
+        if(d.error){ pending.className="cmsg err"; pending.textContent=d.error; }
+        else if(d.delta){ acc+=d.delta; pending.textContent=acc; $("chatMsgs").scrollTop=$("chatMsgs").scrollHeight; }
+      }
+    }
+    if(acc){ curChat.messages.push({role:"assistant",content:acc}); chatsSave(); }
+    else if(pending.className.indexOf("err")<0){ pending.textContent="(empty)"; }
   }catch(e){ pending.className="cmsg err"; pending.textContent="request failed"; }
   finally{ $("chatSend").disabled=false; $("chatMsgs").scrollTop=$("chatMsgs").scrollHeight; }
 }

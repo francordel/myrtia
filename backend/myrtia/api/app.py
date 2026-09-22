@@ -20,7 +20,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 
 from myrtia.events.bus import BUS
 from myrtia.events.schema import Event, EventType
@@ -104,6 +104,54 @@ def chat(body: dict[str, Any]) -> dict[str, Any]:
         return {"reply": reply}
     except Exception as exc:  # noqa: BLE001
         return {"error": str(exc)[:300]}
+
+
+@app.post("/chat/stream")
+def chat_stream(body: dict[str, Any]) -> StreamingResponse:
+    """Streaming (token-by-token) chat completion, proxied as Server-Sent Events."""
+    import json as _json
+    import requests
+
+    base = str(body.get("base_url", "")).rstrip("/")
+    url = base + ("/chat/completions" if base.endswith("/v1") else "/v1/chat/completions")
+    headers = {"Content-Type": "application/json"}
+    key = body.get("api_key")
+    if key:
+        headers["Authorization"] = f"Bearer {key}"
+    payload = {
+        "model": body.get("model"), "messages": body.get("messages") or [],
+        "max_tokens": int(body.get("max_tokens", 1024)), "stream": True,
+    }
+
+    def gen():
+        if not base or not payload["model"] or not payload["messages"]:
+            yield "data: " + _json.dumps({"error": "base_url, model and messages required"}) + "\n\n"
+            return
+        try:
+            with requests.post(url, json=payload, headers=headers, stream=True, timeout=120) as r:
+                if r.status_code // 100 != 2:
+                    yield "data: " + _json.dumps({"error": f"provider {r.status_code}: {r.text[:200]}"}) + "\n\n"
+                    return
+                for line in r.iter_lines():
+                    if not line:
+                        continue
+                    s = line.decode("utf-8", "ignore")
+                    if s.startswith("data: "):
+                        s = s[6:]
+                    if s.strip() == "[DONE]":
+                        break
+                    try:
+                        d = _json.loads(s)
+                        delta = (d.get("choices") or [{}])[0].get("delta", {}).get("content")
+                        if delta:
+                            yield "data: " + _json.dumps({"delta": delta}) + "\n\n"
+                    except Exception:  # noqa: BLE001
+                        continue
+        except Exception as exc:  # noqa: BLE001
+            yield "data: " + _json.dumps({"error": str(exc)[:200]}) + "\n\n"
+        yield "data: " + _json.dumps({"done": True}) + "\n\n"
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
 
 
 @app.get("/behaviors")
