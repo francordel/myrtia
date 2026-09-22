@@ -115,10 +115,18 @@ class RunStore:
                 status = RunStatus(row.get("status", "pending"))
             except ValueError:
                 status = RunStatus.PENDING
+            error = row.get("error")
+            # A run still marked RUNNING/PENDING at load time is an orphan (its
+            # process died on a previous restart) — mark it interrupted, not running.
+            if status in (RunStatus.RUNNING, RunStatus.PENDING):
+                status = RunStatus.FAILED
+                error = error or "interrupted (backend restarted)"
             run = Run(id=row["id"], spec=spec, status=status,
                       created_at=row.get("created_at") or time.time(),
-                      error=row.get("error"), results=row.get("results") or [])
+                      error=error, results=row.get("results") or [])
             self._runs[run.id] = run
+            if status == RunStatus.FAILED and error and "interrupted" in error:
+                self.persist(run)  # write back the corrected status
 
     def create(self, spec: RunSpec) -> Run:
         run = Run(id=uuid.uuid4().hex, spec=spec)

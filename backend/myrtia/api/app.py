@@ -324,24 +324,29 @@ async def stop_run(run_id: str) -> dict[str, Any]:
 async def list_runs(
     q: str = "",
     theme: str = "",
+    attack: str = "",
     result: str = "",
     min_score: int = -1,
 ) -> dict[str, Any]:
     """Searchable/filterable run history.
 
-    q         -> substring match on goal text or theme
+    q         -> substring match on goal text, theme, attack or target model
     theme     -> exact theme match
-    result    -> 'succeeded' | 'failed' (run status)
+    attack    -> exact attack id match
+    result    -> run status ('running' | 'succeeded' | 'failed' | 'cancelled')
     min_score -> minimum graded evaluation score (best judge score across turns)
     """
     q = q.strip().lower()
     runs = [r.summary() for r in STORE.list()]
     out = []
     for s in runs:
-        hay = (" ".join(s["goals"]) + " " + (s["theme"] or "")).lower()
+        hay = (" ".join(s["goals"]) + " " + (s["theme"] or "") + " "
+               + s["attack_id"] + " " + (s["target_model"] or "")).lower()
         if q and q not in hay:
             continue
         if theme and s["theme"] != theme:
+            continue
+        if attack and s["attack_id"] != attack:
             continue
         if result and s["status"] != result:
             continue
@@ -349,7 +354,8 @@ async def list_runs(
             continue
         out.append(s)
     themes = sorted({s["theme"] for s in runs if s["theme"]})
-    return {"runs": out, "themes": themes, "total": len(runs)}
+    attacks = sorted({s["attack_id"] for s in runs if s["attack_id"]})
+    return {"runs": out, "themes": themes, "attacks": attacks, "total": len(runs)}
 
 
 @app.get("/runs/{run_id}")

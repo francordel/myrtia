@@ -322,7 +322,8 @@
       <div class="hist-h" id="histToggle"><span>History &amp; search</span><span class="hist-count" id="histCount"></span></div>
       <div class="hist-body" id="histBody">
         <div class="filters">
-          <input id="fq" placeholder="Search goals / theme…" />
+          <input id="fq" placeholder="Search goals / theme / attack / model…" />
+          <select id="fattack"><option value="">All attacks</option></select>
           <select id="ftheme"><option value="">All themes</option></select>
           <select id="fresult">
             <option value="">Any result</option>
@@ -641,6 +642,7 @@ $("launch").onclick = async () => {
     if(!data.run_id){ setStatus("err","no run id"); return; }
     connectRun(data.run_id);
     $("stop").style.display="block";
+    loadHistory(); loadStats();  // show the new run in History immediately (as running)
   } catch(e){ setStatus("err","launch failed"); }
   finally { $("launch").disabled=false; $("launch").textContent="Launch attack"; }
 };
@@ -655,13 +657,18 @@ function fmtTime(ts){ try{ return new Date(ts*1000).toLocaleString(); }catch(e){
 async function loadHistory(){
   const base=$("base").value.replace(/\/$/,"");
   const params=new URLSearchParams({ q:$("fq").value.trim(), theme:$("ftheme").value,
-    result:$("fresult").value, min_score:$("fscore").value });
+    attack:$("fattack").value, result:$("fresult").value, min_score:$("fscore").value });
   let data; try { data=await (await fetch(base+"/runs?"+params)).json(); } catch(e){ return; }
-  $("histCount").textContent = `${data.runs.length} shown · ${data.total} total`;
-  // refresh theme options preserving selection
+  const running=(data.runs||[]).filter(r=>r.status==="running").length;
+  window._anyRunning = running>0;
+  $("histCount").textContent = `${data.runs.length} shown · ${data.total} total${running?` · ${running} running`:""}`;
+  // refresh theme + attack options preserving selection
   const cur=$("ftheme").value;
   $("ftheme").innerHTML='<option value="">All themes</option>'+
     (data.themes||[]).map(t=>`<option${t===cur?" selected":""}>${esc(t)}</option>`).join("");
+  const curA=$("fattack").value;
+  $("fattack").innerHTML='<option value="">All attacks</option>'+
+    (data.attacks||[]).map(a=>`<option${a===curA?" selected":""}>${esc(a)}</option>`).join("");
   const list=$("runlist");
   if(!data.runs.length){ list.innerHTML='<div class="none">No runs match.</div>'; return; }
   list.innerHTML="";
@@ -712,7 +719,7 @@ async function loadStats(){
 $("statsToggle").onclick=()=>{ const b=$("statsBody"); b.style.display = b.style.display==="none"?"block":"none"; };
 
 let histT=null;
-["fq","ftheme","fresult","fscore"].forEach(id=>{
+["fq","fattack","ftheme","fresult","fscore"].forEach(id=>{
   $(id).addEventListener("input",()=>{ clearTimeout(histT); histT=setTimeout(loadHistory,200); });
 });
 $("histToggle").onclick=()=>{ const b=$("histBody"); b.style.display = b.style.display==="none"?"block":"none"; };
@@ -813,6 +820,8 @@ chatsLoad(); renderChatList();
 loadPlugins();
 loadHistory();
 loadStats();
+// keep History + Stats live while any run is executing
+setInterval(()=>{ if(window._anyRunning){ loadHistory(); loadStats(); } }, 4000);
 </script>
 </body>
 </html>
