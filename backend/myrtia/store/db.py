@@ -9,12 +9,27 @@ The DB path is `$MYRTIA_DB` or `<repo>/.data/myrtia.db`.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import os
 import sqlite3
 import threading
 from pathlib import Path
 from typing import Any
+
+
+def _json_default(o: Any):
+    """Make non-JSON objects (e.g. ARES ConnectorResponse dataclasses) serialisable."""
+    if dataclasses.is_dataclass(o) and not isinstance(o, type):
+        try:
+            return dataclasses.asdict(o)
+        except Exception:  # noqa: BLE001
+            return str(o)
+    return str(o)
+
+
+def _dumps(obj: Any) -> str:
+    return json.dumps(obj, ensure_ascii=False, default=_json_default)
 
 _DEFAULT = Path(__file__).resolve().parents[3] / ".data" / "myrtia.db"
 _PATH = Path(os.getenv("MYRTIA_DB", str(_DEFAULT)))
@@ -51,7 +66,7 @@ def save_run(run_id: str, created_at: float, status: str, error: str | None,
             "VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET "
             "status=excluded.status, error=excluded.error, results_json=excluded.results_json",
             (run_id, created_at, status, error,
-             json.dumps(spec, ensure_ascii=False), json.dumps(results, ensure_ascii=False)),
+             _dumps(spec), _dumps(results)),
         )
         c.commit()
 
@@ -79,7 +94,7 @@ def append_event(run_id: str, seq: int, ts: float, type_: str,
         c.execute(
             "INSERT OR IGNORE INTO events(run_id,seq,ts,type,payload_json,id) "
             "VALUES(?,?,?,?,?,?)",
-            (run_id, seq, ts, type_, json.dumps(payload, ensure_ascii=False), ev_id),
+            (run_id, seq, ts, type_, _dumps(payload), ev_id),
         )
         c.commit()
 

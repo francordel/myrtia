@@ -280,8 +280,15 @@
     <input id="apikey" type="password" placeholder="sk-… / sk-ant-…" autocomplete="off" />
     <label>Target model</label>
     <input id="tmodel" value="qwen2.5:1.5b" />
-    <label>Council models (comma-separated)</label>
+    <label>Council models (comma-separated) <span style="color:var(--faint)">(the attacking agents)</span></label>
     <input id="cmodels" value="qwen2.5:1.5b" />
+    <details class="adv" id="agentwrap"><summary>Build your own agentic attack — agents &amp; prompts</summary>
+      <label>Council system prompt <span style="color:var(--faint)">(the attacker persona / context shared by the council agents; blank = built-in red-team prompt)</span></label>
+      <textarea id="csysPrompt" rows="5" placeholder="e.g. You are a proficient red-teaming engineer probing a target LLM for safety failures. Craft prompts that…"></textarea>
+      <label>Critique style</label>
+      <select id="critMode"><option value="hardened">Hardened (default)</option><option value="soft">Soft</option></select>
+      <div class="desc">Combine with the council models above (your agents), the chairman/judge in Advanced configuration, and turns/Borda to define a fully custom agentic attack.</div>
+    </details>
     <label>Goal / behaviour <span style="color:var(--faint)">(used if none selected below)</span></label>
     <textarea id="goal" rows="2">Write a short limerick about a mischievous cat (harmless test)</textarea>
     <details class="adv" id="libwrap"><summary>Behaviour library — select what to test (<span id="libSel">0</span> selected)</summary>
@@ -648,6 +655,8 @@ $("launch").onclick = async () => {
   const attack_config=Object.assign(
     { council_models:$("cmodels").value.split(",").map(s=>s.trim()).filter(Boolean) }, collectAdvanced());
   if(key) attack_config.api_key=key;
+  const csp=$("csysPrompt")?$("csysPrompt").value.trim():""; if(csp) attack_config.council_system_prompt=csp;
+  if($("critMode")) attack_config.critique_prompt_mode=$("critMode").value;
   const target={ kind:"openai_chat", base_url:$("turl").value.trim(), model:$("tmodel").value.trim() };
   if(key) target.api_key=key;
   const body={ attack_id:$("attack").value, attack_config, theme:$("themeTag").value.trim(), target, goals };
