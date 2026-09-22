@@ -31,6 +31,7 @@ from myrtia.store.runs import RunSpec, STORE
 
 # Import side effect: register the bundled plugins.
 import myrtia.plugins.council  # noqa: F401
+import myrtia.plugins.crescendo  # noqa: F401
 import myrtia.plugins.direct  # noqa: F401
 import myrtia.plugins.human_jailbreak  # noqa: F401
 import myrtia.plugins.obfuscation  # noqa: F401

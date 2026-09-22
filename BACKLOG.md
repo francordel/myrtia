@@ -27,7 +27,21 @@ Status: ✅ done · 🚧 in progress · ⬜ todo.
 - ⬜ API keys in the UI (paste key per provider; provider presets OpenAI/Anthropic/Ollama/vLLM)
 - ⬜ Dynamic model lists: query `/v1/models` (OpenAI/Anthropic) + `/api/tags` (Ollama) → populate dropdowns (never outdated) + billing links
 - ⬜ Download local models from the UI (Ollama pull); (later) browse HuggingFace
-- ⬜ Integrate more ARES attacks (echo-chamber, tap, autodan, gcg, human-jailbreak, pyrit) as plugins
+- ✅ Integrate the ARES attack strategies as plugins. Black-box, end-to-end verified:
+  `direct`, `human-jailbreak`, `obfuscation` (now the full ARES/garak Encoding family:
+  base64/base32/base16/hex/ascii85/uu/ROT13/Morse/NATO/Braille/binary/leetspeak/reversed),
+  `crescendo` (ARES/PyRIT dual-LLM multi-turn escalation), plus Myrtia's own
+  `council` / `council-crescendo` / `payload-splitting`.
+- ⬜ [white-box] `gcg` (Greedy Coordinate Gradient) + `autodan`: ARES ships these but they
+  need model weights + gradients (GPU), so they are NOT black-box compatible and cannot run
+  against an API target. Add only behind a HuggingFace/white-box target connector; until then
+  they stay out of the runnable registry (would never complete end-to-end otherwise).
+- ⬜ **Upload your own behaviour dataset** (like HarmBench): let the operator upload a file of
+  goals instead of only the bundled HarmBench 278. Requirements shown in the UI: a parseable
+  format — CSV in the HarmBench shape (a `Behavior` column, comma-separated, one goal per row;
+  optional `SemanticCategory`/`context`), or one goal per line for plain `.txt`. Validate on
+  upload (reject unparseable/oversized files, cap row count), preview parsed goals, then feed
+  them to any attack as a custom theme.
 - ⬜ Per-attack info tab (paper link + how-it-works diagram), GTI-style
 
 ## Sprint 3 — Navigation & analytics ⬜
