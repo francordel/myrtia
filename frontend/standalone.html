@@ -992,14 +992,14 @@ window.addEventListener("scroll", updJump, {passive:true});
 $("jumpLive").onclick=()=>window.scrollTo({top:document.documentElement.scrollHeight, behavior:"smooth"});
 
 // ---- websocket ----
-let ws=null, wsRunId=null, wsRetries=0, wsFinished=false;
+let ws=null, wsRunId=null, wsRetries=0, wsFinished=false, wsOpenedAt=0;
 function connectRun(runId, keepEvents){
   if(ws){ try{ ws.onclose=null; ws.close(); }catch(e){} }
   wsRunId=runId; wsFinished=false;
   if(!RUN || RUN.id!==runId){ RUN={id:runId, status:"running"}; fetchRunMeta(runId); }
   if(!keepEvents){ events=[]; goalOpen.clear(); collapsedTurns.clear(); expandedEv.clear(); render(); }
   ws=new WebSocket(API().replace(/^http/,"ws")+`/runs/${runId}/events`);
-  ws.onopen=()=>{ wsRetries=0; renderRunHead(); };
+  ws.onopen=()=>{ wsRetries=0; wsOpenedAt=Date.now(); renderRunHead(); };
   ws.onclose=()=>{ renderRunHead();
     // Auto-reconnect (backoff) unless the run already finished. Backlog replay
     // re-sends everything, so we resync from scratch on reconnect.
@@ -1011,7 +1011,8 @@ function connectRun(runId, keepEvents){
     events.push(ev);
     if(ev.type==="run.started" && ev.payload && ev.payload.spec){ RUN.spec=RUN.spec||ev.payload.spec; }
     if(ev.type==="run.finished"){ wsFinished=true; const st=ev.payload.status; RUN.status=st;
-      toast(`Run ${STATUS_LABEL[st]||st}${st==="succeeded"?"":""}.`, st==="succeeded"?"ok":(st==="cancelled"?"info":"err"));
+      // Backlog replay re-sends run.finished right after open; only toast for a live finish.
+      if(Date.now()-wsOpenedAt>1500) toast(`Run ${STATUS_LABEL[st]||st}.`, st==="succeeded"?"ok":(st==="cancelled"?"info":"err"));
       loadHistory(); loadStats(); $("stop").disabled=false; $("stop").textContent="Stop run"; }
     render();
     if(stick) window.scrollTo({top:document.documentElement.scrollHeight});
