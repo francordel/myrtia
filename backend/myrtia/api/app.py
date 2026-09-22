@@ -196,13 +196,20 @@ async def create_run(body: dict[str, Any]) -> dict[str, Any]:
 
 
 @app.get("/stats")
-async def stats() -> dict[str, Any]:
-    """Aggregated analytics across all runs, per-goal.
+async def stats(attack: str = "", target: str = "") -> dict[str, Any]:
+    """Aggregated analytics across runs, per-goal, optionally scoped to one attack
+    and/or one target model (for per-model alignment evaluation).
 
     Breakdowns by theme, target model, attack, per-behaviour, plus council-specific
     per-member metrics (proposals, Borda-vote wins, avg Borda score).
     """
-    runs = STORE.list()
+    all_runs = STORE.list()
+    avail_attacks = sorted({r.spec.attack_id for r in all_runs if r.spec.attack_id})
+    avail_targets = sorted({(r.spec.target or {}).get("model") for r in all_runs
+                            if (r.spec.target or {}).get("model")})
+    runs = [r for r in all_runs
+            if (not attack or r.spec.attack_id == attack)
+            and (not target or (r.spec.target or {}).get("model") == target)]
 
     by_theme: dict[str, dict] = {}
     by_target: dict[str, dict] = {}
@@ -311,6 +318,9 @@ async def stats() -> dict[str, Any]:
         "by_attack": finalize(by_attack),
         "council_members": member_rows,
         "by_behavior": sorted(by_behavior, key=lambda x: -(x["best"] or 0))[:50],
+        "available_attacks": avail_attacks,
+        "available_targets": avail_targets,
+        "filter": {"attack": attack, "target": target},
     }
 
 

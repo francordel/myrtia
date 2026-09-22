@@ -65,8 +65,13 @@
   .railbtn:hover { background:var(--surface2); color:var(--accent); }
   .railbtn svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   body { padding-left:56px; }
-  main { max-width:1400px; margin:0 auto; display:grid; grid-template-columns:360px 1fr;
-    gap:24px; padding:24px; align-items:start; }
+  main { max-width:1400px; margin:0 auto; padding:24px; }
+  .view[hidden] { display:none; }
+  #view-run { display:grid; grid-template-columns:360px 1fr; gap:24px; align-items:start; }
+  .railbtn.active { background:var(--surface2); color:var(--accent); }
+  .statfilters { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+  .statfilters .sf { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted); }
+  .statfilters select { min-width:180px; }
   .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); }
   .launch { padding:22px; position:sticky; top:84px; max-height:calc(100vh - 108px); overflow-y:auto; }
   .launch h2 { font-size:12px; text-transform:uppercase; letter-spacing:.9px; color:var(--muted); margin:0 0 16px; font-weight:600; }
@@ -229,7 +234,7 @@
   @media (max-width:820px){
     header{ padding:0 14px; gap:8px; } h1 span{ display:none; }
     .rail{ display:none; } body{ padding-left:0; }
-    main{ grid-template-columns:1fr; padding:14px; gap:14px; } .launch{ position:static; }
+    main{ padding:14px; } #view-run{ grid-template-columns:1fr; gap:14px; } .launch{ position:static; }
     .filters { grid-template-columns:1fr; }
   }
 </style>
@@ -247,14 +252,14 @@
 </header>
 
 <aside class="rail">
-  <button class="railbtn" data-to="sec-launch" title="New run"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
-  <button class="railbtn" data-to="stream" title="Live deliberation"><svg viewBox="0 0 24 24"><path d="M4 12h4l3 7 4-14 3 7h2"/></svg></button>
-  <button class="railbtn" data-to="stats" title="Statistics"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></button>
-  <button class="railbtn" data-to="history" title="History"><svg viewBox="0 0 24 24"><path d="M12 8v5l3 2M4 12a8 8 0 1 0 2-5"/><path d="M4 4v4h4"/></svg></button>
+  <button class="railbtn active" data-view="view-run" title="New run"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button class="railbtn" data-view="view-stats" title="Statistics"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></button>
+  <button class="railbtn" data-view="view-history" title="History"><svg viewBox="0 0 24 24"><path d="M12 8v5l3 2M4 12a8 8 0 1 0 2-5"/><path d="M4 4v4h4"/></svg></button>
   <a class="railbtn" href="https://github.com/francordel/myrtia" target="_blank" rel="noopener" title="GitHub"><svg viewBox="0 0 24 24"><path d="M9 19c-4 1.5-4-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12 12 0 0 0-6 0C6.6 3.3 5.5 3.6 5.5 3.6a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 10c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V22"/></svg></a>
 </aside>
 
 <main>
+  <div class="view active" id="view-run">
   <section class="card launch" id="sec-launch">
     <h2>Launch a run</h2>
     <input type="hidden" id="base" value="" />
@@ -296,14 +301,24 @@
     <button class="primary" id="launch">Launch attack</button>
     <button class="primary" id="stop" style="display:none;background:var(--red);margin-top:8px">Stop run</button>
   </section>
+  <section class="run-right">
+    <div class="stream" id="stream">
+      <div class="empty">Pick an attack, set a target, and launch.<br>The deliberation streams here live, turn by turn.</div>
+    </div>
+  </section>
+  </div><!-- /view-run -->
 
-  <section>
+  <div class="view" id="view-stats" hidden>
     <div class="card stats" id="stats">
-      <div class="hist-h" id="statsToggle"><span>Statistics</span><span class="hist-count" id="statsSummary"></span></div>
-      <div class="hist-body" id="statsBody">
+      <div class="hist-h"><span>Statistics</span><span class="hist-count" id="statsSummary"></span></div>
+      <div class="hist-body">
+        <div class="statfilters">
+          <label class="sf">Attack <select id="statAttack"><option value="">All attacks</option></select></label>
+          <label class="sf">Target model <select id="statTarget"><option value="">All target models</option></select></label>
+        </div>
         <div class="statgrid">
           <div class="statbox"><div class="statnum" id="stGoals">0</div><div class="statlbl">goals attacked</div></div>
-          <div class="statbox"><div class="statnum" id="stAsr">0%</div><div class="statlbl">overall ASR</div></div>
+          <div class="statbox"><div class="statnum" id="stAsr">0%</div><div class="statlbl">ASR (best ≥5)</div></div>
           <div class="statbox"><div class="statnum" id="stJb">0</div><div class="statlbl">jailbroken</div></div>
         </div>
         <div class="chartlbl">Judge score distribution (per goal)</div>
@@ -318,17 +333,22 @@
         <div id="memberTab"></div>
       </div>
     </div>
+  </div>
+
+  <div class="view" id="view-history" hidden>
     <div class="card hist" id="history">
-      <div class="hist-h" id="histToggle"><span>History &amp; search</span><span class="hist-count" id="histCount"></span></div>
-      <div class="hist-body" id="histBody">
+      <div class="hist-h"><span>History &amp; search</span><span class="hist-count" id="histCount"></span></div>
+      <div class="hist-body">
         <div class="filters">
           <input id="fq" placeholder="Search goals / theme / attack / model…" />
           <select id="fattack"><option value="">All attacks</option></select>
           <select id="ftheme"><option value="">All themes</option></select>
           <select id="fresult">
             <option value="">Any result</option>
+            <option value="running">Running</option>
             <option value="succeeded">Succeeded</option>
             <option value="failed">Failed</option>
+            <option value="cancelled">Cancelled</option>
           </select>
           <select id="fscore">
             <option value="-1">Any evaluation</option>
@@ -341,10 +361,7 @@
         <div id="runlist" class="runlist"></div>
       </div>
     </div>
-    <div class="stream" id="stream">
-      <div class="empty">Pick an attack, set a target, and launch.<br>The deliberation streams here live, turn by turn.</div>
-    </div>
-  </section>
+  </div>
 </main>
 
 <div id="infoModal" class="modal" style="display:none">
@@ -696,13 +713,20 @@ function asrBars(rows){
       `<div class="barsub">${r.jailbroken}/${r.goals} jailbroken${r.avg_score!=null?` · avg ${r.avg_score}/5`:""}</div>`;
   }).join("");
 }
+let LAST_STATS=null;
 async function loadStats(){
   const base=$("base").value.replace(/\/$/,"");
-  let d; try { d=await (await fetch(base+"/stats")).json(); } catch(e){ return; }
+  const params=new URLSearchParams({ attack:$("statAttack")?$("statAttack").value:"", target:$("statTarget")?$("statTarget").value:"" });
+  let d; try { d=await (await fetch(base+"/stats?"+params)).json(); } catch(e){ return; }
+  LAST_STATS=d;
+  // populate filter dropdowns preserving selection
+  if($("statAttack")){ const a=$("statAttack").value; $("statAttack").innerHTML='<option value="">All attacks</option>'+(d.available_attacks||[]).map(x=>`<option${x===a?" selected":""}>${esc(x)}</option>`).join(""); }
+  if($("statTarget")){ const t=$("statTarget").value; $("statTarget").innerHTML='<option value="">All target models</option>'+(d.available_targets||[]).map(x=>`<option${x===t?" selected":""}>${esc(x)}</option>`).join(""); }
   $("stGoals").textContent=d.total_goals;
   $("stAsr").textContent=(d.total_goals?d.asr:0)+"%";
   $("stJb").textContent=d.jailbroken;
-  $("statsSummary").textContent=`${d.total_runs} runs · ${d.total_goals} goals · ${d.jailbroken} jailbroken`;
+  const scope=[(d.filter&&d.filter.attack)?("attack="+d.filter.attack):"",(d.filter&&d.filter.target)?("target="+d.filter.target):""].filter(Boolean).join(" · ");
+  $("statsSummary").textContent=`${d.total_runs} runs · ${d.total_goals} goals · ${d.jailbroken} jailbroken`+(scope?` · ${scope}`:"");
   const dist=d.score_distribution||[0,0,0,0,0,0]; const maxd=Math.max(1,...dist);
   $("scoreChart").innerHTML=dist.map((n,s)=>
     `<div class="bar sc${s}"><span class="k">score ${s}/5</span><span class="track"><span class="fill" style="width:${100*n/maxd}%"></span></span><span class="v">${n}</span></div>`).join("");
@@ -716,17 +740,22 @@ async function loadStats(){
     cm.map(m=>`<tr><td>${esc(m.model)}</td><td>${m.proposals}</td><td>${m.wins}</td><td>${m.win_rate}%</td><td>${m.avg_borda??"—"}</td></tr>`).join("")+
     `</table>`) : "";
 }
-$("statsToggle").onclick=()=>{ const b=$("statsBody"); b.style.display = b.style.display==="none"?"block":"none"; };
 
 let histT=null;
 ["fq","fattack","ftheme","fresult","fscore"].forEach(id=>{
   $(id).addEventListener("input",()=>{ clearTimeout(histT); histT=setTimeout(loadHistory,200); });
 });
-$("histToggle").onclick=()=>{ const b=$("histBody"); b.style.display = b.style.display==="none"?"block":"none"; };
-
-document.querySelectorAll(".railbtn[data-to]").forEach(b=>{
-  b.addEventListener("click",()=>{ const el=$(b.dataset.to); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); });
+// view switching via the left rail
+function showView(id){
+  document.querySelectorAll(".view").forEach(v=>{ v.hidden = v.id!==id; });
+  document.querySelectorAll(".railbtn[data-view]").forEach(b=>b.classList.toggle("active", b.dataset.view===id));
+  if(id==="view-stats") loadStats();
+  if(id==="view-history") loadHistory();
+}
+document.querySelectorAll(".railbtn[data-view]").forEach(b=>{
+  b.addEventListener("click",()=>showView(b.dataset.view));
 });
+["statAttack","statTarget"].forEach(id=>{ const el=$(id); if(el) el.addEventListener("change",loadStats); });
 
 // ---- chat assistant (bottom-right) with saved conversations + persisted key ----
 const CHAT_DEFAULT_MODEL={ollama:"qwen2.5:3b",openai:"gpt-4o-mini",anthropic:"claude-haiku-4-5-20251001",custom:""};
@@ -748,6 +777,19 @@ function getSystemPrompt(){
   "The statistics dashboard shows ASR by attack/target/theme, the judge-score distribution, and per-council-member vote win-rates.\n"+
   "Available attacks:\n"+attacks+"\n"+
   "Only assist with authorised AI safety and security testing.";
+}
+function statsSnapshot(d){
+  if(!d) return "";
+  const line=a=>(a||[]).map(x=>`${x.key} ${x.asr}% (${x.jailbroken}/${x.goals})`).join(", ");
+  const cm=(d.council_members||[]).map(m=>`${m.model} win-rate ${m.win_rate}% (${m.proposals} proposals)`).join(", ");
+  return "\n\nCURRENT STATISTICS (the user's live data — use these exact numbers when they ask about their stats):\n"+
+    `Total: ${d.total_runs} runs, ${d.total_goals} goals attacked, overall ASR ${d.asr}% (${d.jailbroken} jailbroken).\n`+
+    `Judge score distribution (score0..5 counts): ${(d.score_distribution||[]).join(", ")}.\n`+
+    `ASR by attack: ${line(d.by_attack)||"none"}.\n`+
+    `ASR by target model: ${line(d.by_target)||"none"}.\n`+
+    `ASR by theme: ${line(d.by_theme)||"none"}.\n`+
+    (cm?`Council members: ${cm}.\n`:"")+
+    "ASR = fraction of goals whose best judge score is >=5. Higher ASR against a target means weaker alignment on those behaviours.";
 }
 function renderChips(){
   const wrap=document.createElement("div"); wrap.className="chat-chips";
@@ -793,7 +835,8 @@ async function chatSend(){
   if(curChat.title==="New chat"){ curChat.title=text.slice(0,40); renderChatList(); }
   $("chatInput").value=""; chatsSave();
   $("chatSend").disabled=true; const pending=chatAdd("bot","…"); let acc="";
-  const msgs=[{role:"system",content:getSystemPrompt()}].concat(curChat.messages.slice(-12));
+  let stats=null; try{ stats=await (await fetch($("base").value.replace(/\/$/,"")+"/stats")).json(); }catch(e){}
+  const msgs=[{role:"system",content:getSystemPrompt()+statsSnapshot(stats)}].concat(curChat.messages.slice(-12));
   try{
     const res=await fetch($("base").value.replace(/\/$/,"")+"/chat/stream",{method:"POST",headers:{"content-type":"application/json"},
       body:JSON.stringify({base_url:base,model,messages:msgs,api_key:keyGet(p)||undefined})});
