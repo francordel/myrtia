@@ -283,8 +283,8 @@ async def stats(attack: str = "", target: str = "") -> dict[str, Any]:
     # Aggregate from the event backlog so live AND completed runs both count.
     for run in runs:
         theme = run.spec.theme
-        target = (run.spec.target or {}).get("model") or "(unknown)"
-        attack = run.spec.attack_id
+        run_target = (run.spec.target or {}).get("model") or "(unknown)"
+        run_attack = run.spec.attack_id
         events = BUS.backlog(run.id)
         gi = -1
         goal_scores: dict[int, list[int]] = {}
@@ -318,13 +318,13 @@ async def stats(attack: str = "", target: str = "") -> dict[str, Any]:
             if success:
                 jb += 1
             bump(by_theme, theme, success, best)
-            bump(by_target, target, success, best)
-            bump(by_attack, attack, success, best)
+            bump(by_target, run_target, success, best)
+            bump(by_attack, run_attack, success, best)
             if best is not None and 0 <= best <= 5:
                 score_dist[best] += 1
             by_behavior.append({
-                "goal": goal_text.get(g, ""), "theme": theme, "attack": attack,
-                "target": target, "best": best, "success": success,
+                "goal": goal_text.get(g, ""), "theme": theme, "attack": run_attack,
+                "target": run_target, "best": best, "success": success,
             })
         # council-member metrics
         for (_g, _turn), d in per_turn.items():

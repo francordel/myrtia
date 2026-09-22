@@ -298,3 +298,34 @@ Rama `design/audit-2026-09`, commits a nombre del autor, sin firmas de IA. Mismo
 | 4. Stats, History, Chat | Barras con n/N, distribución apilada, tabla de miembros, tabla de History, chat con popover/Markdown/Stop/hoja móvil | M2, M3, M4, M9, M11, B6, B7 | 4-5 h |
 
 Cada fase termina con las mismas capturas (1440/1024/390, oscuro/claro) en `docs/design-audit/after/` para comparar.
+
+---
+
+## 7. Implementación (rama `design/audit-2026-09`)
+
+Las cuatro fases se han implementado en `frontend/standalone.html` (fichero único, sin build, mismos IDs de control, mismos endpoints y eventos) más el renombrado de dos variables locales en `/stats` (`backend/myrtia/api/app.py`). Capturas "después" en `after/` con la misma numeración que `before/`.
+
+Verificado con Playwright (Chromium) a 1440, 1024 y 390 px, oscuro y claro, con cero errores ni warnings de consola:
+
+| Comprobación | Antes | Después |
+|---|---|---|
+| Botón Launch visible al aterrizar (1440×900) | no (3 pantallas de scroll interno) | sí, pie sticky |
+| Clic en fila de History | carga en vista oculta | abre la vista Runs con cabecera de run |
+| Ámbito de Statistics sin filtros | `attack=council · target=claude-sonnet-5` | vacío; chips sólo con filtro activo |
+| Run de 5 goals × 3 turnos | 15.614 px, todo abierto | 3.680 px, sólo el último goal abierto, índice G1…G5 |
+| Índice de propuesta sin resolver en Borda | `P2` | `proposal #2 (no response)` |
+| Diálogo "How this attack works" con Escape | no cierra | cierra (`<dialog>` nativo, foco atrapado) |
+| Plegables de goal/turno por teclado | no operables (`div`) | `button` con `aria-expanded` |
+| Navegación en móvil (390 px) | ninguna | nav inferior de 3 pestañas |
+| Objetivos táctiles < 40 px en móvil con chat abierto | 6 | 1 (selector de conversación, 32 px) |
+| Sección Council en ataques sin council (`direct`, `obfuscation`…) | siempre visible | oculta |
+| Run de humo en vivo (`direct` vs `qwen2.5:0.5b`) | — | cabecera Running → Completed, toast, sin errores |
+
+Resumen de lo cambiado por fase:
+
+- **Fase 1.** Clic en History abre el run; vocabulario separado de estado de ejecución (Completed / Running / Error / Cancelled) y resultado (`n/5 resisted | partial | jailbroken`); nav inferior en móvil; chip "N running" en cabecera sólo con runs activos; prosa en Roboto y mono sólo para el prompt del chairman; pie sticky con resumen y Launch; variables renombradas en `/stats`.
+- **Fase 2.** Tokens `--surface-1/2/3`, `--text-1/2/3` (≥ 4.5:1), `--role-*`, `--score-low/mid/high/max`, radios y spacing en escala; anillo de foco unificado; `label for`; `<dialog>`; `aria-current` en el rail; iconos sol/luna; favicon por esquema de color; título de pestaña por vista; wordmark MYRTIA en Montserrat Light con tracking .28em (con Avenir Next y Helvetica Neue como fallback de sistema; hoja comparativa en `wordmark-options.png`).
+- **Fase 3.** Formulario en 4 secciones numeradas con resumen por sección (Council sólo para ataques council); cabecera de run (goal, ataque, council, target, fecha, tema, estado, mejor score, eventos/turnos, Stop, Copy JSON, New run); índice de goals; auto-colapso de goals anteriores; "Jump to live" con stick-to-bottom; panel Borda como ranking con barras y críticas legibles; estado vacío didáctico con leyenda; skeleton mientras llega el primer evento; toasts para errores y fin de run.
+- **Fase 4.** KPIs con N de runs y avg best score; distribución como barra apilada con leyenda; ASR en dos columnas con `n/N`, marca de avg y texto en 12 px legible; tabla de miembros acotada, ordenada y con barra de win rate; chips de ámbito; History como tabla ordenable (Outcome / Date) con chips de filtros activos y sin scroll interno; chat de 420×600 con ajustes en popover, Markdown básico seguro, botón Stop (AbortController), indicador de escritura y hoja a pantalla completa en móvil.
+
+Pendiente fuera de alcance del fichero: paginación de History (el endpoint `/runs` no la ofrece), duración del run (no hay `finished_at` en la API) y una vista "Attacks" como catálogo.

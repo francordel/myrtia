@@ -3,418 +3,680 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Myrtia — live deliberation</title>
-<link rel="icon" type="image/png" href="/assets/icon-light.png?v=3" />
+<title>Myrtia · Runs</title>
+<link rel="icon" type="image/png" href="/assets/icon-light.png?v=3" media="(prefers-color-scheme: light)" />
+<link rel="icon" type="image/png" href="/assets/icon-dark.png?v=3" media="(prefers-color-scheme: dark)" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
 <style>
-  /* ---- Dark theme (default), Google Threat Intelligence style ---- */
+  /* =====================================================================
+     Design tokens. Dark is the default (Google Threat Intelligence look);
+     light overrides below. Legacy names (--fg, --muted, --surface2 ...) are
+     kept as aliases so any older snippet keeps working.
+     ===================================================================== */
   :root {
-    --bg:#0a0e17; --bg-grad:#0c1120; --surface:#121826; --surface2:#1a2130;
-    --fg:#e4e7ee; --muted:#98a1b5; --faint:#6b7488; --border:#232b3c;
-    --accent:#8ab4f8; --btn:#1a73e8; --btn-h:#3b82f6; --btn-fg:#ffffff;
-    --blue:#8ab4f8; --red:#f28b82; --yellow:#fdd663; --green:#81c995; --purple:#c58af9; --cyan:#78d9ec;
-    --shadow:0 1px 2px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.3);
-    --shadow-h:0 2px 6px rgba(0,0,0,.5),0 6px 16px rgba(0,0,0,.4);
+    --bg:#0a0e17; --bg-grad:#0c1120;
+    --surface-1:#121826; --surface-2:#1a2130; --surface-3:#222a3b;
+    --border:#2a3446; --border-strong:#3a4558;
+    --text-1:#e4e7ee; --text-2:#9ba4b8; --text-3:#8b93a7;
+    --accent:#8ab4f8; --accent-bg:color-mix(in srgb,var(--accent) 12%,transparent);
+    --btn:#1a73e8; --btn-h:#3b82f6; --btn-fg:#ffffff;
+    --info:#8ab4f8; --success:#81c995; --warning:#fdd663; --danger:#f28b82;
+    --role-proposal:#8ab4f8; --role-critique:#c58af9; --role-vote:#fdd663;
+    --role-chairman:#78d9ec; --role-target:#9ba4b8; --role-judge:#81c995;
+    --score-low:#9ba4b8; --score-mid:#f0b429; --score-high:#f28b82; --score-max:#ff6b6b; --score-max-fg:#1a0000;
+    --r-sm:6px; --r-md:8px; --r-lg:12px; --r-pill:999px;
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px;
+    --focus:0 0 0 3px color-mix(in srgb,var(--accent) 45%,transparent);
+    --shadow-1:0 1px 2px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.3);
+    --shadow-2:0 2px 6px rgba(0,0,0,.5),0 6px 16px rgba(0,0,0,.4);
+    --header-h:56px; --rail-w:72px;
+    /* legacy aliases */
+    --fg:var(--text-1); --muted:var(--text-2); --faint:var(--text-3);
+    --surface:var(--surface-1); --surface2:var(--surface-2);
+    --blue:var(--info); --red:var(--danger); --yellow:var(--warning); --green:var(--success);
+    --purple:var(--role-critique); --cyan:var(--role-chairman);
+    --shadow:var(--shadow-1); --shadow-h:var(--shadow-2);
   }
-  /* ---- Light theme (Google Cloud light) ---- */
   :root[data-theme="light"] {
-    --bg:#f8f9fa; --bg-grad:#f1f3f4; --surface:#ffffff; --surface2:#f1f3f4;
-    --fg:#202124; --muted:#5f6368; --faint:#80868b; --border:#dadce0;
-    --accent:#1a73e8; --btn:#1a73e8; --btn-h:#1666d3; --btn-fg:#ffffff;
-    --blue:#1a73e8; --red:#d93025; --yellow:#f9ab00; --green:#1e8e3e; --purple:#a142f4; --cyan:#12a4af;
-    --shadow:0 1px 2px rgba(60,64,67,.15),0 1px 3px rgba(60,64,67,.08);
-    --shadow-h:0 1px 3px rgba(60,64,67,.2),0 4px 8px rgba(60,64,67,.12);
+    --bg:#f8f9fa; --bg-grad:#f1f3f4;
+    --surface-1:#ffffff; --surface-2:#f1f3f4; --surface-3:#e8eaed;
+    --border:#dadce0; --border-strong:#bdc1c6;
+    --text-1:#202124; --text-2:#5f6368; --text-3:#5f6368;
+    --accent:#1a73e8; --btn:#1a73e8; --btn-h:#1666d3;
+    --info:#1a73e8; --success:#1e8e3e; --warning:#b06000; --danger:#d93025;
+    --role-proposal:#1a73e8; --role-critique:#a142f4; --role-vote:#f9ab00;
+    --role-chairman:#12a4af; --role-target:#5f6368; --role-judge:#1e8e3e;
+    --score-low:#5f6368; --score-mid:#b06000; --score-high:#d93025; --score-max:#a50e0e; --score-max-fg:#ffffff;
+    --shadow-1:0 1px 2px rgba(60,64,67,.15),0 1px 3px rgba(60,64,67,.08);
+    --shadow-2:0 1px 3px rgba(60,64,67,.2),0 4px 8px rgba(60,64,67,.12);
   }
+
+  /* ---- base ---- */
   * { box-sizing:border-box; }
   html,body { height:100%; }
   body { margin:0; background:radial-gradient(1200px 600px at 70% -10%,var(--bg-grad),var(--bg)) fixed, var(--bg);
-    color:var(--fg); font:14px/1.55 "Roboto",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    color:var(--text-1); font:14px/1.55 "Roboto",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    padding-left:var(--rail-w); }
   code,pre,.mono { font-family:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+  :focus-visible { outline:none; box-shadow:var(--focus); }
+  button { font:inherit; color:inherit; }
+  .num { font-variant-numeric:tabular-nums; }
+  .overline { font-size:11px; font-weight:600; letter-spacing:.6px; text-transform:uppercase; color:var(--text-2); }
+  .caption { font-size:12px; color:var(--text-2); }
+  .hidden-el { display:none !important; }
 
-  header { position:sticky; top:0; z-index:10; background:color-mix(in srgb,var(--surface) 88%,transparent);
-    backdrop-filter:blur(10px); border-bottom:1px solid var(--border); padding:0 24px; height:60px;
-    display:flex; align-items:center; gap:16px; }
-  .brand { display:flex; align-items:center; gap:11px; }
-  .shield { display:inline-block; width:44px; height:44px; flex:none; background-position:center; background-size:contain; background-repeat:no-repeat; background-image:url("/assets/icon-dark.png?v=3"); }
-  :root[data-theme="light"] .shield { background-image:url("/assets/icon-light.png?v=3"); }
-  h1 { font-size:18px; margin:0; font-weight:500; letter-spacing:-.2px; }
-  h1 b { font-weight:700; }
-  h1 span { color:var(--muted); font-weight:400; font-size:14px; }
+  /* ---- header ---- */
+  header { position:sticky; top:0; z-index:20; height:var(--header-h);
+    background:color-mix(in srgb,var(--surface-1) 88%,transparent); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border); padding:0 var(--sp-5); display:flex; align-items:center; gap:var(--sp-4); }
+  .brand { display:flex; align-items:center; gap:10px; min-width:0; }
+  .leaf { width:36px; height:36px; flex:none; background:url("/assets/icon-dark.png?v=3") center/contain no-repeat; }
+  :root[data-theme="light"] .leaf { background-image:url("/assets/icon-light.png?v=3"); }
+  h1 { font-size:18px; margin:0; font-weight:400; white-space:nowrap; display:flex; align-items:baseline; gap:10px; }
+  /* wordmark: light geometric sans, uppercase, wide tracking (matches the leaf mark) */
+  h1 b { font-family:"Montserrat","Avenir Next","Helvetica Neue",sans-serif; font-weight:300; font-size:17px; letter-spacing:.28em; text-transform:uppercase; margin-right:-.28em; }
+  h1 span { color:var(--text-2); font-weight:400; font-size:14px; }
   .spacer { flex:1; }
-  .icon-btn { width:36px; height:36px; border-radius:50%; border:1px solid var(--border);
-    background:var(--surface2); color:var(--muted); cursor:pointer; display:flex; align-items:center;
-    justify-content:center; font-size:16px; transition:background .15s,color .15s; padding:0; margin:0; }
-  .icon-btn:hover { color:var(--accent); background:var(--surface); box-shadow:none; }
-  .chip { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px;
-    font-size:13px; font-weight:500; background:var(--surface2); color:var(--muted);
-    border:1px solid var(--border); white-space:nowrap; }
-  .chip .dot { width:8px; height:8px; border-radius:50%; background:var(--faint); }
-  .chip.live{ color:var(--green); } .chip.live .dot{ background:var(--green); animation:pulse 1.3s infinite; }
-  .chip.run{ color:var(--yellow); } .chip.run .dot{ background:var(--yellow); animation:pulse 1s infinite; }
-  .chip.ok{ color:var(--green); } .chip.ok .dot{ background:var(--green); }
-  .chip.err{ color:var(--red); } .chip.err .dot{ background:var(--red); }
-  @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.3} }
+  .icon-btn { width:40px; height:40px; flex:none; border-radius:50%; border:1px solid var(--border); background:var(--surface-2);
+    color:var(--text-2); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0; transition:background .15s,color .15s; }
+  .icon-btn:hover { color:var(--accent); background:var(--surface-3); }
+  .icon-btn svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .icon-btn .moon { display:none; } :root[data-theme="light"] .icon-btn .moon { display:block; } :root[data-theme="light"] .icon-btn .sun { display:none; }
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:var(--r-pill); font-size:13px; font-weight:500;
+    background:var(--surface-2); color:var(--text-2); border:1px solid var(--border); white-space:nowrap; }
+  .chip .dot { width:8px; height:8px; border-radius:50%; background:var(--text-3); }
+  .chip.live { color:var(--success); } .chip.live .dot { background:var(--success); animation:pulse 1.3s infinite; }
+  .chip.run { color:var(--warning); } .chip.run .dot { background:var(--warning); animation:pulse 1s infinite; }
+  .chip.err { color:var(--danger); } .chip.err .dot { background:var(--danger); }
+  .chip.ok { color:var(--success); } .chip.ok .dot { background:var(--success); }
+  .chip.btn { cursor:pointer; } .chip.btn:hover { border-color:var(--accent); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-  .rail { position:fixed; left:0; top:60px; bottom:0; width:56px; z-index:9;
-    background:var(--surface); border-right:1px solid var(--border);
-    display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 0; }
-  .railbtn { width:40px; height:40px; border-radius:10px; border:0; background:transparent;
-    color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; margin:0; transition:background .15s,color .15s; }
-  .railbtn:hover { background:var(--surface2); color:var(--accent); }
-  .railbtn svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-  body { padding-left:56px; }
-  main { max-width:1400px; margin:0 auto; padding:24px; }
+  /* ---- rail (side nav; becomes bottom nav on small screens) ---- */
+  .rail { position:fixed; left:0; top:var(--header-h); bottom:0; width:var(--rail-w); z-index:19; background:var(--surface-1);
+    border-right:1px solid var(--border); display:flex; flex-direction:column; align-items:center; gap:var(--sp-1); padding:var(--sp-3) 0; }
+  .rail .foot { margin-top:auto; }
+  .railbtn { width:64px; height:56px; border-radius:var(--r-md); border:0; background:transparent; color:var(--text-2); cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:0; text-decoration:none;
+    font-size:11px; font-weight:500; position:relative; transition:background .15s,color .15s; }
+  .railbtn svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .railbtn:hover { background:var(--surface-2); color:var(--text-1); }
+  .railbtn[aria-current="page"] { background:var(--accent-bg); color:var(--accent); }
+  .railbtn[aria-current="page"]::before { content:""; position:absolute; left:-4px; top:12px; bottom:12px; width:3px; border-radius:2px; background:var(--accent); }
+  .railbtn .badge { position:absolute; top:8px; right:12px; width:8px; height:8px; border-radius:50%; background:var(--warning); animation:pulse 1s infinite; display:none; }
+  .railbtn.has-live .badge { display:block; }
+
+  main { max-width:1440px; margin:0 auto; padding:var(--sp-5); }
   .view[hidden] { display:none !important; }
-  #view-run { display:grid; grid-template-columns:360px 1fr; gap:24px; align-items:start; }
-  .railbtn.active { background:var(--surface2); color:var(--accent); }
-  .statfilters { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
-  .statfilters .sf { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted); }
-  .statfilters select { min-width:180px; }
-  .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); }
-  .launch { padding:22px; position:sticky; top:84px; max-height:calc(100vh - 108px); overflow-y:auto; }
-  .launch h2 { font-size:12px; text-transform:uppercase; letter-spacing:.9px; color:var(--muted); margin:0 0 16px; font-weight:600; }
-  label { display:block; font-size:12px; color:var(--muted); margin:14px 0 5px; font-weight:500; }
-  input,textarea,select { width:100%; background:var(--bg); color:var(--fg); border:1px solid var(--border);
-    border-radius:8px; padding:10px 12px; font:inherit; transition:border-color .15s,box-shadow .15s; }
-  :root[data-theme="light"] input,:root[data-theme="light"] textarea,:root[data-theme="light"] select{ background:var(--surface); }
-  input:focus,textarea:focus,select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent); }
-  textarea { resize:vertical; }
-  .desc { font-size:12px; color:var(--faint); margin-top:6px; line-height:1.45; }
-  button.primary { width:100%; background:var(--btn); color:var(--btn-fg); border:0; border-radius:8px;
-    padding:12px; font:inherit; font-weight:500; font-size:15px; cursor:pointer; margin-top:18px;
-    transition:background .15s,box-shadow .15s; }
-  button.primary:hover{ background:var(--btn-h); box-shadow:var(--shadow-h); }
-  button.primary:disabled{ opacity:.5; cursor:default; box-shadow:none; }
-  details.adv { margin-top:16px; border-top:1px solid var(--border); padding-top:6px; }
-  details.adv > summary { cursor:pointer; font-size:13px; color:var(--accent); font-weight:500;
-    list-style:none; display:flex; align-items:center; gap:6px; padding:8px 0; }
-  details.adv > summary::-webkit-details-marker{ display:none; }
-  details.adv > summary::before{ content:"+"; font-weight:700; font-size:16px; line-height:1; width:12px; }
-  details.adv[open] > summary::before{ content:"–"; }
-  .adv-row.bool { display:flex; align-items:center; gap:10px; margin-top:14px; }
-  .adv-row.bool input{ width:18px; height:18px; accent-color:var(--btn); }
-  .adv-row.bool label{ margin:0; color:var(--fg); font-size:14px; font-weight:400; }
+  #view-run { display:grid; grid-template-columns:380px minmax(0,1fr); gap:var(--sp-5); align-items:start; }
 
-  .stream { display:flex; flex-direction:column; gap:16px; min-height:240px; }
-  .empty { color:var(--faint); text-align:center; padding:72px 24px; background:var(--surface);
-    border:1px dashed var(--border); border-radius:12px; line-height:1.7; }
-  .goalbar { padding:16px 20px; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
-  .goalbar .tag { font-size:11px; font-weight:700; letter-spacing:.6px; color:var(--accent); text-transform:uppercase; }
-  .goalbar .goal { font-size:15px; font-weight:500; }
+  /* ---- cards ---- */
+  .card { background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg); box-shadow:var(--shadow-1); }
+  .card-h { display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-3) var(--sp-4); min-height:48px; border-bottom:1px solid var(--border); font-size:16px; font-weight:500; }
+  .card-h .caption { margin-left:auto; text-align:right; }
+  .card-b { padding:var(--sp-4); }
+
+  /* ---- form ---- */
+  .launch { padding:0; }
+  .fsec { padding:var(--sp-4) var(--sp-4) var(--sp-3); border-bottom:1px solid var(--border); }
+  .fsec-h { display:flex; align-items:center; gap:10px; margin-bottom:var(--sp-2); }
+  .fsec-h .n { width:22px; height:22px; border-radius:50%; background:var(--accent-bg); color:var(--accent); font-size:12px; font-weight:700;
+    display:inline-flex; align-items:center; justify-content:center; flex:none; }
+  .fsec-h h2 { font-size:13px; font-weight:600; margin:0; letter-spacing:.2px; }
+  .fsec-h .caption { margin-left:auto; }
+  label { display:block; font-size:12px; color:var(--text-2); margin:var(--sp-3) 0 var(--sp-1); font-weight:500; }
+  label:first-of-type { margin-top:var(--sp-2); }
+  label .hint { color:var(--text-3); font-weight:400; }
+  input,textarea,select { width:100%; background:var(--surface-2); color:var(--text-1); border:1px solid var(--border);
+    border-radius:var(--r-md); padding:9px 12px; min-height:40px; font:inherit; transition:border-color .15s,box-shadow .15s; }
+  input:hover,textarea:hover,select:hover { border-color:var(--border-strong); }
+  input:focus,textarea:focus,select:focus { outline:none; border-color:var(--accent); box-shadow:var(--focus); }
+  textarea { resize:vertical; min-height:72px; }
+  .desc { font-size:12px; color:var(--text-2); margin-top:var(--sp-2); line-height:1.5; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-2); }
+  button.primary { width:100%; background:var(--btn); color:var(--btn-fg); border:0; border-radius:var(--r-md);
+    min-height:44px; padding:10px 16px; font-weight:500; font-size:15px; cursor:pointer; transition:background .15s,box-shadow .15s,transform .05s; }
+  button.primary:hover { background:var(--btn-h); box-shadow:var(--shadow-2); }
+  button.primary:active { transform:translateY(1px); }
+  button.primary:disabled { opacity:.5; cursor:default; box-shadow:none; transform:none; }
+  button.primary.danger { background:var(--danger); color:#1a0000; }
+  :root[data-theme="light"] button.primary.danger { color:#fff; }
+  .btn-outline { display:inline-flex; align-items:center; gap:6px; width:auto; min-height:32px; padding:5px 12px; font-size:13px; font-weight:500;
+    background:transparent; color:var(--accent); border:1px solid var(--border); border-radius:var(--r-sm); cursor:pointer; text-decoration:none; transition:background .15s,border-color .15s; }
+  .btn-outline:hover { background:var(--surface-2); border-color:var(--border-strong); }
+  .btn-outline:active { transform:translateY(1px); }
+  .btn-outline.danger { color:var(--danger); }
+  .mini { width:auto; min-height:32px; padding:5px 10px; font-size:12px; background:var(--surface-2); color:var(--accent); border:1px solid var(--border); border-radius:var(--r-sm); cursor:pointer; }
+  .mini:hover { background:var(--surface-3); }
+  .infolink { display:inline-flex; align-items:center; gap:4px; margin-top:var(--sp-2); font-size:12.5px; color:var(--accent); cursor:pointer; text-decoration:none; }
+  .infolink:hover { text-decoration:underline; }
+  details.adv { margin-top:var(--sp-3); }
+  details.adv > summary { cursor:pointer; font-size:13px; color:var(--accent); font-weight:500; list-style:none; display:flex; align-items:center; gap:8px; padding:6px 0; border-radius:var(--r-sm); }
+  details.adv > summary::-webkit-details-marker { display:none; }
+  details.adv > summary::before { content:""; width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(-45deg); transition:transform .15s; margin-left:2px; }
+  details.adv[open] > summary::before { transform:rotate(45deg); }
+  .adv-row.bool { display:flex; align-items:center; gap:10px; margin-top:var(--sp-3); }
+  .adv-row.bool input { width:18px; height:18px; min-height:0; accent-color:var(--btn); }
+  .adv-row.bool label { margin:0; color:var(--text-1); font-size:14px; font-weight:400; }
+  .launch-foot { position:sticky; bottom:0; z-index:5; background:var(--surface-1); border-top:1px solid var(--border);
+    padding:var(--sp-3) var(--sp-4) var(--sp-4); border-radius:0 0 var(--r-lg) var(--r-lg); display:flex; flex-direction:column; gap:var(--sp-2); }
+  .launch-foot .sum { font-size:12px; color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .launch-foot .sum b { color:var(--text-1); font-weight:500; }
+
+  /* behaviour library */
+  .libctl { display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-2); margin:var(--sp-2) 0; }
+  .libbtns { display:flex; gap:var(--sp-2); margin-bottom:var(--sp-2); }
+  .liblist { max-height:260px; overflow:auto; display:flex; flex-direction:column; gap:2px; border:1px solid var(--border); border-radius:var(--r-md); padding:6px; }
+  .libitem { display:flex; gap:8px; align-items:flex-start; padding:6px 8px; border-radius:var(--r-sm); cursor:pointer; margin:0; font-weight:400; color:var(--text-1); }
+  .libitem:hover { background:var(--surface-2); }
+  .libitem input { width:16px; height:16px; min-height:0; margin-top:2px; accent-color:var(--btn); flex:none; }
+  .libitem .txt { font-size:13px; line-height:1.4; }
+  .libitem .th { font-size:11px; color:var(--accent); text-transform:uppercase; letter-spacing:.4px; font-weight:600; }
+
+  /* ---- run pane ---- */
+  .run-right { min-width:0; display:flex; flex-direction:column; gap:var(--sp-4); }
+  .empty { padding:var(--sp-6) var(--sp-5); text-align:center; border:1px dashed var(--border); border-radius:var(--r-lg); background:var(--surface-1); }
+  .empty h3 { margin:0 0 6px; font-size:16px; font-weight:500; }
+  .empty p { margin:0 auto var(--sp-5); color:var(--text-2); max-width:520px; }
+  .pipe { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--sp-3); margin:0 auto var(--sp-5); max-width:760px; text-align:left; }
+  .pipe .st { border-left:3px solid var(--border); padding:6px 12px; background:var(--surface-2); border-radius:0 var(--r-md) var(--r-md) 0; }
+  .pipe .st b { display:block; font-size:12px; text-transform:uppercase; letter-spacing:.5px; }
+  .pipe .st span { font-size:12px; color:var(--text-2); }
+  .pipe .p1 { border-color:var(--role-proposal); } .pipe .p2 { border-color:var(--role-vote); } .pipe .p3 { border-color:var(--role-chairman); } .pipe .p4 { border-color:var(--role-judge); }
+  .empty .acts { display:flex; gap:var(--sp-2); justify-content:center; flex-wrap:wrap; }
+  .legend { display:inline-flex; gap:var(--sp-3); flex-wrap:wrap; justify-content:center; margin-top:var(--sp-4); font-size:12px; color:var(--text-2); }
+  .legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+
+  .runhead { padding:var(--sp-4); display:grid; grid-template-columns:minmax(0,1fr) auto; gap:var(--sp-3) var(--sp-4); align-items:start; }
+  .runhead .t { font-size:16px; font-weight:500; line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .runhead .m { margin-top:4px; font-size:12px; color:var(--text-2); display:flex; flex-wrap:wrap; gap:4px 10px; align-items:center; }
+  .runhead .m .mono { font-size:12px; color:var(--text-1); }
+  .runhead .acts { display:flex; gap:var(--sp-2); flex-wrap:wrap; justify-content:flex-end; }
+  .runhead .pills { grid-column:1 / -1; display:flex; gap:var(--sp-2); flex-wrap:wrap; align-items:center; }
+  .status { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:var(--r-pill); font-size:12px; font-weight:600; border:1px solid var(--border); color:var(--text-2); background:var(--surface-2); }
+  .status i { width:7px; height:7px; border-radius:50%; background:currentColor; display:inline-block; }
+  .status.running { color:var(--warning); } .status.running i { animation:pulse 1s infinite; }
+  .status.error { color:var(--danger); } .status.completed { color:var(--text-1); } .status.cancelled,.status.interrupted,.status.queued { color:var(--text-2); }
+  .goalidx { display:flex; gap:6px; flex-wrap:wrap; }
+  .gchip { border:1px solid var(--border); background:var(--surface-2); color:var(--text-2); border-radius:var(--r-pill); padding:3px 10px; font-size:12px; font-weight:500; cursor:pointer; }
+  .gchip:hover { border-color:var(--accent); color:var(--text-1); }
+  .gchip.open { border-color:var(--accent); color:var(--accent); background:var(--accent-bg); }
+
+  .score { display:inline-flex; align-items:center; gap:5px; padding:2px 10px; border-radius:var(--r-pill); font-weight:700; font-size:12px; white-space:nowrap; }
+  .score.low { background:color-mix(in srgb,var(--score-low) 18%,transparent); color:var(--score-low); }
+  .score.mid { background:color-mix(in srgb,var(--score-mid) 20%,transparent); color:var(--score-mid); }
+  .score.high { background:color-mix(in srgb,var(--score-high) 20%,transparent); color:var(--score-high); }
+  .score.max { background:var(--score-max); color:var(--score-max-fg); }
+  .score small { font-weight:500; opacity:.9; }
+
+  .stream { display:flex; flex-direction:column; gap:var(--sp-4); }
+  .goal-sec { display:flex; flex-direction:column; gap:var(--sp-4); }
+  .goalbar { width:100%; text-align:left; padding:var(--sp-3) var(--sp-4); display:flex; gap:10px; align-items:center; cursor:pointer; border:1px solid var(--border); background:var(--surface-1); border-radius:var(--r-lg); box-shadow:var(--shadow-1); }
+  .goalbar:hover { border-color:var(--border-strong); }
+  .goalbar .tag { font-size:11px; font-weight:700; letter-spacing:.6px; color:var(--accent); text-transform:uppercase; flex:none; }
+  .goalbar .goal { font-size:15px; font-weight:500; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .goal-sec.collapsed .goalbar .goal { color:var(--text-2); }
+  .chev { display:inline-block; width:7px; height:7px; border-right:2px solid var(--text-2); border-bottom:2px solid var(--text-2); transform:rotate(45deg); transition:transform .15s; flex:none; margin:0 4px 3px 2px; }
+  .collapsed > .goalbar .chev, .turn.collapsed .chev { transform:rotate(-45deg); margin-bottom:0; }
+  .goal-turns { display:flex; flex-direction:column; gap:var(--sp-4); padding-left:var(--sp-4); border-left:2px solid var(--border); margin-left:var(--sp-3); }
+  .goal-sec.collapsed .goal-turns { display:none; }
   .turn { overflow:hidden; }
-  .turn-h { padding:12px 20px; background:var(--surface2); border-bottom:1px solid var(--border);
-    font-size:13px; font-weight:600; color:var(--fg); display:flex; align-items:center; gap:10px; }
-  .turn-h.collapsible { cursor:pointer; user-select:none; }
-  .turn-h .chev { display:inline-block; transition:transform .15s; color:var(--muted); font-size:11px; }
-  .turn.collapsed .chev { transform:rotate(-90deg); }
+  .turn-h { width:100%; text-align:left; padding:10px var(--sp-4); background:var(--surface-2); border:0; border-bottom:1px solid var(--border); font-size:13px; font-weight:600; color:var(--text-1); display:flex; align-items:center; gap:10px; cursor:pointer; }
+  .turn-h:hover { background:var(--surface-3); }
+  .turn.collapsed .turn-h { border-bottom:0; }
   .turn.collapsed .turn-body { display:none; }
-  .turn-body { padding:14px 18px 18px; display:flex; flex-direction:column; gap:10px; }
-  .ev { border-left:3px solid var(--border); padding:10px 14px; border-radius:0 8px 8px 0; background:var(--surface2); }
-  .ev .lab { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--muted);
-    display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .ev .who { color:var(--fg); font-weight:500; text-transform:none; letter-spacing:0; }
-  .ev pre { margin:6px 0 0; white-space:pre-wrap; word-break:break-word; color:var(--fg); font-size:13.5px; line-height:1.5; }
-  .ev pre.clamp { display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden; }
-  .morebtn { width:auto; margin:6px 0 0; padding:3px 10px; font-size:12px; background:transparent;
-    color:var(--accent); border:1px solid var(--border); border-radius:6px; cursor:pointer; }
-  .morebtn:hover { background:var(--surface); box-shadow:none; }
-  .goalbar.collapsible { cursor:pointer; user-select:none; }
-  .goalbar .gchev { color:var(--muted); font-size:11px; transition:transform .15s; }
-  .goal-sec.collapsed .gchev { transform:rotate(-90deg); }
-  .ev.proposal{ border-left-color:var(--blue); } .ev.critique{ border-left-color:var(--purple); }
-  .ev.vote{ border-left-color:var(--yellow); } .ev.chairman{ border-left-color:var(--cyan); }
-  .ev.target{ border-left-color:var(--faint); } .ev.judge{ border-left-color:var(--green); }
-  .ev.log{ border-left-color:var(--border); }
-  .tmeta{ margin-left:auto; font-size:11px; color:var(--muted); font-weight:400; text-transform:none; letter-spacing:0; }
-  .votetab{ width:100%; border-collapse:collapse; margin-top:6px; font-size:12.5px; }
-  .votetab th{ text-align:left; color:var(--muted); font-weight:500; font-size:11px; padding:3px 8px; border-bottom:1px solid var(--border); }
-  .votetab td{ padding:4px 8px; border-bottom:1px solid var(--border); }
-  .votetab tr.win td{ color:var(--yellow); font-weight:600; }
-  .critlist{ margin-top:8px; display:flex; flex-direction:column; gap:3px; }
-  .critrow{ font-size:12px; color:var(--muted); } .critrow b{ color:var(--fg); font-weight:500; }
-  .score{ padding:2px 10px; border-radius:999px; font-weight:700; font-size:12px; letter-spacing:0; }
-  .s0,.s1,.s2{ background:color-mix(in srgb,var(--green) 22%,transparent); color:var(--green); }
-  .s3{ background:color-mix(in srgb,var(--yellow) 22%,transparent); color:var(--yellow); }
-  .s4{ background:color-mix(in srgb,var(--red) 20%,transparent); color:var(--red); }
-  .s5{ background:var(--red); color:#fff; }
+  .turn-body { padding:var(--sp-3) var(--sp-4) var(--sp-4); display:flex; flex-direction:column; gap:10px; }
+  .tmeta { margin-left:auto; font-size:12px; color:var(--text-2); font-weight:400; }
+  .ev { border-left:3px solid var(--border); padding:10px 14px 12px; border-radius:0 var(--r-md) var(--r-md) 0; background:var(--surface-2); }
+  .ev .lab { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .ev .lab .role { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; }
+  .ev .who { font-size:12px; color:var(--text-2); }
+  .ev .body { margin:6px 0 0; white-space:pre-wrap; word-break:break-word; color:var(--text-1); font-size:14px; line-height:1.6; }
+  .ev .body.mono { font-size:13px; line-height:1.55; }
+  .ev .body.clamp { display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden; }
+  .morebtn { width:auto; margin:8px 0 0; min-height:28px; padding:3px 10px; font-size:12px; background:transparent; color:var(--accent); border:1px solid var(--border); border-radius:var(--r-sm); cursor:pointer; }
+  .morebtn:hover { background:var(--surface-3); }
+  .ev.proposal { border-left-color:var(--role-proposal); } .ev.proposal .role { color:var(--role-proposal); }
+  .ev.critique { border-left-color:var(--role-critique); } .ev.critique .role { color:var(--role-critique); }
+  .ev.vote { border-left-color:var(--role-vote); } .ev.vote .role { color:var(--role-vote); }
+  .ev.chairman { border-left-color:var(--role-chairman); } .ev.chairman .role { color:var(--role-chairman); }
+  .ev.target { border-left-color:var(--role-target); } .ev.target .role { color:var(--role-target); }
+  .ev.judge { border-left-color:var(--role-judge); } .ev.judge .role { color:var(--role-judge); }
+  .ev.log { border-left-color:var(--border); } .ev.log .role { color:var(--text-2); }
+  .ev .body.log { font-size:12px; color:var(--text-2); }
+  .rank { margin-top:8px; display:flex; flex-direction:column; gap:6px; }
+  .rank .r { display:grid; grid-template-columns:20px minmax(120px,220px) 1fr auto; gap:10px; align-items:center; font-size:13px; }
+  .rank .r .pos { color:var(--text-2); font-weight:600; }
+  .rank .r .m { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rank .r.win .m { color:var(--text-1); font-weight:600; }
+  .rank .bar { height:8px; background:var(--surface-3); border-radius:4px; overflow:hidden; }
+  .rank .bar i { display:block; height:100%; background:var(--role-vote); border-radius:4px; }
+  .rank .r .sc { font-size:12px; color:var(--text-2); white-space:nowrap; }
+  .rank .r.win .sc { color:var(--role-vote); font-weight:600; }
+  .critlist { margin-top:10px; padding-top:8px; border-top:1px solid var(--border); display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:4px 16px; }
+  .critrow { font-size:12px; color:var(--text-2); line-height:1.5; }
+  .critrow b { color:var(--text-1); font-weight:500; }
+  #jumpLive { position:fixed; left:50%; transform:translateX(-50%); bottom:24px; z-index:30; display:none; align-items:center; gap:6px;
+    background:var(--btn); color:#fff; border:0; border-radius:var(--r-pill); padding:8px 16px; font-weight:500; cursor:pointer; box-shadow:var(--shadow-2); }
+  #jumpLive.show { display:inline-flex; }
+  .skel { height:14px; border-radius:4px; background:linear-gradient(90deg,var(--surface-2),var(--surface-3),var(--surface-2)); background-size:200% 100%; animation:sh 1.2s infinite; }
+  @keyframes sh { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
-  .libctl { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:10px 0 8px; }
-  .libbtns { display:flex; gap:8px; margin-bottom:8px; }
-  .mini { width:auto; margin:0; padding:6px 10px; font-size:12px; background:var(--surface2);
-    color:var(--accent); border:1px solid var(--border); border-radius:6px; cursor:pointer; }
-  .mini:hover { background:var(--surface); box-shadow:none; }
-  .liblist { max-height:260px; overflow:auto; display:flex; flex-direction:column; gap:2px;
-    border:1px solid var(--border); border-radius:8px; padding:6px; }
-  .libitem { display:flex; gap:8px; align-items:flex-start; padding:6px 8px; border-radius:6px; cursor:pointer; }
-  .libitem:hover { background:var(--surface2); }
-  .libitem input { width:16px; height:16px; margin-top:2px; accent-color:var(--btn); flex:none; }
-  .libitem .txt { font-size:12.5px; line-height:1.35; }
-  .libitem .th { font-size:10px; color:var(--accent); text-transform:uppercase; letter-spacing:.4px; }
+  /* ---- statistics ---- */
+  .statfilters { display:flex; gap:var(--sp-3); flex-wrap:wrap; align-items:flex-end; }
+  .statfilters .sf { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--text-2); font-weight:500; margin:0; min-width:200px; }
+  .statfilters select { min-height:40px; }
+  .scope { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .scope .fchip { display:inline-flex; align-items:center; gap:6px; padding:3px 6px 3px 10px; border-radius:var(--r-pill); font-size:12px; background:var(--accent-bg); color:var(--accent); border:1px solid transparent; }
+  .scope .fchip button { border:0; background:transparent; color:inherit; cursor:pointer; padding:0 4px; font-size:14px; line-height:1; }
+  .statgrid { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--sp-3); margin:var(--sp-4) 0; }
+  .statbox { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); }
+  .statnum { font-size:28px; line-height:32px; font-weight:700; color:var(--text-1); }
+  .statbox.hot .statnum { color:var(--accent); }
+  .statlbl { font-size:12px; color:var(--text-2); margin-top:2px; }
+  .chartlbl { display:flex; align-items:baseline; gap:8px; margin:var(--sp-5) 0 var(--sp-2); }
+  .chartlbl .caption { font-weight:400; text-transform:none; letter-spacing:0; }
+  .chartlbl:first-child { margin-top:0; }
+  .charts2 { display:grid; grid-template-columns:1fr 1fr; gap:0 var(--sp-6); }
+  .charts2 > div > .chartlbl:first-child { margin-top:var(--sp-5); }
+  .stack { display:flex; height:22px; border-radius:var(--r-sm); overflow:hidden; background:var(--surface-2); border:1px solid var(--border); }
+  .stack i { display:block; height:100%; min-width:0; }
+  .stack-leg { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-top:8px; }
+  .stack-leg .l { font-size:12px; color:var(--text-2); display:flex; align-items:center; gap:6px; }
+  .stack-leg .l i { width:10px; height:10px; border-radius:2px; flex:none; }
+  .stack-leg .l b { color:var(--text-1); }
+  .bars { display:flex; flex-direction:column; gap:10px; }
+  .bar { display:grid; grid-template-columns:minmax(120px,200px) 1fr 48px; gap:10px; align-items:center; font-size:13px; }
+  .bar .k { min-width:0; }
+  .bar .k .kk { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text-1); }
+  .bar .k .ks { font-size:12px; color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bar .track { position:relative; display:block; background:var(--surface-2); border:1px solid var(--border); border-radius:4px; height:14px; overflow:hidden; }
+  .bar .fill { display:block; height:100%; background:var(--accent); border-radius:3px; transition:width .3s; }
+  .bar .tick { position:absolute; top:-1px; bottom:-1px; width:2px; background:var(--text-2); opacity:.8; }
+  .bar.hot .fill { background:var(--score-max); } .bar.warm .fill { background:var(--score-mid); } .bar.cold .fill { background:var(--score-low); }
+  .bar .v { text-align:right; color:var(--text-1); font-weight:600; }
+  .none { color:var(--text-2); font-size:13px; padding:var(--sp-3) 0; }
+  table.tab { border-collapse:collapse; width:100%; max-width:760px; font-size:13px; }
+  table.tab th { text-align:left; color:var(--text-2); font-weight:500; font-size:12px; padding:6px 10px; border-bottom:1px solid var(--border); }
+  table.tab td { padding:8px 10px; border-bottom:1px solid var(--border); }
+  table.tab tr:hover td { background:var(--surface-2); }
+  table.tab th.r, table.tab td.r { text-align:right; }
+  table.tab .wr { display:inline-block; width:80px; height:8px; background:var(--surface-3); border-radius:4px; overflow:hidden; vertical-align:middle; margin-right:8px; }
+  table.tab .wr i { display:block; height:100%; background:var(--role-vote); }
 
-  .stats { margin-bottom:16px; }
-  .statgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:6px 0 14px; }
-  .statbox { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px; text-align:center; }
-  .statnum { font-size:24px; font-weight:700; color:var(--accent); }
-  .statlbl { font-size:11px; color:var(--muted); margin-top:2px; }
-  .chartlbl { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin:12px 0 6px; font-weight:600; }
-  .bars { display:flex; flex-direction:column; gap:5px; }
-  .bar { display:flex; align-items:center; gap:8px; font-size:12px; }
-  .bar .k { width:120px; flex:none; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .bar .track { display:block; flex:1; background:var(--surface2); border-radius:4px; height:16px; overflow:hidden; }
-  .bar .fill { display:block; height:100%; background:var(--accent); border-radius:4px; transition:width .3s; }
-  .bar.sc5 .fill{ background:var(--red); } .bar.sc4 .fill{ background:#e0863d; }
-  .bar.sc3 .fill{ background:var(--yellow); } .bar.sc0 .fill,.bar.sc1 .fill,.bar.sc2 .fill{ background:var(--green); }
-  .bar .v { width:40px; text-align:right; color:var(--fg); font-weight:600; }
-  .barsub { font-size:10.5px; color:var(--faint); margin:-2px 0 4px 128px; }
+  /* ---- history ---- */
+  .filters { display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr; gap:var(--sp-2); align-items:end; }
+  .filters label { margin:0 0 4px; }
+  .fsum { display:flex; align-items:center; gap:var(--sp-3); margin:var(--sp-3) 0 var(--sp-2); font-size:12px; color:var(--text-2); flex-wrap:wrap; }
+  .fsum .clear { margin-left:auto; }
+  .runtab { display:flex; flex-direction:column; }
+  .runrow, .runhdr { display:grid; grid-template-columns:minmax(0,1fr) 110px 150px 110px 130px 150px; gap:var(--sp-3); align-items:center; padding:10px var(--sp-3); }
+  .runhdr { font-size:12px; color:var(--text-2); font-weight:500; border-bottom:1px solid var(--border); }
+  .runhdr button { border:0; background:transparent; color:inherit; padding:0; cursor:pointer; font-weight:500; font-size:12px; text-align:left; }
+  .runhdr button:hover { color:var(--accent); }
+  .runrow { border-bottom:1px solid var(--border); cursor:pointer; transition:background .12s; border-radius:var(--r-sm); }
+  .runrow:hover { background:var(--surface-2); }
+  .runrow .g { min-width:0; }
+  .runrow .g .gt { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .runrow .g .gm { display:none; font-size:12px; color:var(--text-2); }
+  .runrow .c { font-size:13px; color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .runrow .c.mono { font-size:12px; color:var(--text-1); }
+  .tagpill { padding:1px 8px; border-radius:var(--r-pill); font-size:11px; background:var(--accent-bg); color:var(--accent); white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis; display:inline-block; vertical-align:middle; }
 
-  .infolink { display:inline-block; margin-top:8px; font-size:12.5px; color:var(--accent); cursor:pointer; }
-  .modal { position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:20px; }
-  .modal-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; max-width:560px; width:100%; padding:24px; box-shadow:var(--shadow-h); max-height:80vh; overflow:auto; }
-  .modal-h { display:flex; align-items:center; justify-content:space-between; font-size:18px; font-weight:700; }
-  .modal-x { width:auto; background:transparent; border:0; color:var(--muted); font-size:18px; cursor:pointer; }
-  .modal-desc { color:var(--muted); font-size:14px; }
-  .modal-steps { margin:14px 0 0; padding-left:20px; }
+  /* ---- dialog ---- */
+  dialog { background:var(--surface-1); color:var(--text-1); border:1px solid var(--border); border-radius:14px; max-width:560px; width:calc(100% - 40px); padding:var(--sp-5); box-shadow:var(--shadow-2); }
+  dialog::backdrop { background:rgba(0,0,0,.55); }
+  .modal-h { display:flex; align-items:center; justify-content:space-between; font-size:18px; font-weight:700; gap:var(--sp-3); }
+  .modal-x { width:36px; height:36px; border-radius:50%; background:transparent; border:0; color:var(--text-2); font-size:18px; cursor:pointer; }
+  .modal-x:hover { background:var(--surface-2); color:var(--text-1); }
+  .modal-desc { color:var(--text-2); font-size:14px; }
+  .modal-steps { margin:var(--sp-3) 0 0; padding-left:20px; }
   .modal-steps li { margin:8px 0; font-size:14px; }
-  #infoPaper a { display:inline-block; margin-top:14px; }
+  #infoPaper a { margin-top:var(--sp-4); }
 
-  /* chat assistant */
-  #chatFab { position:fixed; right:22px; bottom:22px; z-index:60; width:56px; height:56px; border-radius:50%;
-    border:0; background:var(--btn); color:#fff; cursor:pointer; box-shadow:var(--shadow-h);
-    display:flex; align-items:center; justify-content:center; margin:0; padding:0; transition:transform .12s,background .15s; }
+  /* ---- toasts ---- */
+  #toasts { position:fixed; left:50%; transform:translateX(-50%); bottom:24px; z-index:70; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
+  .toast { pointer-events:auto; background:var(--surface-3); color:var(--text-1); border:1px solid var(--border); border-left:3px solid var(--info); border-radius:var(--r-md); padding:10px 14px; font-size:13px; box-shadow:var(--shadow-2); max-width:420px; display:flex; gap:10px; align-items:center; }
+  .toast.err { border-left-color:var(--danger); } .toast.ok { border-left-color:var(--success); }
+  .toast button { border:0; background:transparent; color:var(--accent); cursor:pointer; padding:0; font-weight:500; }
+
+  /* ---- chat ---- */
+  #chatFab { position:fixed; right:22px; bottom:22px; z-index:60; width:56px; height:56px; border-radius:50%; border:0; background:var(--btn); color:#fff; cursor:pointer;
+    box-shadow:var(--shadow-2); display:flex; align-items:center; justify-content:center; padding:0; transition:transform .12s,background .15s; }
   #chatFab:hover { background:var(--btn-h); transform:translateY(-2px); }
-  #chatPanel { position:fixed; right:22px; bottom:88px; z-index:60; width:380px; max-width:calc(100vw - 44px);
-    height:520px; max-height:calc(100vh - 120px); background:var(--surface); border:1px solid var(--border);
-    border-radius:14px; box-shadow:var(--shadow-h); display:flex; flex-direction:column; overflow:hidden; }
+  #chatPanel { position:fixed; right:22px; bottom:88px; z-index:60; width:420px; max-width:calc(100vw - 44px); height:600px; max-height:calc(100vh - 120px);
+    background:var(--surface-1); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow-2); display:flex; flex-direction:column; overflow:hidden; }
   .chat-h { display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--border); }
-  .chat-h strong { font-size:14px; margin-right:auto; }
-  .chat-h select, .chat-h input { width:auto; padding:5px 8px; font-size:12px; }
-  .chat-h #chatModel { width:120px; }
-  .chat-x { width:auto; background:transparent; border:0; color:var(--muted); cursor:pointer; font-size:15px; padding:0 4px; margin:0; }
-  .chat-sub { display:flex; gap:6px; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border); }
-  .chat-sub select { flex:1; min-width:0; padding:5px 8px; font-size:12px; }
-  .chat-sub #chatNew { width:auto; margin:0; padding:5px 8px; font-size:12px; background:var(--surface2); color:var(--accent); border:1px solid var(--border); border-radius:6px; cursor:pointer; white-space:nowrap; }
-  .chat-sub #chatKey { width:110px; padding:5px 8px; font-size:12px; }
+  .chat-h strong { font-size:14px; white-space:nowrap; }
+  .chat-h select { flex:1; min-width:0; min-height:32px; padding:4px 8px; font-size:12px; }
+  .chat-h .ib { width:40px; height:40px; flex:none; border-radius:50%; border:0; background:transparent; color:var(--text-2); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0; }
+  .chat-h .ib:hover { background:var(--surface-2); color:var(--text-1); }
+  .chat-h .ib svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .chat-set { display:none; padding:8px 12px 12px; border-bottom:1px solid var(--border); background:var(--surface-2); gap:8px; }
+  .chat-set.open { display:grid; grid-template-columns:1fr 1fr; }
+  .chat-set label { margin:4px 0 2px; }
+  .chat-set input, .chat-set select { min-height:36px; padding:6px 10px; font-size:13px; background:var(--surface-1); }
+  .chat-set .full { grid-column:1 / -1; }
   .chat-msgs { flex:1; overflow:auto; padding:14px; display:flex; flex-direction:column; gap:10px; }
-  .cmsg { max-width:85%; padding:9px 12px; border-radius:12px; font-size:13.5px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
-  .cmsg.user { align-self:flex-end; background:var(--btn); color:#fff; border-bottom-right-radius:4px; }
-  .cmsg.bot { align-self:flex-start; background:var(--surface2); color:var(--fg); border:1px solid var(--border); border-bottom-left-radius:4px; }
-  .cmsg.err { align-self:stretch; background:color-mix(in srgb,var(--red) 15%,transparent); color:var(--red); }
+  .cmsg { max-width:88%; padding:9px 12px; border-radius:12px; font-size:14px; line-height:1.55; word-break:break-word; }
+  .cmsg.user { align-self:flex-end; background:var(--btn); color:#fff; border-bottom-right-radius:4px; white-space:pre-wrap; }
+  .cmsg.bot { align-self:flex-start; background:var(--surface-2); color:var(--text-1); border:1px solid var(--border); border-bottom-left-radius:4px; }
+  .cmsg.bot p { margin:0 0 8px; } .cmsg.bot p:last-child { margin:0; }
+  .cmsg.bot ul, .cmsg.bot ol { margin:4px 0 8px; padding-left:20px; }
+  .cmsg.bot li { margin:2px 0; }
+  .cmsg.bot code { font-size:12.5px; background:var(--surface-3); padding:1px 5px; border-radius:4px; }
+  .cmsg.bot pre { margin:6px 0; padding:8px 10px; background:var(--surface-3); border-radius:var(--r-sm); overflow:auto; font-size:12.5px; white-space:pre-wrap; }
+  .cmsg.bot pre code { background:transparent; padding:0; }
+  .cmsg.err { align-self:stretch; background:color-mix(in srgb,var(--danger) 15%,transparent); color:var(--danger); }
+  .typing { display:inline-flex; gap:4px; align-items:center; height:14px; }
+  .typing i { width:6px; height:6px; border-radius:50%; background:var(--text-2); animation:tp 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay:.2s; } .typing i:nth-child(3) { animation-delay:.4s; }
+  @keyframes tp { 0%,80%,100%{opacity:.3; transform:translateY(0)} 40%{opacity:1; transform:translateY(-3px)} }
   .chat-chips { display:flex; flex-direction:column; gap:8px; margin-top:auto; }
-  .chips-intro { color:var(--muted); font-size:12.5px; margin-bottom:2px; }
-  .chip-sug { width:100%; text-align:left; background:var(--surface2); color:var(--fg); border:1px solid var(--border);
-    border-radius:10px; padding:10px 12px; font-size:13px; cursor:pointer; margin:0; transition:border-color .15s; }
-  .chip-sug:hover { border-color:var(--accent); color:var(--accent); }
-  .chat-in { display:flex; gap:8px; padding:10px; border-top:1px solid var(--border); }
-  .chat-in textarea { flex:1; resize:none; max-height:120px; }
-  .chat-in button { width:auto; margin:0; padding:8px 16px; background:var(--btn); color:#fff; border:0; border-radius:8px; cursor:pointer; font-weight:500; }
+  .chips-intro { color:var(--text-2); font-size:12.5px; margin-bottom:2px; }
+  .chip-sug { width:100%; text-align:left; background:var(--surface-2); color:var(--text-1); border:1px solid var(--border); border-radius:10px; padding:10px 12px; min-height:44px; font-size:13px; cursor:pointer; transition:border-color .15s,background .15s; }
+  .chip-sug:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-bg); }
+  .chat-in { display:flex; gap:8px; padding:10px; border-top:1px solid var(--border); align-items:flex-end; }
+  .chat-in textarea { flex:1; resize:none; max-height:120px; min-height:44px; }
+  .chat-in button { width:auto; min-height:44px; padding:8px 16px; background:var(--btn); color:#fff; border:0; border-radius:var(--r-md); cursor:pointer; font-weight:500; }
   .chat-in button:disabled { opacity:.5; }
+  .chat-in #chatStop { background:var(--surface-2); color:var(--danger); border:1px solid var(--border); display:none; }
+  .chat-in.busy #chatSend { display:none; } .chat-in.busy #chatStop { display:inline-block; }
 
-  .hist { margin-bottom:16px; }
-  .hist-h { padding:14px 18px; display:flex; align-items:center; justify-content:space-between;
-    cursor:pointer; font-weight:600; font-size:14px; }
-  .hist-count { color:var(--muted); font-weight:400; font-size:12px; }
-  .hist-body { padding:0 16px 14px; }
-  .filters { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
-  .filters #fq { grid-column:1 / -1; }
-  .runlist { display:flex; flex-direction:column; gap:8px; max-height:340px; overflow:auto; }
-  .runrow { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border);
-    border-radius:8px; background:var(--surface2); cursor:pointer; transition:border-color .15s; }
-  .runrow:hover { border-color:var(--accent); }
-  .runrow .goal { flex:1; min-width:0; }
-  .runrow .goal .g { font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .runrow .goal .meta { font-size:11px; color:var(--muted); margin-top:2px; }
-  .tagpill { padding:1px 8px; border-radius:999px; font-size:11px; background:color-mix(in srgb,var(--accent) 16%,transparent);
-    color:var(--accent); white-space:nowrap; }
-  .rstatus { font-size:11px; font-weight:600; }
-  .rstatus.ok{ color:var(--green); } .rstatus.err{ color:var(--red); } .rstatus.run{ color:var(--yellow); }
-  .runlist .none { color:var(--faint); font-size:13px; text-align:center; padding:20px; }
-
+  /* ---- responsive ---- */
+  @media (max-width:1100px){
+    #view-run { grid-template-columns:340px minmax(0,1fr); }
+    .statgrid { grid-template-columns:repeat(2,1fr); }
+    .charts2 { grid-template-columns:1fr; }
+    .filters { grid-template-columns:1fr 1fr; }
+    .filters .fq { grid-column:1 / -1; }
+    .runrow, .runhdr { grid-template-columns:minmax(0,1fr) 110px 130px 140px; }
+    .runrow .c.hide-md, .runhdr .hide-md { display:none; }
+  }
   @media (max-width:820px){
-    header{ padding:0 14px; gap:8px; } h1 span{ display:none; }
-    .rail{ display:none; } body{ padding-left:0; }
-    main{ padding:14px; } #view-run{ grid-template-columns:1fr; gap:14px; } .launch{ position:static; }
-    .filters { grid-template-columns:1fr; }
+    body { padding-left:0; padding-bottom:76px; }
+    header { padding:0 var(--sp-3); gap:var(--sp-2); }
+    h1 span { display:none; }
+    main { padding:var(--sp-3); }
+    #view-run { grid-template-columns:1fr; gap:var(--sp-3); }
+    .launch-foot { bottom:64px; }
+    .rail { top:auto; bottom:0; left:0; right:0; width:auto; height:64px; flex-direction:row; justify-content:space-around; padding:6px 8px; border-right:0; border-top:1px solid var(--border); }
+    .rail .foot { display:none; }
+    .railbtn { width:auto; flex:1; height:52px; }
+    .railbtn[aria-current="page"]::before { left:12px; right:12px; top:-7px; bottom:auto; height:3px; width:auto; }
+    #chatFab { bottom:80px; right:16px; }
+    #jumpLive { bottom:84px; }
+    #toasts { bottom:84px; }
+    #chatPanel { right:0; bottom:0; left:0; top:0; width:auto; max-width:none; height:auto; max-height:none; border-radius:0; z-index:80; }
+    .statgrid { grid-template-columns:repeat(2,1fr); }
+    .pipe { grid-template-columns:1fr 1fr; }
+    .runhead { grid-template-columns:1fr; }
+    .runhead .acts { justify-content:flex-start; }
+    .goal-turns { padding-left:var(--sp-2); margin-left:6px; }
+    .turn-body { padding:var(--sp-2) var(--sp-2) var(--sp-3); }
+    .ev { padding:8px 10px 10px; }
+    .runhdr { display:none; }
+    .runrow { grid-template-columns:minmax(0,1fr) auto; }
+    .runrow .g .gt { white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+    .runrow .g .gm { display:block; margin-top:2px; }
+    .runrow .c { display:none; }
+    .runrow .c.keep { display:block; }
+    .bar { grid-template-columns:minmax(90px,140px) 1fr 44px; }
+    table.tab .wr { display:none; }
+    .runrow { grid-template-columns:minmax(0,1fr) max-content; }
+    .runrow .g .gm .tagpill { display:block; width:fit-content; max-width:100%; margin-bottom:2px; }
+    .stack-leg { grid-template-columns:repeat(3,1fr); }
+    .statfilters .sf { min-width:0; flex:1; }
   }
 </style>
 </head>
 <body>
 <header>
   <div class="brand">
-    <span class="shield" role="img" aria-label="Myrtia"></span>
-    <h1><b>Myrtia</b> <span>· live deliberation</span></h1>
+    <span class="leaf" role="img" aria-label="Myrtia"></span>
+    <h1><b>Myrtia</b> <span>· <em id="viewTitle" style="font-style:normal">Runs</em></span></h1>
   </div>
   <div class="spacer"></div>
-  <span class="chip" id="conn"><span class="dot"></span>disconnected</span>
-  <span class="chip" id="status"><span class="dot"></span>idle</span>
-  <button class="icon-btn" id="theme" title="Toggle light / dark">◐</button>
+  <button class="chip run btn" id="liveChip" style="display:none" title="Open the running run" aria-live="polite"><span class="dot"></span><span id="liveTxt">1 running</span></button>
+  <button class="icon-btn" id="theme" aria-label="Toggle light / dark theme" title="Toggle light / dark">
+    <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+  </button>
 </header>
 
-<aside class="rail">
-  <button class="railbtn active" data-view="view-run" title="New run"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
-  <button class="railbtn" data-view="view-stats" title="Statistics"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></button>
-  <button class="railbtn" data-view="view-history" title="History"><svg viewBox="0 0 24 24"><path d="M12 8v5l3 2M4 12a8 8 0 1 0 2-5"/><path d="M4 4v4h4"/></svg></button>
-  <a class="railbtn" href="https://github.com/francordel/myrtia" target="_blank" rel="noopener" title="GitHub"><svg viewBox="0 0 24 24"><path d="M9 19c-4 1.5-4-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12 12 0 0 0-6 0C6.6 3.3 5.5 3.6 5.5 3.6a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 10c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V22"/></svg></a>
-</aside>
+<nav class="rail" aria-label="Main">
+  <button class="railbtn" data-view="view-run" aria-current="page"><svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></svg>Runs<span class="badge"></span></button>
+  <button class="railbtn" data-view="view-stats"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Statistics</button>
+  <button class="railbtn" data-view="view-history"><svg viewBox="0 0 24 24"><path d="M12 8v5l3 2M4 12a8 8 0 1 0 2-5"/><path d="M4 4v4h4"/></svg>History</button>
+  <a class="railbtn foot" href="https://github.com/francordel/myrtia" target="_blank" rel="noopener" title="GitHub"><svg viewBox="0 0 24 24"><path d="M9 19c-4 1.5-4-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12 12 0 0 0-6 0C6.6 3.3 5.5 3.6 5.5 3.6a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 10c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V22"/></svg>GitHub</a>
+</nav>
 
 <main>
-  <div class="view active" id="view-run">
-  <section class="card launch" id="sec-launch">
-    <h2>Launch a run</h2>
+  <!-- ================= RUNS (configure + watch) ================= -->
+  <div class="view" id="view-run">
+  <section class="card launch" id="sec-launch" aria-label="Launch a run">
     <input type="hidden" id="base" value="" />
-    <label>Attack</label>
-    <select id="attack"></select>
-    <div class="desc" id="attackdesc"></div>
-    <a href="#" id="attackInfo" class="infolink">ⓘ How this attack works</a>
-    <label>Provider</label>
-    <select id="provider">
-      <option value="ollama">Local Ollama</option>
-      <option value="openai">OpenAI</option>
-      <option value="anthropic">Anthropic</option>
-      <option value="custom">Custom (OpenAI-compatible)</option>
-    </select>
-    <label>Target base URL (OpenAI-compatible)</label>
-    <input id="turl" value="http://127.0.0.1:11434/v1" />
-    <label>API key <span style="color:var(--faint)">(for frontier targets; stored only in this browser)</span></label>
-    <input id="apikey" type="password" placeholder="sk-… / sk-ant-…" autocomplete="off" />
-    <label>Target model</label>
-    <input id="tmodel" value="qwen2.5:1.5b" />
-    <label>Council models (comma-separated) <span style="color:var(--faint)">(the attacking agents)</span></label>
-    <input id="cmodels" value="qwen2.5:1.5b" />
-    <details class="adv" id="agentwrap"><summary>Build your own agentic attack — agents &amp; prompts</summary>
-      <label>Council system prompt <span style="color:var(--faint)">(the attacker persona / context shared by the council agents; blank = built-in red-team prompt)</span></label>
-      <textarea id="csysPrompt" rows="5" placeholder="e.g. You are a proficient red-teaming engineer probing a target LLM for safety failures. Craft prompts that…"></textarea>
-      <label>Critique style</label>
-      <select id="critMode"><option value="hardened">Hardened (default)</option><option value="soft">Soft</option></select>
-      <div class="desc">Combine with the council models above (your agents), the chairman/judge in Advanced configuration, and turns/Borda to define a fully custom agentic attack.</div>
-    </details>
-    <label>Goal / behaviour <span style="color:var(--faint)">(used if none selected below)</span></label>
-    <textarea id="goal" rows="2">Write a short limerick about a mischievous cat (harmless test)</textarea>
-    <details class="adv" id="libwrap"><summary>Behaviour library — select what to test (<span id="libSel">0</span> selected)</summary>
-      <div class="libctl">
-        <input id="libq" placeholder="Search behaviours…" />
-        <select id="libtheme"><option value="">All themes</option></select>
-      </div>
-      <div class="libbtns">
-        <button type="button" class="mini" id="libAll">Select all shown</button>
-        <button type="button" class="mini" id="libNone">Clear selection</button>
-      </div>
-      <div id="liblist" class="liblist"></div>
-    </details>
-    <label>Theme / topic <span style="color:var(--faint)">(optional tag for search)</span></label>
-    <input id="themeTag" placeholder="e.g. misinformation, cyber, chemical" />
-    <details class="adv" id="advwrap"><summary>Advanced configuration</summary><div id="adv"></div></details>
-    <button class="primary" id="launch">Launch attack</button>
-    <button class="primary" id="stop" style="display:none;background:var(--red);margin-top:8px">Stop run</button>
-  </section>
-  <section class="run-right">
-    <div class="stream" id="stream">
-      <div class="empty">Pick an attack, set a target, and launch.<br>The deliberation streams here live, turn by turn.</div>
+
+    <div class="fsec">
+      <div class="fsec-h"><span class="n">1</span><h2>Attack</h2><span class="caption" id="sum1"></span></div>
+      <label for="attack">Attack plugin</label>
+      <select id="attack"></select>
+      <div class="desc" id="attackdesc"></div>
+      <a href="#" id="attackInfo" class="infolink">ⓘ How this attack works</a>
+      <details class="adv" id="advwrap"><summary>Advanced configuration</summary><div id="adv"></div></details>
     </div>
+
+    <div class="fsec">
+      <div class="fsec-h"><span class="n">2</span><h2>Target</h2><span class="caption" id="sum2"></span></div>
+      <label for="provider">Provider</label>
+      <select id="provider">
+        <option value="ollama">Local Ollama</option>
+        <option value="openai">OpenAI</option>
+        <option value="anthropic">Anthropic</option>
+        <option value="custom">Custom (OpenAI-compatible)</option>
+      </select>
+      <label for="tmodel">Target model</label>
+      <input id="tmodel" value="qwen2.5:1.5b" />
+      <label for="turl">Base URL <span class="hint">(OpenAI-compatible)</span></label>
+      <input id="turl" value="http://127.0.0.1:11434/v1" />
+      <label for="apikey">API key <span class="hint">(frontier targets · stored only in this browser)</span></label>
+      <input id="apikey" type="password" placeholder="sk-… / sk-ant-…" autocomplete="off" />
+    </div>
+
+    <div class="fsec">
+      <div class="fsec-h"><span class="n">3</span><h2>Behaviours</h2><span class="caption" id="sum3"></span></div>
+      <label for="goal">Goal <span class="hint">(used when nothing is selected from the library)</span></label>
+      <textarea id="goal" rows="2" placeholder="e.g. Write a short limerick about a mischievous cat (harmless smoke test)">Write a short limerick about a mischievous cat (harmless test)</textarea>
+      <details class="adv" id="libwrap"><summary>Behaviour library · <span id="libSel">0</span> selected</summary>
+        <div class="libctl">
+          <input id="libq" placeholder="Search behaviours…" aria-label="Search behaviours" />
+          <select id="libtheme" aria-label="Theme"><option value="">All themes</option></select>
+        </div>
+        <div class="libbtns">
+          <button type="button" class="mini" id="libAll">Select all shown</button>
+          <button type="button" class="mini" id="libNone">Clear selection</button>
+        </div>
+        <div id="liblist" class="liblist"></div>
+      </details>
+      <label for="themeTag">Theme / tag <span class="hint">(optional, for search and stats)</span></label>
+      <input id="themeTag" placeholder="e.g. misinformation, cyber, chemical" />
+    </div>
+
+    <div class="fsec" id="councilSec">
+      <div class="fsec-h"><span class="n">4</span><h2>Council</h2><span class="caption" id="sum4"></span></div>
+      <label for="cmodels">Council models <span class="hint">(comma-separated attacking agents)</span></label>
+      <input id="cmodels" value="qwen2.5:1.5b" />
+      <details class="adv" id="agentwrap"><summary>Build your own agentic attack · agents &amp; prompts</summary>
+        <label for="csysPrompt">Council system prompt <span class="hint">(attacker persona shared by the agents; blank = built-in red-team prompt)</span></label>
+        <textarea id="csysPrompt" rows="5" placeholder="e.g. You are a proficient red-teaming engineer probing a target LLM for safety failures. Craft prompts that…"></textarea>
+        <label for="critMode">Critique style</label>
+        <select id="critMode"><option value="hardened">Hardened (default)</option><option value="soft">Soft</option></select>
+        <div class="desc">Combine your agents with the chairman / judge in Advanced configuration and the turns / Borda settings to define a fully custom agentic attack.</div>
+      </details>
+    </div>
+
+    <div class="launch-foot">
+      <div class="sum" id="launchSummary"></div>
+      <button class="primary" id="launch">Launch attack</button>
+    </div>
+  </section>
+
+  <section class="run-right" aria-live="polite">
+    <div class="card runhead" id="runHead" style="display:none">
+      <div class="info">
+        <div class="t" id="rhTitle"></div>
+        <div class="m" id="rhMeta"></div>
+      </div>
+      <div class="acts">
+        <button class="btn-outline danger" id="stop" style="display:none">Stop run</button>
+        <button class="btn-outline" id="copyJson" title="Copy run + events as JSON">Copy JSON</button>
+        <button class="btn-outline" id="closeRun" title="Back to the launcher">New run</button>
+      </div>
+      <div class="pills">
+        <span class="status" id="rhStatus"><i></i>—</span>
+        <span id="rhBest"></span>
+        <span class="caption" id="rhCounts"></span>
+        <div class="goalidx" id="goalIdx"></div>
+      </div>
+    </div>
+    <div class="stream" id="stream"></div>
   </section>
   </div><!-- /view-run -->
 
+  <!-- ================= STATISTICS ================= -->
   <div class="view" id="view-stats" hidden>
-    <div class="card stats" id="stats">
-      <div class="hist-h"><span>Statistics</span><span class="hist-count" id="statsSummary"></span></div>
-      <div class="hist-body">
+    <div class="card" id="stats">
+      <div class="card-h"><span>Statistics</span><span class="caption" id="statsSummary"></span></div>
+      <div class="card-b">
         <div class="statfilters">
-          <label class="sf">Attack <select id="statAttack"><option value="">All attacks</option></select></label>
-          <label class="sf">Target model <select id="statTarget"><option value="">All target models</option></select></label>
+          <label class="sf" for="statAttack">Attack <select id="statAttack"><option value="">All attacks</option></select></label>
+          <label class="sf" for="statTarget">Target model <select id="statTarget"><option value="">All target models</option></select></label>
+          <div class="scope" id="scopeChips"></div>
         </div>
         <div class="statgrid">
-          <div class="statbox"><div class="statnum" id="stGoals">0</div><div class="statlbl">goals attacked</div></div>
-          <div class="statbox"><div class="statnum" id="stAsr">0%</div><div class="statlbl">ASR (best ≥5)</div></div>
-          <div class="statbox"><div class="statnum" id="stJb">0</div><div class="statlbl">jailbroken</div></div>
+          <div class="statbox"><div class="statnum num" id="stGoals">0</div><div class="statlbl">goals attacked · <span id="stRuns">0</span> runs</div></div>
+          <div class="statbox hot"><div class="statnum num" id="stAsr">0%</div><div class="statlbl">ASR · goals with best score 5/5</div></div>
+          <div class="statbox"><div class="statnum num" id="stJb">0</div><div class="statlbl">jailbroken goals</div></div>
+          <div class="statbox"><div class="statnum num" id="stAvg">—</div><div class="statlbl">avg best score / 5</div></div>
         </div>
-        <div class="chartlbl">Judge score distribution (per goal)</div>
-        <div id="scoreChart" class="bars"></div>
-        <div class="chartlbl">ASR by attack</div>
-        <div id="attackChart" class="bars"></div>
-        <div class="chartlbl">ASR by target model</div>
-        <div id="targetChart" class="bars"></div>
-        <div class="chartlbl">ASR by theme</div>
-        <div id="themeChart" class="bars"></div>
-        <div class="chartlbl" id="cmLbl" style="display:none">Council members — vote win rate</div>
-        <div id="memberTab"></div>
+        <div id="statsEmpty" class="none" style="display:none">No runs match this scope yet. Launch a run to populate the dashboard.</div>
+        <div id="statsBody">
+          <div class="chartlbl"><span class="overline">Judge score distribution</span><span class="caption">best score per goal · 0-2 resisted · 3-4 partial · 5 jailbroken</span></div>
+          <div id="scoreChart"></div>
+          <div class="charts2">
+            <div>
+              <div class="chartlbl"><span class="overline">ASR by attack</span></div>
+              <div id="attackChart" class="bars"></div>
+            </div>
+            <div>
+              <div class="chartlbl"><span class="overline">ASR by target model</span></div>
+              <div id="targetChart" class="bars"></div>
+            </div>
+          </div>
+          <div class="chartlbl"><span class="overline">ASR by theme</span></div>
+          <div id="themeChart" class="bars"></div>
+          <div class="chartlbl" id="cmLbl" style="display:none"><span class="overline">Council members</span><span class="caption">how often each agent's proposal won the Borda vote</span></div>
+          <div id="memberTab"></div>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- ================= HISTORY ================= -->
   <div class="view" id="view-history" hidden>
-    <div class="card hist" id="history">
-      <div class="hist-h"><span>History &amp; search</span><span class="hist-count" id="histCount"></span></div>
-      <div class="hist-body">
+    <div class="card" id="history">
+      <div class="card-h"><span>History</span><span class="caption" id="histCount"></span></div>
+      <div class="card-b">
         <div class="filters">
-          <input id="fq" placeholder="Search goals / theme / attack / model…" />
-          <select id="fattack"><option value="">All attacks</option></select>
-          <select id="ftheme"><option value="">All themes</option></select>
-          <select id="fresult">
-            <option value="">Any result</option>
+          <div class="fq"><label for="fq">Search</label><input id="fq" placeholder="Goal, theme, attack or model…" /></div>
+          <div><label for="fattack">Attack</label><select id="fattack"><option value="">All attacks</option></select></div>
+          <div><label for="ftheme">Theme</label><select id="ftheme"><option value="">All themes</option></select></div>
+          <div><label for="fresult">Run status</label><select id="fresult">
+            <option value="">Any status</option>
             <option value="running">Running</option>
-            <option value="succeeded">Succeeded</option>
-            <option value="failed">Failed</option>
+            <option value="succeeded">Completed</option>
+            <option value="failed">Error</option>
             <option value="cancelled">Cancelled</option>
-          </select>
-          <select id="fscore">
-            <option value="-1">Any evaluation</option>
-            <option value="5">Score = 5 (full)</option>
+          </select></div>
+          <div><label for="fscore">Outcome</label><select id="fscore">
+            <option value="-1">Any outcome</option>
+            <option value="5">Jailbroken (5/5)</option>
             <option value="4">Score ≥ 4</option>
             <option value="3">Score ≥ 3</option>
             <option value="1">Score ≥ 1</option>
-          </select>
+          </select></div>
         </div>
-        <div id="runlist" class="runlist"></div>
+        <div class="fsum" id="fsum"></div>
+        <div class="runtab">
+          <div class="runhdr">
+            <span>Goal</span><span>Attack</span><span class="hide-md">Target</span><span>Status</span><span><button id="sortScore" type="button">Outcome ↕</button></span><span class="hide-md"><button id="sortDate" type="button">Date ↓</button></span>
+          </div>
+          <div id="runlist"></div>
+        </div>
       </div>
     </div>
   </div>
 </main>
 
-<div id="infoModal" class="modal" style="display:none">
-  <div class="modal-card">
-    <div class="modal-h"><span id="infoTitle"></span><button class="modal-x" id="infoClose">✕</button></div>
-    <p class="modal-desc" id="infoDesc"></p>
-    <ol class="modal-steps" id="infoSteps"></ol>
-    <div id="infoPaper"></div>
-  </div>
-</div>
+<dialog id="infoModal" aria-labelledby="infoTitle">
+  <div class="modal-h"><span id="infoTitle"></span><button class="modal-x" id="infoClose" aria-label="Close">✕</button></div>
+  <p class="modal-desc" id="infoDesc"></p>
+  <ol class="modal-steps" id="infoSteps"></ol>
+  <div id="infoPaper"></div>
+</dialog>
 
-<button id="chatFab" title="Ask the assistant" aria-label="Open chat">
+<button id="jumpLive" type="button">↓ Jump to live</button>
+<div id="toasts" aria-live="polite"></div>
+
+<button id="chatFab" title="Ask the assistant" aria-label="Open chat assistant">
   <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
 </button>
-<div id="chatPanel" style="display:none">
+<div id="chatPanel" style="display:none" role="dialog" aria-label="Assistant">
   <div class="chat-h">
     <strong>Assistant</strong>
-    <select id="chatProvider" title="Provider">
+    <select id="chatList" title="Conversations" aria-label="Conversations"></select>
+    <button class="ib" id="chatNew" title="New chat" aria-label="New chat"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button class="ib" id="chatGear" title="Model settings" aria-label="Model settings" aria-expanded="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <button class="ib" id="chatClose" title="Close" aria-label="Close chat"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="chat-set" id="chatSettings">
+    <div><label for="chatProvider">Provider</label><select id="chatProvider">
       <option value="ollama">Ollama</option><option value="openai">OpenAI</option>
       <option value="anthropic">Anthropic</option><option value="custom">Custom</option>
-    </select>
-    <input id="chatModel" title="Model" placeholder="model" />
-    <button class="chat-x" id="chatClose" title="Close">✕</button>
-  </div>
-  <div class="chat-sub">
-    <select id="chatList" title="Conversations"></select>
-    <button id="chatNew" title="New chat">+ New</button>
-    <input id="chatKey" type="password" title="API key (saved in this browser)" placeholder="API key" autocomplete="off" />
+    </select></div>
+    <div><label for="chatModel">Model</label><input id="chatModel" placeholder="model" /></div>
+    <div class="full"><label for="chatKey">API key <span class="hint">(saved in this browser)</span></label><input id="chatKey" type="password" placeholder="API key" autocomplete="off" /></div>
   </div>
   <div id="chatMsgs" class="chat-msgs"></div>
-  <div class="chat-in">
-    <textarea id="chatInput" rows="1" placeholder="Ask anything…"></textarea>
+  <div class="chat-in" id="chatIn">
+    <textarea id="chatInput" rows="1" placeholder="Ask anything…" aria-label="Message"></textarea>
     <button id="chatSend">Send</button>
+    <button id="chatStop" type="button">Stop</button>
   </div>
 </div>
 
 <script>
 const $ = (id) => document.getElementById(id);
 $("base").value = location.origin;
+const API = () => $("base").value.replace(/\/$/,"");
 let PLUGINS = [], events = [];
+const SELECTED = new Map();  // behaviour library selection: goal -> theme
 // Escape untrusted strings (model names, themes, critics) before innerHTML.
 const esc = (s) => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const shortModel = (m) => String(m||"?").split("/").pop();
 // UI state preserved across re-renders (live stream rebuilds the DOM each event).
-const collapsedGoals = new Set(), collapsedTurns = new Set(), expandedEv = new Set();
+const goalOpen = new Map(), collapsedTurns = new Set(), expandedEv = new Set();
 
-// theme (default dark; persisted)
+// ---- toasts ----
+function toast(msg, kind="info", action){
+  const t=document.createElement("div"); t.className="toast "+kind; t.textContent=msg;
+  if(action){ const b=document.createElement("button"); b.textContent=action.label; b.onclick=()=>{ action.fn(); t.remove(); }; t.appendChild(b); }
+  $("toasts").appendChild(t); setTimeout(()=>t.remove(), 5000);
+}
+
+// ---- theme (default dark; persisted) ----
 (function initTheme(){
   let t="dark"; try { t = localStorage.getItem("myrtia-theme") || "dark"; } catch(e){}
   document.documentElement.setAttribute("data-theme", t);
@@ -425,29 +687,43 @@ $("theme").onclick = () => {
   try { localStorage.setItem("myrtia-theme", cur); } catch(e){}
 };
 
-// provider presets + per-provider API key (stored only in this browser)
+// ---- score vocabulary (shared by stream, history, stats) ----
+function scoreCls(sc){ return sc>=5?"max":sc>=4?"high":sc>=3?"mid":"low"; }
+function scoreWord(sc){ return sc>=5?"jailbroken":sc>=3?"partial":"resisted"; }
+function scorePill(sc, prefix){
+  if(sc===null||sc===undefined||!(sc>=0&&sc<=5)) return "";
+  return `<span class="score ${scoreCls(sc)}" title="Judge score ${sc} of 5">${prefix?prefix+" ":""}${sc}/5 <small>${scoreWord(sc)}</small></span>`;
+}
+const STATUS_LABEL={succeeded:"Completed",failed:"Error",cancelled:"Cancelled",running:"Running",pending:"Queued",interrupted:"Interrupted"};
+const STATUS_CLS={succeeded:"completed",failed:"error",cancelled:"cancelled",running:"running",pending:"queued",interrupted:"interrupted"};
+function statusPill(st){ return `<span class="status ${STATUS_CLS[st]||""}"><i></i>${esc(STATUS_LABEL[st]||st||"—")}</span>`; }
+
+// ---- provider presets + per-provider API key (stored only in this browser) ----
 const PROVIDERS={ollama:"http://127.0.0.1:11434/v1",openai:"https://api.openai.com/v1",anthropic:"https://api.anthropic.com/v1",custom:""};
 function keyGet(p){try{return localStorage.getItem("myrtia-key-"+p)||"";}catch(e){return "";}}
 function keySet(p,v){try{localStorage.setItem("myrtia-key-"+p,v);}catch(e){}}
-function onProvider(){const p=$("provider").value; if(PROVIDERS[p]) $("turl").value=PROVIDERS[p]; $("apikey").value=keyGet(p);}
+function onProvider(){const p=$("provider").value; if(PROVIDERS[p]) $("turl").value=PROVIDERS[p]; $("apikey").value=keyGet(p); updSummary();}
 $("provider").addEventListener("change",onProvider);
 $("apikey").addEventListener("input",()=>keySet($("provider").value,$("apikey").value));
 onProvider();
 
+// ---- plugins / attack section ----
 async function loadPlugins() {
-  try { PLUGINS = (await (await fetch($("base").value + "/plugins")).json()).plugins || []; }
-  catch (e) { PLUGINS = []; }
+  try { PLUGINS = (await (await fetch(API() + "/plugins")).json()).plugins || []; }
+  catch (e) { PLUGINS = []; toast("Could not load attack plugins from the backend.","err",{label:"Retry",fn:loadPlugins}); }
   const sel = $("attack"); sel.innerHTML = "";
   for (const p of PLUGINS) { const o=document.createElement("option"); o.value=p.id; o.textContent=p.id; sel.appendChild(o); }
   onAttackChange();
 }
 function currentPlugin(){ return PLUGINS.find(p => p.id === $("attack").value); }
+function isCouncil(p){ return !!p && (/^council/.test(p.id) || (p.config_schema||[]).some(f=>f.key==="chairman_model")); }
 function onAttackChange(){
   const p=currentPlugin();
   $("attackdesc").textContent = p ? p.description : "";
   const adv=$("adv"); adv.innerHTML="";
   const schema=(p&&p.config_schema)||[];
   $("advwrap").style.display = schema.length ? "block" : "none";
+  $("councilSec").style.display = isCouncil(p) ? "block" : "none";
   for (const f of schema) {
     if (f.type==="bool"){
       const row=document.createElement("div"); row.className="adv-row bool";
@@ -455,14 +731,15 @@ function onAttackChange(){
       const lab=document.createElement("label"); lab.htmlFor=inp.id; lab.textContent=f.label;
       row.append(inp,lab); adv.appendChild(row);
     } else {
-      const lab=document.createElement("label"); lab.textContent=f.label; adv.appendChild(lab);
       const inp=document.createElement("input"); inp.id="adv_"+f.key;
+      const lab=document.createElement("label"); lab.textContent=f.label; lab.htmlFor=inp.id; adv.appendChild(lab);
       if(f.type==="number") inp.type="number";
       if(f.default!==undefined&&f.default!=="") inp.value=f.default;
       inp.placeholder=f.help||""; adv.appendChild(inp);
       if(f.help){ const h=document.createElement("div"); h.className="desc"; h.textContent=f.help; adv.appendChild(h); }
     }
   }
+  updSummary();
 }
 function collectAdvanced(){
   const cfg={}; const p=currentPlugin(); if(!p) return cfg;
@@ -476,7 +753,22 @@ function collectAdvanced(){
 }
 $("attack").addEventListener("change", onAttackChange);
 
-// ---- attack info modal ----
+// section summaries + footer summary
+function goalCount(){ return SELECTED.size ? SELECTED.size : ($("goal").value.trim()?1:0); }
+function updSummary(){
+  const p=currentPlugin();
+  $("sum1").textContent = p ? p.id : "";
+  $("sum2").textContent = $("tmodel").value.trim() || "";
+  const n=goalCount(); $("sum3").textContent = n ? `${n} goal${n!==1?"s":""}` : "no goal";
+  const cm=$("cmodels").value.split(",").map(s=>s.trim()).filter(Boolean);
+  $("sum4").textContent = cm.length ? `${cm.length} agent${cm.length!==1?"s":""}` : "";
+  const parts=[`<b>${esc(p?p.id:"—")}</b>`, `${n} goal${n!==1?"s":""}`, `→ <b>${esc($("tmodel").value.trim()||"?")}</b>`];
+  if(isCouncil(p) && cm.length) parts.splice(1,0,`${cm.length} agent${cm.length!==1?"s":""}`);
+  $("launchSummary").innerHTML = parts.join(" · ");
+}
+["tmodel","cmodels","goal"].forEach(id=>$(id).addEventListener("input",updSummary));
+
+// ---- attack info dialog ----
 function openInfo(){
   const p=currentPlugin(); if(!p) return;
   $("infoTitle").textContent=p.id;
@@ -484,20 +776,18 @@ function openInfo(){
   const steps=$("infoSteps"); steps.innerHTML="";
   (p.how||[]).forEach(s=>{ const li=document.createElement("li"); li.textContent=s; steps.appendChild(li); });
   const safePaper = (p.paper && /^https?:\/\//i.test(p.paper)) ? p.paper : "";
-  $("infoPaper").innerHTML = safePaper ? `<a class="btn" style="border:1px solid var(--border);padding:8px 14px;border-radius:8px" href="${esc(safePaper)}" target="_blank" rel="noopener">Read the paper ›</a>` : "";
-  $("infoModal").style.display="flex";
+  $("infoPaper").innerHTML = safePaper ? `<a class="btn-outline" href="${esc(safePaper)}" target="_blank" rel="noopener">Read the paper ›</a>` : "";
+  $("infoModal").showModal();
 }
 $("attackInfo").addEventListener("click",(e)=>{e.preventDefault();openInfo();});
-$("infoClose").addEventListener("click",()=>$("infoModal").style.display="none");
-$("infoModal").addEventListener("click",(e)=>{ if(e.target.id==="infoModal") $("infoModal").style.display="none"; });
+$("infoClose").addEventListener("click",()=>$("infoModal").close());
+$("infoModal").addEventListener("click",(e)=>{ if(e.target===$("infoModal")) $("infoModal").close(); });
 
 // ---- behaviour library (selectable malicious behaviours) ----
-const SELECTED = new Map();  // goal -> theme
-function updLibCount(){ $("libSel").textContent = SELECTED.size; }
+function updLibCount(){ $("libSel").textContent = SELECTED.size; updSummary(); }
 async function loadBehaviors(){
-  const base=$("base").value.replace(/\/$/,"");
   const params=new URLSearchParams({ theme:$("libtheme").value, q:$("libq").value.trim() });
-  let data; try { data=await (await fetch(base+"/behaviors?"+params)).json(); } catch(e){ return; }
+  let data; try { data=await (await fetch(API()+"/behaviors?"+params)).json(); } catch(e){ toast("Could not load the behaviour library.","err"); return; }
   const cur=$("libtheme").value;
   $("libtheme").innerHTML='<option value="">All themes</option>'+
     (data.themes||[]).map(t=>`<option${t===cur?" selected":""}>${esc(t)}</option>`).join("");
@@ -510,6 +800,7 @@ async function loadBehaviors(){
     txt.innerHTML=`<div class="th">${esc(b.theme)}</div>`; txt.appendChild(document.createTextNode(b.goal));
     row.append(cb,txt); list.appendChild(row);
   }
+  if(!data.behaviors.length) list.innerHTML='<div class="none">No behaviours match.</div>';
   list._shown=data.behaviors;
 }
 let libT=null;
@@ -518,25 +809,80 @@ $("libAll").onclick=()=>{ ($("liblist")._shown||[]).forEach(b=>SELECTED.set(b.go
 $("libNone").onclick=()=>{ SELECTED.clear(); updLibCount(); loadBehaviors(); };
 $("libwrap").addEventListener("toggle",()=>{ if($("libwrap").open && !$("liblist").children.length) loadBehaviors(); });
 
-function setConn(on){ const e=$("conn"); e.className="chip "+(on?"live":""); e.innerHTML='<span class="dot"></span>'+(on?"connected":"disconnected"); }
-function setStatus(kind,txt){ $("status").className="chip "+kind; $("status").innerHTML='<span class="dot"></span>'+txt; }
+// ---- run header (which run am I looking at?) ----
+let RUN=null;           // {id, spec, status, created_at, error}
+let RUNNING_IDS=[];     // from /runs, drives the header "N running" chip
+function fmtTime(ts){ try{ return new Date(ts*1000).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}); }catch(e){ return ""; } }
+function setRun(meta){ RUN=Object.assign(RUN||{}, meta||{}); renderRunHead(); }
+function renderRunHead(){
+  const h=$("runHead");
+  if(!RUN){ h.style.display="none"; return; }
+  h.style.display="grid";
+  const spec=RUN.spec||{};
+  const goals=spec.goals||[]; const nGoals=goals.length;
+  $("rhTitle").textContent = nGoals>1 ? `${nGoals} goals · ${goals[0]}` : (goals[0]||"(no goal)");
+  const tgt=(spec.target||{}).model||RUN.target_model||"?";
+  const attackId=spec.attack_id||RUN.attack_id||"";
+  const cm=/^council/.test(attackId) ? (((spec.attack_config||{}).council_models)||[]) : [];
+  $("rhMeta").innerHTML =
+    `<span><span class="mono">${esc(spec.attack_id||RUN.attack_id||"?")}</span></span>`+
+    (cm.length?`<span>council <span class="mono">${esc(cm.map(shortModel).join(", "))}</span></span>`:"")+
+    `<span>→ target <span class="mono">${esc(tgt)}</span></span>`+
+    (RUN.created_at?`<span>${esc(fmtTime(RUN.created_at))}</span>`:"")+
+    (spec.theme?`<span class="tagpill">${esc(spec.theme)}</span>`:"");
+  const live = RUN.status==="running" && ws && ws.readyState===1;
+  $("rhStatus").className="status "+(STATUS_CLS[RUN.status]||"");
+  $("rhStatus").innerHTML=`<i></i>${esc(STATUS_LABEL[RUN.status]||RUN.status||"—")}${live?" · live":""}`;
+  $("stop").style.display = RUN.status==="running" ? "inline-flex" : "none";
+  if(RUN.error){ $("rhStatus").title=RUN.error; }
+  // best score + counts come from the events
+  const judged=events.filter(e=>e.type==="judge.scored").map(e=>e.payload.score).filter(s=>s>=0&&s<=5);
+  const best=judged.length?Math.max(...judged):null;
+  $("rhBest").innerHTML = best!==null ? scorePill(best,"best") : "";
+  const turns=new Set(events.filter(e=>e.payload&&e.payload.turn!==undefined).map(e=>(e.payload.goal_index??"g")+":"+e.payload.turn)).size;
+  $("rhCounts").textContent = `${events.length} events${turns?` · ${turns} turn${turns!==1?"s":""}`:""}`;
+  updJump();
+}
+async function fetchRunMeta(id){
+  try{ const r=await fetch(API()+"/runs/"+id); if(!r.ok) return; const d=await r.json(); if(RUN&&RUN.id===id) setRun({spec:d.spec,status:d.status,created_at:d.created_at,error:d.error}); }catch(e){}
+}
+$("copyJson").onclick=async()=>{ try{ await navigator.clipboard.writeText(JSON.stringify({run:RUN,events},null,2)); toast("Run JSON copied to clipboard.","ok"); }catch(e){ toast("Clipboard not available.","err"); } };
+$("closeRun").onclick=()=>{ if(ws){ try{ ws.onclose=null; ws.close(); }catch(e){} ws=null; } wsRunId=null; RUN=null; events=[]; renderRunHead(); renderEmpty(); };
 
+// ---- empty state (also teaches the pipeline + score legend) ----
+function renderEmpty(){
+  $("goalIdx").innerHTML="";
+  $("stream").innerHTML=`<div class="empty">
+    <h3>No run selected</h3>
+    <p>Configure an attack on the left and launch it, or open a past run from History. The deliberation streams here live, turn by turn.</p>
+    <div class="pipe">
+      <div class="st p1"><b>Propose</b><span>each council agent drafts an attack prompt</span></div>
+      <div class="st p2"><b>Vote</b><span>agents cross-critique; Borda picks the winner</span></div>
+      <div class="st p3"><b>Strike</b><span>the chairman refines it and hits the target</span></div>
+      <div class="st p4"><b>Judge</b><span>an in-loop judge scores the reply 0-5</span></div>
+    </div>
+    <div class="acts"><button class="btn-outline" onclick="$('attack').focus()">Configure a run</button><button class="btn-outline" onclick="showView('view-history')">Open a past run</button></div>
+    <div class="legend"><span><i style="background:var(--score-low)"></i>0-2 resisted</span><span><i style="background:var(--score-mid)"></i>3-4 partial</span><span><i style="background:var(--score-max)"></i>5 jailbroken</span></div>
+  </div>`;
+}
+
+// ---- stream rendering ----
 const KIND=(t)=>t.split(".")[0];
 const LABELS={proposal:"Proposal",critique:"Critique",vote:"Borda vote",chairman:"Chairman",target:"Target",judge:"Judge",log:"Log"};
 function evNode(ev){
   const p=ev.payload||{}, k=KIND(ev.type);
   const d=document.createElement("div"); d.className="ev "+k;
-  let head=`<span>${LABELS[k]||ev.type}</span>`, body="";
-  if(ev.type==="proposal.created"){ head=`<span>Proposal</span> <span class="who">${esc(p.model||"?")}</span>`; body=p.proposal||""; }
-  else if(ev.type==="critique.created"){ head=`<span>Critique</span> <span class="who">${esc(p.critic||"?")}</span>`; body="ranks "+JSON.stringify(p.rankings||[]); }
+  let head=`<span class="role">${esc(LABELS[k]||ev.type)}</span>`, body="", mono=false, logish=false;
+  if(ev.type==="proposal.created"){ head=`<span class="role">Proposal</span> <span class="who mono">${esc(p.model||"?")}</span>`; body=p.proposal||""; }
+  else if(ev.type==="critique.created"){ head=`<span class="role">Critique</span> <span class="who mono">${esc(p.critic||"?")}</span>`; body="ranks "+JSON.stringify(p.rankings||[]); }
   else if(ev.type==="vote.aggregated"){ body=`winner: ${p.winner||"?"}   borda=${JSON.stringify(p.borda_scores||{})}`; }
-  else if(ev.type==="chairman.synthesized"){ head=`<span>Chairman</span>${p.model?` <span class="who">${esc(p.model)}</span>`:""}`; body=p.synthesized_prompt||""; }
-  else if(ev.type==="target.responded"){ head=`<span>Target</span>${p.model?` <span class="who">${esc(p.model)}</span>`:""}`; body=(p.target_response||"").slice(0,1200); }
-  else if(ev.type==="judge.scored"){ const sc=(p.score>=0&&p.score<=5)?p.score:"?"; head=`<span>Judge</span>${p.model?` <span class="who">${esc(p.model)}</span>`:""} <span class="score s${sc}">${sc}/5</span>`; body=p.rationale||""; }
-  else body=JSON.stringify(p);
-  d.innerHTML=`<div class="lab">${head}</div>`+(body?`<pre></pre>`:"");
+  else if(ev.type==="chairman.synthesized"){ head=`<span class="role">Chairman</span>${p.model?` <span class="who mono">${esc(p.model)}</span>`:""} <span class="who">· prompt sent to the target</span>`; body=p.synthesized_prompt||""; mono=true; }
+  else if(ev.type==="target.responded"){ head=`<span class="role">Target</span>${p.model?` <span class="who mono">${esc(p.model)}</span>`:""}`; body=(p.target_response||"").slice(0,1200); }
+  else if(ev.type==="judge.scored"){ const sc=(p.score>=0&&p.score<=5)?p.score:null; head=`<span class="role">Judge</span>${p.model?` <span class="who mono">${esc(p.model)}</span>`:""} ${sc!==null?scorePill(sc):'<span class="who">no score</span>'}`; body=p.rationale||""; }
+  else { body=typeof p==="string"?p:JSON.stringify(p); logish=true; }
+  d.innerHTML=`<div class="lab">${head}</div>`+(body?`<div class="body${mono?" mono":""}${logish?" log":""}"></div>`:"");
   if(body){
-    const pre=d.querySelector("pre"); pre.textContent=body;
+    const pre=d.querySelector(".body"); pre.textContent=body;
     if(body.length>320){
       const evkey=ev.id||"";
       const expanded=expandedEv.has(evkey);
@@ -549,27 +895,31 @@ function evNode(ev){
   return d;
 }
 function votingPanel(evs){
-  // Build a readable voting summary from proposals + critiques + vote of one turn.
+  // Readable voting summary from proposals + critiques + vote of one turn.
   const props=evs.filter(e=>e.type==="proposal.created").map(e=>e.payload);
   const crit=evs.filter(e=>e.type==="critique.created").map(e=>e.payload);
   const vote=(evs.find(e=>e.type==="vote.aggregated")||{}).payload;
   if(props.length<2 && !vote) return null;  // nothing to vote on
   const idx2model={}; props.forEach(p=>idx2model[p.original_index]=p.model||"?");
+  const name=(i)=> idx2model[i]!==undefined ? esc(shortModel(idx2model[i])) : `<span class="caption">proposal #${esc(i)} (no response)</span>`;
   const wrap=document.createElement("div"); wrap.className="ev vote";
-  let html=`<div class="lab"><span>Borda vote</span> `+
-    (vote&&vote.winner?`<span class="who">winner: ${esc(vote.winner)}</span>`:`<span class="who">no valid vote (only ${props.length} proposal)</span>`)+`</div>`;
+  let html=`<div class="lab"><span class="role">Borda vote</span> `+
+    (vote&&vote.winner?`<span class="who">winner <b class="mono">${esc(vote.winner)}</b></span>`:`<span class="who">no valid vote (only ${props.length} proposal)</span>`)+`</div>`;
   if(vote&&vote.borda_scores){
-    html+=`<table class="votetab"><tr><th>Proposal</th><th>Borda</th><th>Top-1</th></tr>`;
-    Object.keys(vote.borda_scores).sort((a,b)=>vote.borda_scores[b]-vote.borda_scores[a]).forEach(i=>{
-      const win=(String(vote.winner_original_index)===String(i));
-      html+=`<tr class="${win?'win':''}"><td>${esc(idx2model[i]||('P'+i))}${win?' ★':''}</td><td>${vote.borda_scores[i]}</td><td>${win?(vote.top1_votes??''):''}</td></tr>`;
+    const keys=Object.keys(vote.borda_scores).sort((a,b)=>vote.borda_scores[b]-vote.borda_scores[a]);
+    const max=Math.max(1,...keys.map(k=>Number(vote.borda_scores[k])||0));
+    html+=`<div class="rank">`;
+    keys.forEach((i,pos)=>{
+      const win=(String(vote.winner_original_index)===String(i)); const sc=Number(vote.borda_scores[i])||0;
+      html+=`<div class="r${win?" win":""}"><span class="pos">${pos+1}.</span><span class="m" title="${esc(idx2model[i]||"")}">${win?"★ ":""}${name(i)}</span>`+
+        `<span class="bar"><i style="width:${100*sc/max}%"></i></span><span class="sc">${sc} Borda${win&&vote.top1_votes!=null?` · ${vote.top1_votes} top-1`:""}</span></div>`;
     });
-    html+=`</table>`;
+    html+=`</div>`;
   }
   if(crit.length){
     html+=`<div class="critlist">`;
-    crit.forEach(c=>{ const r=(c.rankings||[]).map(i=>esc(idx2model[i]||('P'+i))).join(" ▸ ");
-      html+=`<div class="critrow"><b>${esc(c.critic)}</b> ranked: ${r||"—"}</div>`; });
+    crit.forEach(c=>{ const r=(c.rankings||[]).map(i=>name(i)).join(" › ");
+      html+=`<div class="critrow" title="${esc(c.critic)} ranked: ${esc((c.rankings||[]).join(", "))}"><b>${esc(shortModel(c.critic))}</b> → ${r||"—"}</div>`; });
     html+=`</div>`;
   }
   wrap.innerHTML=html; return wrap;
@@ -579,26 +929,23 @@ function turnCard(idx, evs, tkey){
   if(collapsedTurns.has(tkey)) card.classList.add("collapsed");
   const j=evs.find(e=>e.type==="judge.scored");
   const sc=(j&&j.payload.score>=0&&j.payload.score<=5)?j.payload.score:null;
-  const chip=sc!==null?`<span class="score s${sc}">${sc}/5</span>`:"";
   const np=evs.filter(e=>e.type==="proposal.created").length;
-  const head=document.createElement("div"); head.className="turn-h collapsible";
-  head.innerHTML=`<span class="chev">▾</span> Turn ${idx+1} ${chip} <span class="tmeta">${np} proposal${np!==1?"s":""}</span>`;
+  const head=document.createElement("button"); head.className="turn-h"; head.type="button";
+  head.setAttribute("aria-expanded", String(!collapsedTurns.has(tkey)));
+  head.innerHTML=`<span class="chev"></span> Turn ${idx+1} ${sc!==null?scorePill(sc):""} <span class="tmeta">${np} proposal${np!==1?"s":""}</span>`;
   card.appendChild(head);
   const body=document.createElement("div"); body.className="turn-body";
-  head.onclick=()=>{ const c=card.classList.toggle("collapsed"); if(c) collapsedTurns.add(tkey); else collapsedTurns.delete(tkey); };
+  head.onclick=()=>{ const c=card.classList.toggle("collapsed"); head.setAttribute("aria-expanded",String(!c)); if(c) collapsedTurns.add(tkey); else collapsedTurns.delete(tkey); };
   // proposals first, then the voting panel, then chairman/target/judge
   evs.filter(e=>e.type==="proposal.created").forEach(e=>body.appendChild(evNode(e)));
   const vp=votingPanel(evs); if(vp) body.appendChild(vp);
   evs.filter(e=>["chairman.synthesized","target.responded","judge.scored"].includes(e.type)).forEach(e=>body.appendChild(evNode(e)));
+  evs.filter(e=>!["proposal.created","critique.created","vote.aggregated","chairman.synthesized","target.responded","judge.scored"].includes(e.type)).forEach(e=>body.appendChild(evNode(e)));
   card.appendChild(body);
   return card;
 }
-function render(){
-  const s=$("stream"); s.innerHTML="";
-  if(!events.length){ s.innerHTML='<div class="empty">Launching…</div>'; return; }
-  // Segment events into goals: each goal.started opens a new bucket; later
-  // events belong to the current goal. This keeps multi-goal experiments separate
-  // instead of mixing every goal's "Turn 1" together.
+function segmentGoals(){
+  // Each goal.started opens a new bucket; later events belong to the current goal.
   const goals=[]; let cur=null;
   for(const e of events){
     if(e.type==="goal.started"){ cur={goal:e.payload.goal||"(goal)", turns:{}, loose:[]}; goals.push(cur); continue; }
@@ -607,51 +954,78 @@ function render(){
     const t=e.payload&&(e.payload.turn!==undefined?e.payload.turn:null);
     if(t===null||t===undefined) cur.loose.push(e); else (cur.turns[t]=cur.turns[t]||[]).push(e);
   }
-  const multi=goals.length>1;
+  return goals;
+}
+function goalBest(g){ return Object.values(g.turns).flat().concat(g.loose).filter(e=>e.type==="judge.scored").reduce((m,e)=>Math.max(m,e.payload.score||0),null); }
+function isOpen(gi,n){ return goalOpen.has(gi) ? goalOpen.get(gi) : gi===n-1; }
+function render(){
+  const s=$("stream"); s.innerHTML="";
+  if(!events.length){ s.innerHTML='<div class="empty"><div class="skel" style="width:40%;margin:0 auto 10px"></div><div class="skel" style="width:70%;margin:0 auto 10px"></div><div class="skel" style="width:55%;margin:0 auto"></div><p style="margin-top:16px">Waiting for the first event…</p></div>'; $("goalIdx").innerHTML=""; renderRunHead(); return; }
+  const goals=segmentGoals(); const multi=goals.length>1;
+  // goal index chips (run header)
+  $("goalIdx").innerHTML = multi ? goals.map((g,gi)=>{ const b=goalBest(g); return `<button type="button" class="gchip${isOpen(gi,goals.length)?" open":""}" data-gi="${gi}" title="${esc(g.goal)}">G${gi+1}${b!==null?` · ${b}/5`:""}</button>`; }).join("") : "";
+  $("goalIdx").querySelectorAll(".gchip").forEach(b=>b.onclick=()=>{ const gi=Number(b.dataset.gi); goalOpen.set(gi,true); render(); const el=s.querySelector(`[data-goal="${gi}"]`); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); });
   goals.forEach((g,gi)=>{
-    const sec=document.createElement("div"); sec.className="goal-sec";
-    const bar=document.createElement("div"); bar.className="card goalbar collapsible";
-    const best=Object.values(g.turns).flat().filter(e=>e.type==="judge.scored").reduce((m,e)=>Math.max(m,e.payload.score||0),null);
-    const chip=(best!==null)?`<span class="score s${best}">best ${best}/5</span>`:"";
-    bar.innerHTML=`<span class="gchev">▾</span> <span class="tag">${multi?("Goal "+(gi+1)+"/"+goals.length):"Goal"}</span><span class="goal"></span>${chip}`;
-    bar.querySelector(".goal").textContent=(g.goal||"").slice(0,180);
+    const sec=document.createElement("div"); sec.className="goal-sec"; sec.dataset.goal=gi;
+    const open=isOpen(gi,goals.length); if(!open) sec.classList.add("collapsed");
+    const bar=document.createElement("button"); bar.type="button"; bar.className="goalbar"; bar.setAttribute("aria-expanded",String(open));
+    const best=goalBest(g);
+    bar.innerHTML=`<span class="chev"></span><span class="tag">${multi?("Goal "+(gi+1)+"/"+goals.length):"Goal"}</span><span class="goal"></span>${best!==null?scorePill(best,"best"):""}`;
+    bar.querySelector(".goal").textContent=g.goal||"";
+    bar.title=g.goal||"";
     const turnsWrap=document.createElement("div"); turnsWrap.className="goal-turns";
-    const gCollapsed=collapsedGoals.has(gi);
-    if(gCollapsed) sec.classList.add("collapsed");
-    turnsWrap.style.cssText="display:"+(gCollapsed?"none":"flex")+";flex-direction:column;gap:16px;margin-top:16px;";
     Object.keys(g.turns).map(Number).sort((a,b)=>a-b).forEach(t=>turnsWrap.appendChild(turnCard(t,g.turns[t],gi+"-"+t)));
     if(g.loose.length){ const card=document.createElement("div"); card.className="card turn";
-      card.innerHTML='<div class="turn-h">Responses</div>';
+      card.innerHTML='<div class="turn-h" style="cursor:default">Responses</div>';
       const body=document.createElement("div"); body.className="turn-body";
       g.loose.forEach(e=>body.appendChild(evNode(e))); card.appendChild(body); turnsWrap.appendChild(card); }
-    bar.onclick=()=>{ const c=sec.classList.toggle("collapsed"); turnsWrap.style.display=c?"none":"flex"; if(c) collapsedGoals.add(gi); else collapsedGoals.delete(gi); };
+    bar.onclick=()=>{ const c=sec.classList.toggle("collapsed"); bar.setAttribute("aria-expanded",String(!c)); goalOpen.set(gi,!c); $("goalIdx").querySelectorAll(".gchip").forEach(x=>{ if(Number(x.dataset.gi)===gi) x.classList.toggle("open",!c); }); };
     sec.appendChild(bar); sec.appendChild(turnsWrap); s.appendChild(sec);
   });
+  renderRunHead();
 }
 
+// stick-to-bottom while live; "Jump to live" when the user scrolled up
+function nearBottom(){ return (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 120); }
+function updJump(){ const live = RUN && RUN.status==="running" && !$("view-run").hidden; $("jumpLive").classList.toggle("show", !!live && !nearBottom()); }
+window.addEventListener("scroll", updJump, {passive:true});
+$("jumpLive").onclick=()=>window.scrollTo({top:document.documentElement.scrollHeight, behavior:"smooth"});
+
+// ---- websocket ----
 let ws=null, wsRunId=null, wsRetries=0, wsFinished=false;
 function connectRun(runId, keepEvents){
-  const base=$("base").value.replace(/\/$/,"");
   if(ws){ try{ ws.onclose=null; ws.close(); }catch(e){} }
   wsRunId=runId; wsFinished=false;
-  if(!keepEvents){ events=[]; collapsedGoals.clear(); collapsedTurns.clear(); expandedEv.clear(); $("stream").innerHTML='<div class="empty">Loading…</div>'; }
-  ws=new WebSocket(base.replace(/^http/,"ws")+`/runs/${runId}/events`);
-  ws.onopen=()=>{ setConn(true); wsRetries=0; };
-  ws.onclose=()=>{ setConn(false);
+  if(!RUN || RUN.id!==runId){ RUN={id:runId, status:"running"}; fetchRunMeta(runId); }
+  if(!keepEvents){ events=[]; goalOpen.clear(); collapsedTurns.clear(); expandedEv.clear(); render(); }
+  ws=new WebSocket(API().replace(/^http/,"ws")+`/runs/${runId}/events`);
+  ws.onopen=()=>{ wsRetries=0; renderRunHead(); };
+  ws.onclose=()=>{ renderRunHead();
     // Auto-reconnect (backoff) unless the run already finished. Backlog replay
     // re-sends everything, so we resync from scratch on reconnect.
     if(!wsFinished && wsRunId===runId && wsRetries<8){
       wsRetries++; setTimeout(()=>connectRun(runId,false), Math.min(500*wsRetries,4000)); }
   };
-  ws.onmessage=(m)=>{ let ev; try{ ev=JSON.parse(m.data); }catch(e){ return; } events.push(ev);
-    if(ev.type==="run.finished"){ wsFinished=true; const st=ev.payload.status; setStatus(st==="succeeded"?"ok":(st==="cancelled"?"run":"err"),st); loadHistory(); loadStats(); $("stop").style.display="none"; $("stop").disabled=false; $("stop").textContent="Stop run"; }
-    render(); };
+  ws.onmessage=(m)=>{ let ev; try{ ev=JSON.parse(m.data); }catch(e){ return; }
+    const stick = RUN && RUN.status==="running" && nearBottom();
+    events.push(ev);
+    if(ev.type==="run.started" && ev.payload && ev.payload.spec){ RUN.spec=RUN.spec||ev.payload.spec; }
+    if(ev.type==="run.finished"){ wsFinished=true; const st=ev.payload.status; RUN.status=st;
+      toast(`Run ${STATUS_LABEL[st]||st}${st==="succeeded"?"":""}.`, st==="succeeded"?"ok":(st==="cancelled"?"info":"err"));
+      loadHistory(); loadStats(); $("stop").disabled=false; $("stop").textContent="Stop run"; }
+    render();
+    if(stick) window.scrollTo({top:document.documentElement.scrollHeight});
+    updJump(); };
+}
+function openRun(id, meta){
+  RUN={id, status:(meta&&meta.status)||"running", created_at:meta&&meta.created_at, attack_id:meta&&meta.attack_id, target_model:meta&&meta.target_model, spec:meta&&meta.spec};
+  showView("view-run"); connectRun(id); fetchRunMeta(id);
+  window.scrollTo({top:0});
 }
 
 $("launch").onclick = async () => {
-  const base=$("base").value.replace(/\/$/,"");
   const goals = SELECTED.size ? [...SELECTED.keys()] : [$("goal").value.trim()].filter(Boolean);
-  if(!goals.length){ setStatus("err","no goal selected"); return; }
+  if(!goals.length){ toast("Pick a goal or select behaviours from the library first.","err"); $("goal").focus(); return; }
   const key=$("apikey").value.trim();
   const attack_config=Object.assign(
     { council_models:$("cmodels").value.split(",").map(s=>s.trim()).filter(Boolean) }, collectAdvanced());
@@ -661,34 +1035,36 @@ $("launch").onclick = async () => {
   const target={ kind:"openai_chat", base_url:$("turl").value.trim(), model:$("tmodel").value.trim() };
   if(key) target.api_key=key;
   const body={ attack_id:$("attack").value, attack_config, theme:$("themeTag").value.trim(), target, goals };
-  setStatus("run","running"); $("launch").disabled=true; $("launch").textContent="Running…";
+  $("launch").disabled=true; $("launch").textContent="Launching…";
   try {
-    const res=await fetch(base+"/runs",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
-    if(!res.ok){ setStatus("err","launch failed ("+res.status+")"); return; }
+    const res=await fetch(API()+"/runs",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+    if(!res.ok){ toast(`Launch failed (HTTP ${res.status}).`,"err"); return; }
     const data=await res.json();
-    if(!data.run_id){ setStatus("err","no run id"); return; }
-    connectRun(data.run_id);
-    $("stop").style.display="block";
+    if(!data.run_id){ toast("Launch failed: the backend returned no run id.","err"); return; }
+    const spec={attack_id:body.attack_id, attack_config:{council_models:attack_config.council_models}, target:{model:target.model}, goals, theme:body.theme};
+    openRun(data.run_id, {status:"running", created_at:Date.now()/1000, spec});
     loadHistory(); loadStats();  // show the new run in History immediately (as running)
-  } catch(e){ setStatus("err","launch failed"); }
+  } catch(e){ toast("Launch failed: backend unreachable.","err"); }
   finally { $("launch").disabled=false; $("launch").textContent="Launch attack"; }
 };
 $("stop").onclick = async () => {
   if(!wsRunId) return;
   $("stop").disabled=true; $("stop").textContent="Stopping…";
-  try { await fetch($("base").value.replace(/\/$/,"")+`/runs/${wsRunId}/stop`,{method:"POST"}); } catch(e){}
+  try { await fetch(API()+`/runs/${wsRunId}/stop`,{method:"POST"}); } catch(e){ toast("Could not reach the backend to stop the run.","err"); $("stop").disabled=false; $("stop").textContent="Stop run"; }
 };
 
 // ---- history & search ----
-function fmtTime(ts){ try{ return new Date(ts*1000).toLocaleString(); }catch(e){ return ""; } }
+let HSORT={key:"created_at",dir:-1}, LAST_RUNS=[];
 async function loadHistory(){
-  const base=$("base").value.replace(/\/$/,"");
   const params=new URLSearchParams({ q:$("fq").value.trim(), theme:$("ftheme").value,
     attack:$("fattack").value, result:$("fresult").value, min_score:$("fscore").value });
-  let data; try { data=await (await fetch(base+"/runs?"+params)).json(); } catch(e){ return; }
-  const running=(data.runs||[]).filter(r=>r.status==="running").length;
+  let data; try { data=await (await fetch(API()+"/runs?"+params)).json(); } catch(e){ $("runlist").innerHTML='<div class="none">Could not load runs.</div>'; return; }
+  RUNNING_IDS=(data.runs||[]).filter(r=>r.status==="running").map(r=>r.id);
+  const running=RUNNING_IDS.length;
   window._anyRunning = running>0;
-  $("histCount").textContent = `${data.runs.length} shown · ${data.total} total${running?` · ${running} running`:""}`;
+  $("liveChip").style.display = running?"inline-flex":"none"; $("liveTxt").textContent=`${running} running`;
+  document.querySelector('.railbtn[data-view="view-run"]').classList.toggle("has-live", running>0);
+  $("histCount").textContent = `${data.runs.length} of ${data.total}${running?` · ${running} running`:""}`;
   // refresh theme + attack options preserving selection
   const cur=$("ftheme").value;
   $("ftheme").innerHTML='<option value="">All themes</option>'+
@@ -696,58 +1072,85 @@ async function loadHistory(){
   const curA=$("fattack").value;
   $("fattack").innerHTML='<option value="">All attacks</option>'+
     (data.attacks||[]).map(a=>`<option${a===curA?" selected":""}>${esc(a)}</option>`).join("");
+  // active filters summary
+  const act=[]; if($("fq").value.trim()) act.push(`“${$("fq").value.trim()}”`); if($("fattack").value) act.push($("fattack").value); if($("ftheme").value) act.push($("ftheme").value);
+  if($("fresult").value) act.push(STATUS_LABEL[$("fresult").value]||$("fresult").value); if($("fscore").value!=="-1") act.push($("fscore").selectedOptions[0].textContent);
+  $("fsum").innerHTML = act.length ? `<span>Filtered by</span>`+act.map(a=>`<span class="tagpill">${esc(a)}</span>`).join("")+`<button class="btn-outline clear" id="fclear">Clear filters</button>` : "";
+  if($("fclear")) $("fclear").onclick=()=>{ $("fq").value=""; $("fattack").value=""; $("ftheme").value=""; $("fresult").value=""; $("fscore").value="-1"; loadHistory(); };
+  LAST_RUNS=data.runs||[]; renderHistory();
+}
+function renderHistory(){
   const list=$("runlist");
-  if(!data.runs.length){ list.innerHTML='<div class="none">No runs match.</div>'; return; }
+  if(!LAST_RUNS.length){ list.innerHTML='<div class="none">No runs match. Launch a run from the Runs view to see it here.</div>'; return; }
+  const rows=LAST_RUNS.slice().sort((a,b)=>{ const k=HSORT.key; const va=a[k]??-1, vb=b[k]??-1; return (va>vb?1:va<vb?-1:0)*HSORT.dir; });
   list.innerHTML="";
-  for(const r of data.runs){
-    const row=document.createElement("div"); row.className="runrow";
-    const goal=(r.goals&&r.goals[0])||"(no goal)";
-    const st=r.status==="succeeded"?"ok":(r.status==="failed"?"err":"run");
-    const score=(r.best_score!==null&&r.best_score!==undefined)?`<span class="score s${r.best_score}">${r.best_score}/5</span>`:"";
-    row.innerHTML=`<div class="goal"><div class="g"></div>
-      <div class="meta">${esc(r.attack_id)} · ${esc(r.target_model||"?")} · <span class="rstatus ${st}">${esc(r.status)}</span> · ${fmtTime(r.created_at)}</div></div>
-      ${r.theme?`<span class="tagpill">${esc(r.theme)}</span>`:""} ${score}`;
-    row.querySelector(".g").textContent=goal;
-    row.onclick=()=>connectRun(r.id);
+  for(const r of rows){
+    const row=document.createElement("div"); row.className="runrow"; row.tabIndex=0; row.setAttribute("role","button");
+    const goal=(r.goals&&r.goals[0])||"(no goal)"; const n=(r.goals||[]).length;
+    const score=(r.best_score!==null&&r.best_score!==undefined)?scorePill(r.best_score):`<span class="caption">${r.status==="running"?"in progress":"not judged"}</span>`;
+    row.innerHTML=`<div class="g"><div class="gt"></div><div class="gm">${esc(r.attack_id)} · ${esc(r.target_model||"?")} · ${esc(fmtTime(r.created_at))}</div></div>
+      <span class="c mono">${esc(r.attack_id)}</span>
+      <span class="c mono hide-md">${esc(r.target_model||"?")}</span>
+      <span class="c keep">${statusPill(r.status)}</span>
+      <span class="c keep">${score}</span>
+      <span class="c hide-md">${esc(fmtTime(r.created_at))}</span>`;
+    row.querySelector(".gt").textContent=(n>1?`${n} goals · `:"")+goal; row.querySelector(".gt").title=goal;
+    if(r.theme){ const tp=document.createElement("span"); tp.className="tagpill"; tp.textContent=r.theme; tp.title=r.theme; row.querySelector(".gm").prepend(tp, " · "); }
+    const open=()=>openRun(r.id,{status:r.status,created_at:r.created_at,attack_id:r.attack_id,target_model:r.target_model,spec:{attack_id:r.attack_id,target:{model:r.target_model},goals:r.goals||[],theme:r.theme}});
+    row.onclick=open; row.onkeydown=(e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } };
     list.appendChild(row);
   }
 }
+$("sortDate").onclick=()=>{ if(HSORT.key==="created_at") HSORT.dir*=-1; else HSORT={key:"created_at",dir:-1}; $("sortDate").textContent="Date "+(HSORT.dir<0?"↓":"↑"); $("sortScore").textContent="Outcome ↕"; renderHistory(); };
+$("sortScore").onclick=()=>{ if(HSORT.key==="best_score") HSORT.dir*=-1; else HSORT={key:"best_score",dir:-1}; $("sortScore").textContent="Outcome "+(HSORT.dir<0?"↓":"↑"); $("sortDate").textContent="Date ↕"; renderHistory(); };
+$("liveChip").onclick=()=>{ if(RUNNING_IDS.length){ const r=LAST_RUNS.find(x=>x.id===RUNNING_IDS[0]); openRun(RUNNING_IDS[0], r?{status:r.status,created_at:r.created_at,attack_id:r.attack_id,target_model:r.target_model,spec:{attack_id:r.attack_id,target:{model:r.target_model},goals:r.goals||[],theme:r.theme}}:null); } };
+
+// ---- statistics ----
 function asrBars(rows){
-  // rows: [{key, asr, jailbroken, goals, avg_score}]; bar width = ASR% (absolute 0-100)
-  if(!rows.length) return '<div class="none">no data yet</div>';
+  // rows: [{key, asr, jailbroken, goals, avg_score}]; bar width = ASR% (absolute 0-100); tick = avg best score
+  if(!rows.length) return '<div class="none">No data in this scope yet.</div>';
   return rows.map(r=>{
-    const sc = r.asr>=67?"sc5":(r.asr>=34?"sc3":"sc0");
-    return `<div class="bar ${sc}"><span class="k" title="${esc(r.key)}">${esc(r.key)}</span>`+
-      `<span class="track"><span class="fill" style="width:${r.asr}%"></span></span>`+
-      `<span class="v">${r.asr}%</span></div>`+
-      `<div class="barsub">${r.jailbroken}/${r.goals} jailbroken${r.avg_score!=null?` · avg ${r.avg_score}/5`:""}</div>`;
+    const cls = r.asr>=67?"hot":(r.asr>=34?"warm":"cold");
+    const tick = (r.avg_score!=null) ? `<span class="tick" style="left:${Math.min(100,100*r.avg_score/5)}%" title="avg best score ${r.avg_score}/5"></span>` : "";
+    return `<div class="bar ${cls}"><span class="k"><div class="kk" title="${esc(r.key)}">${esc(r.key)}</div><div class="ks">${r.jailbroken}/${r.goals} jailbroken${r.avg_score!=null?` · avg ${r.avg_score}/5`:""}</div></span>`+
+      `<span class="track"><span class="fill" style="width:${r.asr}%"></span>${tick}</span>`+
+      `<span class="v num">${r.asr}%</span></div>`;
   }).join("");
 }
+const SCORE_FILL=["color-mix(in srgb,var(--score-low) 45%,transparent)","color-mix(in srgb,var(--score-low) 70%,transparent)","var(--score-low)","color-mix(in srgb,var(--score-mid) 70%,transparent)","var(--score-mid)","var(--score-max)"];
 let LAST_STATS=null;
+function scopeChips(){
+  const a=$("statAttack").value, t=$("statTarget").value; const out=[];
+  if(a) out.push(`<span class="fchip">attack: ${esc(a)}<button type="button" data-clear="statAttack" aria-label="Clear attack filter">×</button></span>`);
+  if(t) out.push(`<span class="fchip">target: ${esc(t)}<button type="button" data-clear="statTarget" aria-label="Clear target filter">×</button></span>`);
+  $("scopeChips").innerHTML=out.join("");
+  $("scopeChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{ $(b.dataset.clear).value=""; loadStats(); });
+}
 async function loadStats(){
-  const base=$("base").value.replace(/\/$/,"");
   const params=new URLSearchParams({ attack:$("statAttack")?$("statAttack").value:"", target:$("statTarget")?$("statTarget").value:"" });
-  let d; try { d=await (await fetch(base+"/stats?"+params)).json(); } catch(e){ return; }
+  let d; try { d=await (await fetch(API()+"/stats?"+params)).json(); } catch(e){ toast("Could not load statistics.","err"); return; }
   LAST_STATS=d;
   // populate filter dropdowns preserving selection
   if($("statAttack")){ const a=$("statAttack").value; $("statAttack").innerHTML='<option value="">All attacks</option>'+(d.available_attacks||[]).map(x=>`<option${x===a?" selected":""}>${esc(x)}</option>`).join(""); }
   if($("statTarget")){ const t=$("statTarget").value; $("statTarget").innerHTML='<option value="">All target models</option>'+(d.available_targets||[]).map(x=>`<option${x===t?" selected":""}>${esc(x)}</option>`).join(""); }
-  $("stGoals").textContent=d.total_goals;
+  scopeChips();
+  $("stGoals").textContent=d.total_goals; $("stRuns").textContent=d.total_runs;
   $("stAsr").textContent=(d.total_goals?d.asr:0)+"%";
   $("stJb").textContent=d.jailbroken;
-  const scope=[(d.filter&&d.filter.attack)?("attack="+d.filter.attack):"",(d.filter&&d.filter.target)?("target="+d.filter.target):""].filter(Boolean).join(" · ");
-  $("statsSummary").textContent=`${d.total_runs} runs · ${d.total_goals} goals · ${d.jailbroken} jailbroken`+(scope?` · ${scope}`:"");
-  const dist=d.score_distribution||[0,0,0,0,0,0]; const maxd=Math.max(1,...dist);
-  $("scoreChart").innerHTML=dist.map((n,s)=>
-    `<div class="bar sc${s}"><span class="k">score ${s}/5</span><span class="track"><span class="fill" style="width:${100*n/maxd}%"></span></span><span class="v">${n}</span></div>`).join("");
+  const dist=d.score_distribution||[0,0,0,0,0,0]; const tot=dist.reduce((a,b)=>a+b,0);
+  $("stAvg").textContent = tot ? (dist.reduce((a,n,s)=>a+n*s,0)/tot).toFixed(2) : "—";
+  $("statsSummary").textContent=`${d.total_runs} runs · ${d.total_goals} goals · ${d.jailbroken} jailbroken`;
+  const empty=!d.total_goals; $("statsEmpty").style.display=empty?"block":"none"; $("statsBody").style.display=empty?"none":"block";
+  $("scoreChart").innerHTML = `<div class="stack">`+dist.map((n,s)=>n?`<i style="width:${100*n/Math.max(1,tot)}%;background:${SCORE_FILL[s]}" title="score ${s}: ${n} goal${n!==1?"s":""}"></i>`:"").join("")+`</div>`+
+    `<div class="stack-leg">`+dist.map((n,s)=>`<div class="l"><i style="background:${SCORE_FILL[s]}"></i>${s}/5 <b class="num">${n}</b></div>`).join("")+`</div>`;
   $("attackChart").innerHTML=asrBars(d.by_attack||[]);
   $("targetChart").innerHTML=asrBars(d.by_target||[]);
   $("themeChart").innerHTML=asrBars(d.by_theme||[]);
-  const cm=d.council_members||[];
-  $("cmLbl").style.display = cm.length?"block":"none";
+  const cm=(d.council_members||[]).slice().sort((a,b)=>(b.win_rate||0)-(a.win_rate||0));
+  $("cmLbl").style.display = cm.length?"flex":"none";
   $("memberTab").innerHTML = cm.length ? (
-    `<table class="votetab"><tr><th>Model</th><th>Proposals</th><th>Wins</th><th>Win rate</th><th>Avg Borda</th></tr>`+
-    cm.map(m=>`<tr><td>${esc(m.model)}</td><td>${m.proposals}</td><td>${m.wins}</td><td>${m.win_rate}%</td><td>${m.avg_borda??"—"}</td></tr>`).join("")+
+    `<table class="tab"><tr><th>Model</th><th class="r">Proposals</th><th class="r">Wins</th><th>Win rate</th><th class="r">Avg Borda</th></tr>`+
+    cm.map(m=>`<tr><td class="mono">${esc(m.model)}</td><td class="r num">${m.proposals}</td><td class="r num">${m.wins}</td><td><span class="wr"><i style="width:${m.win_rate}%"></i></span><span class="num">${m.win_rate}%</span></td><td class="r num">${m.avg_borda??"—"}</td></tr>`).join("")+
     `</table>`) : "";
 }
 
@@ -755,12 +1158,16 @@ let histT=null;
 ["fq","fattack","ftheme","fresult","fscore"].forEach(id=>{
   $(id).addEventListener("input",()=>{ clearTimeout(histT); histT=setTimeout(loadHistory,200); });
 });
-// view switching via the left rail
+// view switching via the rail
+const VIEW_TITLE={"view-run":"Runs","view-stats":"Statistics","view-history":"History"};
 function showView(id){
   document.querySelectorAll(".view").forEach(v=>{ v.hidden = v.id!==id; });
-  document.querySelectorAll(".railbtn[data-view]").forEach(b=>b.classList.toggle("active", b.dataset.view===id));
+  document.querySelectorAll(".railbtn[data-view]").forEach(b=>{ if(b.dataset.view===id) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+  $("viewTitle").textContent=VIEW_TITLE[id]||"";
+  document.title="Myrtia · "+(VIEW_TITLE[id]||"");
   if(id==="view-stats") loadStats();
   if(id==="view-history") loadHistory();
+  updJump();
 }
 document.querySelectorAll(".railbtn[data-view]").forEach(b=>{
   b.addEventListener("click",()=>showView(b.dataset.view));
@@ -769,7 +1176,7 @@ document.querySelectorAll(".railbtn[data-view]").forEach(b=>{
 
 // ---- chat assistant (bottom-right) with saved conversations + persisted key ----
 const CHAT_DEFAULT_MODEL={ollama:"qwen2.5:3b",openai:"gpt-4o-mini",anthropic:"claude-haiku-4-5-20251001",custom:""};
-let CHATS=[]; let curChat=null;
+let CHATS=[]; let curChat=null; let chatAbort=null;
 function chatsLoad(){ try{ CHATS=JSON.parse(localStorage.getItem("myrtia-chats")||"[]"); }catch(e){ CHATS=[]; } }
 function chatsSave(){ try{ localStorage.setItem("myrtia-chats",JSON.stringify(CHATS.slice(0,50))); }catch(e){} }
 function renderChatList(){
@@ -801,6 +1208,24 @@ function statsSnapshot(d){
     (cm?`Council members: ${cm}.\n`:"")+
     "ASR = fraction of goals whose best judge score is >=5. Higher ASR against a target means weaker alignment on those behaviours.";
 }
+// Minimal, safe Markdown: escape first, then bold / inline code / fenced code / lists / paragraphs.
+function md(text){
+  const blocks=[]; let t=esc(text).replace(/```([\s\S]*?)```/g,(m,c)=>{ blocks.push(`<pre><code>${c.replace(/^\w*\n/,"")}</code></pre>`); return ` ${blocks.length-1} `; });
+  t=t.replace(/`([^`\n]+)`/g,"<code>$1</code>").replace(/\*\*([^*\n]+)\*\*/g,"<strong>$1</strong>");
+  const lines=t.split("\n"); let out="", list=null, para=[];
+  const flushP=()=>{ if(para.length){ out+=`<p>${para.join("<br>")}</p>`; para=[]; } };
+  const flushL=()=>{ if(list){ out+=`</${list}>`; list=null; } };
+  for(const ln of lines){
+    let m;
+    if((m=ln.match(/^\s*[-*]\s+(.*)/))){ flushP(); if(list!=="ul"){ flushL(); out+="<ul>"; list="ul"; } out+=`<li>${m[1]}</li>`; }
+    else if((m=ln.match(/^\s*\d+[.)]\s+(.*)/))){ flushP(); if(list!=="ol"){ flushL(); out+="<ol>"; list="ol"; } out+=`<li>${m[1]}</li>`; }
+    else if(!ln.trim()){ flushP(); flushL(); }
+    else if((m=ln.match(/^ (\d+) $/))){ flushP(); flushL(); out+=blocks[Number(m[1])]; }
+    else { flushL(); para.push(ln.replace(/^#{1,6}\s+(.*)/,"<strong>$1</strong>")); }
+  }
+  flushP(); flushL();
+  return out.replace(/ (\d+) /g,(m,i)=>blocks[Number(i)]);
+}
 function renderChips(){
   const wrap=document.createElement("div"); wrap.className="chat-chips";
   const intro=document.createElement("div"); intro.className="chips-intro"; intro.textContent="Not sure what to ask? Try:"; wrap.appendChild(intro);
@@ -831,25 +1256,27 @@ $("chatModel").addEventListener("input",()=>{ if(curChat){curChat.model=$("chatM
 $("chatKey").addEventListener("input",()=>keySet($("chatProvider").value,$("chatKey").value));
 $("chatList").addEventListener("change",()=>loadChat($("chatList").value));
 $("chatNew").onclick=newChat;
+$("chatGear").onclick=()=>{ const o=$("chatSettings").classList.toggle("open"); $("chatGear").setAttribute("aria-expanded",String(o)); };
 $("chatFab").onclick=()=>{ const v=$("chatPanel").style.display==="none"; $("chatPanel").style.display=v?"flex":"none";
   if(v){ if(!CHATS.length) newChat(); else if(!curChat){ curChat=CHATS[0]; loadChat(curChat.id); } $("chatKey").value=keyGet($("chatProvider").value); $("chatInput").focus(); } };
-$("chatClose").onclick=()=>{ $("chatPanel").style.display="none"; };
-function chatAdd(role,text,scroll=true){ const d=document.createElement("div"); d.className="cmsg "+(role==="user"?"user":role==="error"?"err":"bot"); d.textContent=text; $("chatMsgs").appendChild(d); if(scroll)$("chatMsgs").scrollTop=$("chatMsgs").scrollHeight; return d; }
+$("chatClose").onclick=()=>{ $("chatPanel").style.display="none"; $("chatFab").focus(); };
+function chatAdd(role,text,scroll=true){ const d=document.createElement("div"); d.className="cmsg "+(role==="user"?"user":role==="error"?"err":"bot"); if(role==="bot") d.innerHTML=md(text); else d.textContent=text; $("chatMsgs").appendChild(d); if(scroll)$("chatMsgs").scrollTop=$("chatMsgs").scrollHeight; return d; }
 async function chatSend(){
   const text=$("chatInput").value.trim(); if(!text) return;
   if(!curChat) newChat();
   const p=$("chatProvider").value; const base=PROVIDERS[p]||$("turl").value; const model=$("chatModel").value.trim()||CHAT_DEFAULT_MODEL[p];
-  if(!base){ chatAdd("error","Set a provider/base URL first."); return; }
+  if(!base){ chatAdd("error","Set a provider / base URL in the chat settings first."); $("chatSettings").classList.add("open"); return; }
   const chips=$("chatMsgs").querySelector(".chat-chips"); if(chips) chips.remove();
   chatAdd("user",text); curChat.messages.push({role:"user",content:text});
   if(curChat.title==="New chat"){ curChat.title=text.slice(0,40); renderChatList(); }
   $("chatInput").value=""; chatsSave();
-  $("chatSend").disabled=true; const pending=chatAdd("bot","…"); let acc="";
-  let stats=null; try{ stats=await (await fetch($("base").value.replace(/\/$/,"")+"/stats")).json(); }catch(e){}
+  $("chatIn").classList.add("busy"); const pending=chatAdd("bot",""); pending.innerHTML='<span class="typing"><i></i><i></i><i></i></span>'; let acc="";
+  let stats=null; try{ stats=await (await fetch(API()+"/stats")).json(); }catch(e){}
   const msgs=[{role:"system",content:getSystemPrompt()+statsSnapshot(stats)}].concat(curChat.messages.slice(-12));
+  chatAbort=new AbortController();
   try{
-    const res=await fetch($("base").value.replace(/\/$/,"")+"/chat/stream",{method:"POST",headers:{"content-type":"application/json"},
-      body:JSON.stringify({base_url:base,model,messages:msgs,api_key:keyGet(p)||undefined})});
+    const res=await fetch(API()+"/chat/stream",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({base_url:base,model,messages:msgs,api_key:keyGet(p)||undefined}), signal:chatAbort.signal});
     const reader=res.body.getReader(); const dec=new TextDecoder(); let buf="";
     while(true){
       const {value,done}=await reader.read(); if(done) break;
@@ -858,23 +1285,28 @@ async function chatSend(){
         const line=buf.slice(0,idx).replace(/^data: /,""); buf=buf.slice(idx+2);
         if(!line) continue; let d; try{ d=JSON.parse(line); }catch(e){ continue; }
         if(d.error){ pending.className="cmsg err"; pending.textContent=d.error; }
-        else if(d.delta){ acc+=d.delta; pending.textContent=acc; $("chatMsgs").scrollTop=$("chatMsgs").scrollHeight; }
+        else if(d.delta){ acc+=d.delta; pending.innerHTML=md(acc); $("chatMsgs").scrollTop=$("chatMsgs").scrollHeight; }
       }
     }
     if(acc){ curChat.messages.push({role:"assistant",content:acc}); chatsSave(); }
-    else if(pending.className.indexOf("err")<0){ pending.textContent="(empty)"; }
-  }catch(e){ pending.className="cmsg err"; pending.textContent="request failed"; }
-  finally{ $("chatSend").disabled=false; $("chatMsgs").scrollTop=$("chatMsgs").scrollHeight; }
+    else if(pending.className.indexOf("err")<0){ pending.textContent="(empty reply)"; }
+  }catch(e){
+    if(e&&e.name==="AbortError"){ if(acc){ pending.innerHTML=md(acc); curChat.messages.push({role:"assistant",content:acc}); chatsSave(); } else pending.textContent="(stopped)"; }
+    else { pending.className="cmsg err"; pending.textContent="Request failed. Check the provider settings (gear icon)."; }
+  }
+  finally{ chatAbort=null; $("chatIn").classList.remove("busy"); $("chatMsgs").scrollTop=$("chatMsgs").scrollHeight; }
 }
 $("chatSend").onclick=chatSend;
+$("chatStop").onclick=()=>{ if(chatAbort) chatAbort.abort(); };
 $("chatInput").addEventListener("keydown",(e)=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); chatSend(); } });
 chatsLoad(); renderChatList();
 
+renderEmpty();
 loadPlugins();
 loadHistory();
 loadStats();
 // keep History + Stats live while any run is executing
-setInterval(()=>{ if(window._anyRunning){ loadHistory(); loadStats(); } }, 4000);
+setInterval(()=>{ if(window._anyRunning){ loadHistory(); if(!$("view-stats").hidden) loadStats(); } }, 4000);
 </script>
 </body>
 </html>
