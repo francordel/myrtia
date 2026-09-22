@@ -1210,7 +1210,7 @@ function statsSnapshot(d){
 }
 // Minimal, safe Markdown: escape first, then bold / inline code / fenced code / lists / paragraphs.
 function md(text){
-  const blocks=[]; let t=esc(text).replace(/```([\s\S]*?)```/g,(m,c)=>{ blocks.push(`<pre><code>${c.replace(/^\w*\n/,"")}</code></pre>`); return ` ${blocks.length-1} `; });
+  const blocks=[]; let t=esc(text).replace(/```([\s\S]*?)```/g,(m,c)=>{ blocks.push(`<pre><code>${c.replace(/^\w*\n/,"")}</code></pre>`); return `\u0000${blocks.length-1}\u0000`; });
   t=t.replace(/`([^`\n]+)`/g,"<code>$1</code>").replace(/\*\*([^*\n]+)\*\*/g,"<strong>$1</strong>");
   const lines=t.split("\n"); let out="", list=null, para=[];
   const flushP=()=>{ if(para.length){ out+=`<p>${para.join("<br>")}</p>`; para=[]; } };
@@ -1220,11 +1220,11 @@ function md(text){
     if((m=ln.match(/^\s*[-*]\s+(.*)/))){ flushP(); if(list!=="ul"){ flushL(); out+="<ul>"; list="ul"; } out+=`<li>${m[1]}</li>`; }
     else if((m=ln.match(/^\s*\d+[.)]\s+(.*)/))){ flushP(); if(list!=="ol"){ flushL(); out+="<ol>"; list="ol"; } out+=`<li>${m[1]}</li>`; }
     else if(!ln.trim()){ flushP(); flushL(); }
-    else if((m=ln.match(/^ (\d+) $/))){ flushP(); flushL(); out+=blocks[Number(m[1])]; }
+    else if((m=ln.match(/^\u0000(\d+)\u0000$/))){ flushP(); flushL(); out+=blocks[Number(m[1])]; }
     else { flushL(); para.push(ln.replace(/^#{1,6}\s+(.*)/,"<strong>$1</strong>")); }
   }
   flushP(); flushL();
-  return out.replace(/ (\d+) /g,(m,i)=>blocks[Number(i)]);
+  return out.replace(/\u0000(\d+)\u0000/g,(m,i)=>blocks[Number(i)]);
 }
 function renderChips(){
   const wrap=document.createElement("div"); wrap.className="chat-chips";
