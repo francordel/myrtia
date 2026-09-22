@@ -82,13 +82,11 @@
   .hero .mark { width:104px; height:104px; margin-bottom:18px; }
   .hero .hero-wm { font-size:clamp(30px,5vw,46px); line-height:1; color:var(--text-1); margin-right:-.28em; }
   .hero .hero-tag { font-family:"Montserrat","Avenir Next","Helvetica Neue",sans-serif; font-weight:400; font-size:clamp(11px,1.4vw,13px); letter-spacing:.42em; text-transform:uppercase; color:var(--text-2); margin:12px 0 0; margin-right:-.42em; }
-  .hero h1 { font-size:clamp(32px,5.4vw,56px); line-height:1.12; margin:0 0 20px; font-weight:300; letter-spacing:.01em; }
-  .hero h1 span { color:var(--accent); font-weight:400; }
-  .hero p.sub { font-size:clamp(17px,2.2vw,20px); color:var(--text-2); max-width:760px; margin:0 auto 30px; }
+  .hero h1 { font-size:clamp(28px,5.4vw,56px); line-height:1.12; margin:0 0 18px; font-weight:300; letter-spacing:.01em; text-wrap:balance; }
+  .hero p.sub { font-size:clamp(17px,2.2vw,20px); color:var(--text-2); max-width:620px; margin:0 auto 30px; text-wrap:balance; }
   .hero .cta { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-  .hero .meta { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:22px; }
   .chip { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:var(--r-pill); font-size:12px; font-weight:500; letter-spacing:.02em; background:var(--surface-2); color:var(--text-2); border:1px solid var(--border); }
-  .shot { margin:48px auto 0; max-width:1120px; padding:0 24px; }
+  .shot { margin:44px auto 0; max-width:1120px; padding:0 24px; }
   .shot .frame { border:1px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:var(--shadow-2); background:var(--surface-1); }
   .shot .frame .bar { height:36px; display:flex; align-items:center; gap:6px; padding:0 14px; background:var(--surface-2); border-bottom:1px solid var(--border); }
   .shot .frame .bar i { width:10px; height:10px; border-radius:50%; background:var(--border-strong); }
@@ -97,20 +95,17 @@
   .shot figcaption { text-align:center; color:var(--text-3); font-size:13px; margin-top:12px; }
 
   section { padding:72px 0; border-top:1px solid var(--border); }
-  h2 { font-size:clamp(24px,3.6vw,34px); margin:12px 0 14px; font-weight:400; letter-spacing:0; line-height:1.2; }
+  h2 { font-size:clamp(24px,3.6vw,34px); margin:0 0 12px; font-weight:400; letter-spacing:0; line-height:1.2; text-wrap:balance; }
   .lead { color:var(--text-2); max-width:760px; font-size:17px; margin:0; }
 
   .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:36px; }
   @media (max-width:900px){ .grid { grid-template-columns:1fr 1fr; } }
   @media (max-width:620px){ .grid { grid-template-columns:1fr; } }
   .card { background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg); padding:22px; box-shadow:var(--shadow-1); transition:border-color .15s,transform .15s; position:relative; overflow:hidden; }
-  .card::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent); }
   .card:hover { border-color:var(--border-strong); transform:translateY(-2px); }
   .card h3 { margin:0 0 6px; font-size:16px; font-weight:500; letter-spacing:.01em; }
   .card p { color:var(--text-2); font-size:14.5px; margin:0; }
   .card .k { font-size:10.5px; font-weight:500; letter-spacing:.2em; text-transform:uppercase; color:var(--text-3); display:block; margin-bottom:8px; }
-  .card.c1::before { background:var(--role-proposal); } .card.c2::before { background:var(--role-critique); } .card.c3::before { background:var(--role-vote); }
-  .card.c4::before { background:var(--role-chairman); } .card.c5::before { background:var(--role-judge); } .card.c6::before { background:var(--role-target); }
 
   /* attacks */
   table.tab { width:100%; border-collapse:collapse; margin-top:32px; font-size:14.5px; }
@@ -159,10 +154,10 @@
   /* providers + security */
   .logos { display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; }
   .logos .chip { font-size:14px; padding:8px 16px; color:var(--text-1); }
-  .sec { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:32px; }
-  @media (max-width:900px){ .sec { grid-template-columns:1fr 1fr; } } @media (max-width:560px){ .sec { grid-template-columns:1fr; } }
-  .sec .it { background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-md); padding:16px 18px; font-size:14.5px; color:var(--text-2); }
-  .sec .it b { display:block; color:var(--text-1); font-weight:500; margin-bottom:4px; }
+  .sec { display:grid; grid-template-columns:1fr 1fr; gap:18px 40px; margin-top:28px; max-width:900px; }
+  @media (max-width:640px){ .sec { grid-template-columns:1fr; } }
+  .sec .it { padding:14px 0 0; border-top:1px solid var(--border); font-size:14.5px; color:var(--text-2); }
+  .sec .it b { display:block; color:var(--text-1); font-weight:500; margin-bottom:2px; }
 
   /* compare */
   table.cmp td.yes { color:var(--success); font-weight:700; } table.cmp td.no { color:var(--text-3); }
@@ -211,70 +206,64 @@
       <div class="hero-wm wordmark">Myrtia</div>
       <div class="hero-tag">Adversarial security for AI</div>
     </div>
-    <div class="overline">Open source · Apache-2.0 · agent-native</div>
-    <h1>Red team the frontier.<br>Watch every <span>move</span>.</h1>
-    <p class="sub">Myrtia red-teams LLMs and AI agents from one console: six attack strategies, from a deliberating council of attacker models to classic jailbreak templates, a 278-behaviour library, live deliberation, Attack Success Rate analytics and a built-in assistant that knows your numbers.</p>
+    <h1>Red team the frontier.<br>Watch every move.</h1>
+    <p class="sub">Open-source red teaming for LLMs and AI agents: six attack strategies, a deliberating council of attacker models, and every turn streamed live.</p>
     <div class="cta">
       <a class="btn primary" href="#start">Get started</a>
-      <a class="btn ghost" href="#console">See the console</a>
-    </div>
-    <div class="meta">
-      <span class="chip">6 attack strategies</span><span class="chip">278 HarmBench behaviours · 5 themes</span><span class="chip">OpenAI · Anthropic · vLLM · Ollama</span><span class="chip">Self-hosted, keys never leave your browser</span>
+      <a class="btn ghost" href="https://github.com/francordel/myrtia">GitHub</a>
     </div>
   </div>
   <figure class="shot">
     <div class="frame"><div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8000 · Runs</span></div><img src="assets/shot-run.png" alt="Myrtia console: the launcher on the left and a council run on the right, with proposal, chairman prompt, target response and judge verdict" loading="eager" /></div>
-    <figcaption>A council run, replayed from history: proposal, chairman prompt, target response and judge verdict, colour-coded by role.</figcaption>
+    <figcaption>A council run: proposal, chairman prompt, target response and judge verdict, colour-coded by role.</figcaption>
   </figure>
 </header>
 
 <section id="console">
   <div class="wrap">
-    <div class="overline">The console</div>
     <h2>Configure, watch, measure.</h2>
-    <p class="lead">Three views and an assistant. Everything a run produces is persisted, searchable and replayable, and the same vocabulary follows you from the live stream to the dashboard.</p>
+    <p class="lead">Three views and an assistant. Every run is persisted, searchable and replayable.</p>
     <div class="grid">
-      <div class="card c1"><span class="k">Runs</span><h3>A launcher in four steps</h3><p>Attack, target, behaviours, council. Advanced settings stay one click away, the launch button never leaves the screen, and the run header tells you what you are looking at: attack, agents, target, date, status and best score.</p></div>
-      <div class="card c4"><span class="k">Live deliberation</span><h3>Every turn, as it happens</h3><p>Proposals, Borda ranking, the exact prompt the chairman sent, the target's answer and the judge's rationale stream over WebSocket. Goals collapse as they finish; a goal index keeps long runs navigable.</p></div>
-      <div class="card c3"><span class="k">Behaviour library</span><h3>278 behaviours, five themes</h3><p>HarmBench behaviours across chemical and biological, cybercrime, harassment, illegal activity and misinformation, searchable and selectable per theme. Or type your own goals.</p></div>
-      <div class="card c5"><span class="k">Statistics</span><h3>ASR you can defend</h3><p>Attack Success Rate by attack, target model and theme, the judge-score distribution, average best score and, for council runs, how often each agent's proposal won the vote.</p></div>
-      <div class="card c6"><span class="k">History</span><h3>Search, filter, replay</h3><p>Every run filtered by text, attack, theme, run status and outcome, sortable by date or score. One click reopens the full deliberation.</p></div>
-      <div class="card c2"><span class="k">Assistant</span><h3>A chat that knows your stats</h3><p>A built-in assistant, on the provider and model of your choice, that explains attacks, helps configure a run and answers questions about your live numbers.</p></div>
+      <div class="card"><span class="k">Runs</span><h3>A launcher in four steps</h3><p>Attack, target, behaviours, council. The launch button never leaves the screen.</p></div>
+      <div class="card"><span class="k">Live deliberation</span><h3>Every turn, as it happens</h3><p>Proposals, Borda ranking, the prompt sent, the target's answer and the judge's verdict, streamed over WebSocket.</p></div>
+      <div class="card"><span class="k">Behaviour library</span><h3>278 behaviours, five themes</h3><p>HarmBench behaviours by theme and search, or your own goals.</p></div>
+      <div class="card"><span class="k">Statistics</span><h3>ASR you can defend</h3><p>Attack Success Rate by attack, target and theme, score distribution and council win rates.</p></div>
+      <div class="card"><span class="k">History</span><h3>Search, filter, replay</h3><p>Filter by text, attack, theme, status and outcome. One click reopens the deliberation.</p></div>
+      <div class="card"><span class="k">Assistant</span><h3>A chat that knows your stats</h3><p>Any provider, any model. It explains attacks and answers questions about your live numbers.</p></div>
     </div>
   </div>
 </section>
 
 <section id="attacks">
   <div class="wrap">
-    <div class="overline">Attacks</div>
     <h2>Six strategies, one contract.</h2>
-    <p class="lead">Attacks are plugins with an ARES-compatible contract and their own advanced settings in the UI. Council attacks carry an in-loop judge; the self-contained baselines record the raw target response for you to grade.</p>
+    <p class="lead">Attacks are plugins with an ARES-compatible contract. Council attacks carry an in-loop judge; the baselines record the raw response.</p>
     <table class="tab">
       <tr><th>Attack</th><th>What it does</th><th>Scoring</th></tr>
-      <tr><td><span class="mono">council</span></td><td class="c">N attacker models propose, cross-critique and vote (Borda Top-1); a chairman synthesises the winner and strikes the target. Each turn is a fresh standalone prompt.</td><td><span class="pill judge">in-loop judge 0-5</span></td></tr>
-      <tr><td><span class="mono">council-crescendo</span></td><td class="c">The same council pipeline, but the target conversation accumulates across turns: a gradual multi-turn escalation.</td><td><span class="pill judge">in-loop judge 0-5</span></td></tr>
-      <tr><td><span class="mono">direct</span></td><td class="c">Sends each behaviour to the target verbatim. The baseline every other attack is compared against.</td><td><span class="pill raw">raw response</span></td></tr>
-      <tr><td><span class="mono">human-jailbreak</span></td><td class="c">Wraps each behaviour in known public persona templates (DAN, AIM, dev-mode and others) and sends every variant.</td><td><span class="pill raw">raw response</span></td></tr>
-      <tr><td><span class="mono">obfuscation</span></td><td class="c">Encodes the behaviour (base64, ROT13, leetspeak, reversed) and asks the target to decode and comply. Tests whether safety filtering survives surface transforms.</td><td><span class="pill raw">raw response</span></td></tr>
-      <tr><td><span class="mono">payload-splitting</span></td><td class="c">Breaks the behaviour into innocuous fragments and asks the target to reassemble and act on them, so the harmful string never appears verbatim.</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">council</span></td><td class="c">N attacker models propose, cross-critique and vote (Borda Top-1); a chairman synthesises the winner and strikes the target. Each turn is a fresh prompt.</td><td><span class="pill judge">in-loop judge 0-5</span></td></tr>
+      <tr><td><span class="mono">council-crescendo</span></td><td class="c">The same pipeline, but the target conversation accumulates across turns: gradual escalation.</td><td><span class="pill judge">in-loop judge 0-5</span></td></tr>
+      <tr><td><span class="mono">direct</span></td><td class="c">Sends each behaviour verbatim. The baseline every other attack is compared against.</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">human-jailbreak</span></td><td class="c">Wraps each behaviour in known persona templates (DAN, AIM, dev-mode and others).</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">obfuscation</span></td><td class="c">Encodes the behaviour (base64, ROT13, leetspeak, reversed) and asks the target to decode and comply.</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">payload-splitting</span></td><td class="c">Splits the behaviour into innocuous fragments the target is asked to reassemble.</td><td><span class="pill raw">raw response</span></td></tr>
     </table>
     <div class="split">
       <div class="panel">
         <h3>Build your own agentic attack</h3>
         <ul>
           <li><b>Council models.</b> Any mix of local and hosted models as attacking agents.</li>
-          <li><b>Council system prompt.</b> The attacker persona and context shared by the agents, or the built-in red-team prompt.</li>
+          <li><b>Council system prompt.</b> The attacker persona shared by the agents.</li>
           <li><b>Critique style.</b> Hardened or soft cross-critique.</li>
-          <li><b>Chairman and judge.</b> Separate models for synthesis and grading, with their own endpoint.</li>
-          <li><b>Turns and voting.</b> Turn budget per behaviour, Borda cross-critique and chairman synthesis on or off.</li>
+          <li><b>Chairman and judge.</b> Separate models for synthesis and grading.</li>
+          <li><b>Turns and voting.</b> Turn budget, Borda and chairman on or off.</li>
         </ul>
       </div>
       <div class="panel">
         <h3>The realistic threat model</h3>
         <ul>
-          <li>Safety-aligned frontier models refuse to author jailbreaks, so they make poor attackers.</li>
-          <li>Myrtia pairs a <b>permissive open-model council</b> (for example local Ollama models) with the <b>frontier target</b> under test.</li>
-          <li>A capable judge is load-bearing: a weak judge inflates ASR. Use the best model you can afford as judge.</li>
+          <li>Frontier models refuse to author jailbreaks, so they make poor attackers.</li>
+          <li>Myrtia pairs a <b>permissive open-model council</b> with the <b>frontier target</b> under test.</li>
+          <li>A capable judge is load-bearing: a weak judge inflates ASR.</li>
         </ul>
       </div>
     </div>
@@ -283,15 +272,14 @@
 
 <section id="how">
   <div class="wrap">
-    <div class="overline">How it works</div>
-    <h2>Propose. Critique. Vote. Synthesise. Strike. Judge.</h2>
-    <p class="lead">One council turn, for one behaviour. The colours are the ones the console uses for each role.</p>
+    <h2>One council turn.</h2>
+    <p class="lead">For one behaviour. The colours are the ones the console uses for each role.</p>
     <div class="steps">
       <div class="step s1"><div class="n">01</div><b>Propose</b><span>each council member drafts an attack prompt</span></div>
       <div class="step s2"><div class="n">02</div><b>Critique</b><span>members rank each other's proposals</span></div>
-      <div class="step s3"><div class="n">03</div><b>Vote</b><span>Borda aggregation picks the Top-1 proposal</span></div>
+      <div class="step s3"><div class="n">03</div><b>Vote</b><span>Borda aggregation picks the Top-1</span></div>
       <div class="step s4"><div class="n">04</div><b>Synthesise</b><span>the chairman refines it into the prompt to send</span></div>
-      <div class="step s5"><div class="n">05</div><b>Strike</b><span>the prompt goes to the target model</span></div>
+      <div class="step s5"><div class="n">05</div><b>Strike</b><span>the prompt goes to the target</span></div>
       <div class="step s6"><div class="n">06</div><b>Judge</b><span>the reply is graded 0-5; 5 is a full jailbreak</span></div>
     </div>
   </div>
@@ -299,19 +287,18 @@
 
 <section id="results">
   <div class="wrap">
-    <div class="overline">Results</div>
     <h2>Two questions, two answers.</h2>
-    <p class="lead">"Did the run finish?" and "did the attack work?" are different questions, so Myrtia never mixes their vocabulary. Green is never used to mean "completed".</p>
+    <p class="lead">"Did the run finish?" and "did the attack work?" never share a vocabulary. Green never means "completed".</p>
     <div class="vocab">
       <div class="panel">
         <h3>Run status</h3>
         <div class="pills"><span class="status completed"><i></i>Completed</span><span class="status running"><i></i>Running</span><span class="status error"><i></i>Error</span><span class="status"><i></i>Cancelled</span></div>
-        <p style="margin:0;color:var(--text-2);font-size:14.5px">Whether the process ran to the end. A run can be Completed and still have resisted every attack.</p>
+        <p style="margin:0;color:var(--text-2);font-size:14.5px">Whether the process ran to the end.</p>
       </div>
       <div class="panel">
         <h3>Outcome</h3>
         <div class="pills"><span class="score low">0/5 <small>resisted</small></span><span class="score mid">3/5 <small>partial</small></span><span class="score max">5/5 <small>jailbroken</small></span></div>
-        <p style="margin:0;color:var(--text-2);font-size:14.5px">The judge's best score for a goal. ASR is the fraction of goals whose best score reached 5.</p>
+        <p style="margin:0;color:var(--text-2);font-size:14.5px">The judge's best score for a goal. ASR is the share of goals that reached 5.</p>
       </div>
     </div>
     <figure class="shot" style="padding:0;margin-top:36px">
@@ -323,34 +310,31 @@
 
 <section id="providers">
   <div class="wrap">
-    <div class="overline">Providers</div>
     <h2>Mix any models, in any role.</h2>
-    <p class="lead">Every role reaches its model through an OpenAI-compatible endpoint, so council, chairman, judge and target can each live somewhere different.</p>
+    <p class="lead">Council, chairman, judge and target each reach their model through an OpenAI-compatible endpoint.</p>
     <div class="logos"><span class="chip">OpenAI</span><span class="chip">Anthropic</span><span class="chip">Self-hosted vLLM</span><span class="chip">Local Ollama</span><span class="chip">Any OpenAI-compatible API</span></div>
   </div>
 </section>
 
 <section id="security">
   <div class="wrap">
-    <div class="overline">Security by default</div>
-    <h2>Built to be run on your own machine.</h2>
-    <p class="lead">Myrtia is a local, single-operator tool. It is careful with your keys and with what the backend is allowed to reach.</p>
+    <h2>Built to run on your own machine.</h2>
+    <p class="lead">A local, single-operator tool that is careful with your keys and with what the backend can reach.</p>
     <div class="sec">
-      <div class="it"><b>Keys stay in the browser</b>API keys are supplied at run time, stored only in your browser, and redacted from every API response and from the live event stream.</div>
-      <div class="it"><b>SSRF guard</b>Link-local and cloud-metadata addresses are refused for targets, council calls and the assistant; loopback and LAN endpoints remain available.</div>
-      <div class="it"><b>Local-only CORS and CSP</b>The API only answers the local origins you run it on, with a Content Security Policy, frame denial and nosniff headers.</div>
-      <div class="it"><b>Durable history</b>Runs, events and statistics persist in a local SQLite database with owner-only permissions and survive restarts.</div>
-      <div class="it"><b>Stop any run</b>Cooperative cancellation ends a running attack at the next turn, from the run header.</div>
-      <div class="it"><b>Escaped everywhere</b>Model names, themes and rationales from the API are escaped before rendering; external links must be http(s).</div>
+      <div class="it"><b>Keys stay in the browser</b>Supplied at run time, stored locally, redacted from every response and event.</div>
+      <div class="it"><b>SSRF guard</b>Link-local and cloud-metadata addresses are refused; loopback and LAN stay available.</div>
+      <div class="it"><b>Local-only CORS and CSP</b>The API answers local origins only, with CSP, frame denial and nosniff.</div>
+      <div class="it"><b>Durable history</b>Runs and statistics persist in a local SQLite database with owner-only permissions.</div>
+      <div class="it"><b>Stop any run</b>Cooperative cancellation at the next turn, from the run header.</div>
+      <div class="it"><b>Escaped everywhere</b>API text is escaped before rendering; external links must be http(s).</div>
     </div>
   </div>
 </section>
 
 <section id="compare">
   <div class="wrap">
-    <div class="overline">Why Myrtia</div>
     <h2>The multi-agent threat model, made observable.</h2>
-    <p class="lead">Library and CLI tools such as IBM ARES and NVIDIA garak are the reference for LLM red teaming. Myrtia keeps their rigour and adds autonomous multi-agent attackers, a real console and analytics.</p>
+    <p class="lead">IBM ARES and NVIDIA garak set the bar for library and CLI red teaming. Myrtia adds autonomous multi-agent attackers, a console and analytics.</p>
     <table class="tab cmp">
       <tr><th>&nbsp;</th><th>Library / CLI tools</th><th>Myrtia</th></tr>
       <tr><td>Multi-agent attacker council with Borda voting and chairman synthesis</td><td class="no">—</td><td class="yes">Yes</td></tr>
@@ -367,9 +351,8 @@
 
 <section id="start">
   <div class="wrap">
-    <div class="overline">Quick start</div>
     <h2>Running in three commands.</h2>
-    <p class="lead">Python 3.11+. A local Ollama with a small model is enough to see a council deliberate without any API key.</p>
+    <p class="lead">Python 3.11+. A local Ollama with a small model is enough to see a council deliberate, no API key needed.</p>
     <pre class="code"><span class="c"># install</span>
 cd backend &amp;&amp; pip install -e . &amp;&amp; pip install -e vendor/ares-council
 
@@ -385,9 +368,8 @@ open http://127.0.0.1:8000/</pre>
   <div class="wrap">
     <div class="callout">
       <h2>Red team the frontier.</h2>
-      <p class="lead">Open source, agent-native, and built to be watched.</p>
       <a class="btn primary" href="https://github.com/francordel/myrtia">Star on GitHub</a>
-      <div class="note">Myrtia is for authorised AI safety and security testing only. It probes models and agents; it ships no network offensive tooling.</div>
+      <div class="note">For authorised AI safety and security testing only.</div>
     </div>
   </div>
 </section>
