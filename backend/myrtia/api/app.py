@@ -56,7 +56,8 @@ _ASSETS = {"icon.png", "icon-light.png", "icon-dark.png"}
 
 @app.get("/")
 async def index() -> FileResponse:
-    return FileResponse(_STANDALONE)
+    # Never cache the app shell, so UI updates show up without a hard refresh.
+    return FileResponse(_STANDALONE, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
 
 @app.get("/assets/{name}")
