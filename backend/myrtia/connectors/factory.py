@@ -19,6 +19,7 @@ from typing import Any
 
 from myrtia.connectors.base import (
     AnthropicMessagesConnector,
+    Connector,
     HTTPAgentConnector,
     OpenAIChatConnector,
 )
@@ -29,7 +30,7 @@ from myrtia.connectors.base import (
 _KINDS = {"openai_chat", "openai", "anthropic", "http_agent"}
 
 
-def build_target_connector(spec: dict[str, Any]) -> Any:
+def build_target_connector(spec: dict[str, Any]) -> Connector:
     """Return a Myrtia connector for the given target spec."""
     kind = spec.get("kind", "openai_chat")
     if kind not in _KINDS:

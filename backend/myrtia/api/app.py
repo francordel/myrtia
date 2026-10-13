@@ -30,17 +30,19 @@ from myrtia.orchestrator.runner import ORCHESTRATOR
 from myrtia.plugins.base import REGISTRY as PLUGINS
 from myrtia.store.runs import RunSpec, STORE
 
-# Import side effect: register the bundled plugins.
-import myrtia.plugins.contextual_jailbreak  # noqa: F401
-import myrtia.plugins.council  # noqa: F401
-import myrtia.plugins.crescendo  # noqa: F401
-import myrtia.plugins.direct  # noqa: F401
-import myrtia.plugins.graph  # noqa: F401
-import myrtia.plugins.garak_probes  # noqa: F401
-import myrtia.plugins.human_jailbreak  # noqa: F401
-import myrtia.plugins.obfuscation  # noqa: F401
-import myrtia.plugins.payload_splitting  # noqa: F401
-import myrtia.plugins.tap  # noqa: F401
+# Register the bundled plugins by discovering every module in the plugins package.
+# Open/Closed: a new attack registers itself just by being a module here — no edit to
+# the core, and third parties can drop one in the package. Private (_-prefixed) and
+# support modules (the contract base, prompt/data helpers) don't define a plugin.
+import importlib as _importlib
+import pkgutil as _pkgutil
+import myrtia.plugins as _plugins_pkg
+
+_PLUGIN_SKIP = {"base", "council_prompts", "council_official"}
+for _m in _pkgutil.iter_modules(_plugins_pkg.__path__):
+    if _m.name.startswith("_") or _m.name in _PLUGIN_SKIP:
+        continue
+    _importlib.import_module(f"myrtia.plugins.{_m.name}")  # noqa: F401 (registers on import)
 
 app = FastAPI(title="Myrtia", version="0.0.1")
 _RUN_TASKS: set = set()  # live run tasks (avoid fire-and-forget GC)

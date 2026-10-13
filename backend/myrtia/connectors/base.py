@@ -17,7 +17,7 @@ import json as _json
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 import requests
 
@@ -33,6 +33,22 @@ class Response:
     status: Status
     response: str = ""
     error_message: str = ""
+
+
+@runtime_checkable
+class Connector(Protocol):
+    """Structural contract every Myrtia target connector honours.
+
+    The concrete connectors below (OpenAI-compatible, Anthropic-native, generic HTTP
+    agent) share this surface by convention. Declaring it lets the factory and the
+    plugins depend on this abstraction instead of ``Any`` (Dependency Inversion), and
+    makes the contract checkable rather than purely duck-typed.
+    """
+
+    config: dict[str, Any]
+    tokens: dict[str, int]
+
+    def generate(self, prompt: Any, **kwargs: Any) -> "Response": ...
 
 
 class OpenAIChatConnector:

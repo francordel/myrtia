@@ -10,10 +10,10 @@ requires-python = ">=3.11"
 license = "Apache-2.0"
 version = "0.0.1"
 dependencies = [
-    "fastapi",
-    "uvicorn[standard]",
-    "requests",
-    "openpyxl",  # Excel export of the audit report (/audit?format=xlsx)
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "requests>=2.31",
+    "openpyxl>=3.1",  # Excel export of the audit report (/audit?format=xlsx)
     # Attack plugins (ARES-compatible). CouncilAttack is hosted, not forked:
     #   "ares-council",   # add once packaged/available on the target machine
 ]
@@ -23,6 +23,7 @@ dev = [
     "pytest",
     "pytest-bdd",
     "httpx",  # Starlette TestClient (offline API tests in tests/test_api.py)
+    "ruff",   # lint + format — `ruff check` / `ruff format` (config in [tool.ruff])
 ]
 
 [tool.setuptools.packages.find]
@@ -38,3 +39,13 @@ markers = [
 #   pytest -m "not e2e"     fast, offline (encodings + evaluator)
 #   pytest -m e2e           runs every attack against a live endpoint
 # Point the e2e tier elsewhere with MYRTIA_TEST_ENDPOINT / MYRTIA_TEST_MODEL.
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# Start pragmatic: pyflakes (F, real errors) + pycodestyle (E). Line length is
+# enforced via line-length above, not E501, so existing long lines don't block CI.
+select = ["E", "F"]
+ignore = ["E501"]
