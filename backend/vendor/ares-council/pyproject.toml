@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ares-council"
+description = "ARES Council Attack Plugin — multi-model collaborative adversarial prompt generation"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  {name = "ARES Team"},
+]
+license = "Apache-2.0"
+dependencies = [
+    "requests",
+    "tqdm",
+]
+version = "0.1"
+
+[tool.setuptools.packages.find]
+where = ["src"]

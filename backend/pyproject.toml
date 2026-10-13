@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "myrtia"
+description = "Myrtia — agent-native AI/LLM red-teaming framework (backend)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+version = "0.0.1"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "requests",
+    "openpyxl",  # Excel export of the audit report (/audit?format=xlsx)
+    # Attack plugins (ARES-compatible). CouncilAttack is hosted, not forked:
+    #   "ares-council",   # add once packaged/available on the target machine
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-bdd",
+    "httpx",  # Starlette TestClient (offline API tests in tests/test_api.py)
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["myrtia*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "e2e: needs a live model endpoint (local Ollama); skipped by -m 'not e2e'",
+]
+# The behaviour-driven suite:
+#   pytest -m "not e2e"     fast, offline (encodings + evaluator)
+#   pytest -m e2e           runs every attack against a live endpoint
+# Point the e2e tier elsewhere with MYRTIA_TEST_ENDPOINT / MYRTIA_TEST_MODEL.

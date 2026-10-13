@@ -1,0 +1,39 @@
+# Auditoría de claridad de la interfaz · 28 septiembre 2026
+
+Alcance: Firefox, ventana de 1302 × 768, frontend local `127.0.0.1:8000`, ambas modalidades de Runs, History, Statistics, Plugins y `site/index.html`. Inspección visual y del código; no se lanzaron ataques ni se instalaron plugins durante esta auditoría. Las capturas son del estado real de esta máquina, no maquetas. No se ha verificado aquí la versión móvil.
+
+## Hallazgos prioritarios
+
+| Prioridad | Vista | Hallazgo y consecuencia | Cambio recomendado | Evidencia |
+| --- | --- | --- | --- | --- |
+| Alta | Statistics | El panel anuncia **Critical** y **3 jailbroken** incluyendo goals explícitamente inocuos: «Say one friendly sentence about the sea» y «Write one sentence about the sea» figuran como *Critical*. Un usuario puede interpretar smoke tests o errores del juez como vulnerabilidades reales. El PDF/Excel/CSV/JSON/Markdown del audit reutiliza esta agregación. | Separar corridas de prueba de evaluaciones de seguridad mediante una marca explícita de run; excluirlas por defecto del informe y permitir incluirlas con un filtro visible. Mostrar que la severidad procede de un juez automático y permitir revisión de falsos positivos. | [Resumen](stats-summary.png), [historial con goal inocuo 5/5](history-scroll.png). Código: `frontend/standalone.html:1682`, `backend/myrtia/api/app.py:522`, `backend/myrtia/audit.py:65`. |
+| Alta | History → Runs | Al abrir un run `council` desde History, a la izquierda permanece el launcher editable de **contextual-jailbreak** con `qwen2.5:1.5b`; a la derecha se reproduce el run `council` contra `qwen2.5:3b`. Parece que el formulario describe el run abierto, aunque no lo hace. | Ocultar/colapsar el launcher en modo replay o mostrar una ficha de configuración **inmutable de ese run**, diferenciada de «New run». | [Run reabierto](run-from-history.png). |
+| Media | Runs · Standard | El selector de behaviours está confinado a una columna de ~290 px, pese a que la mayor parte de la pantalla queda vacía. Dataset cae a una segunda línea; el panel abierto muestra solo unas tres filas y el bloque fijo de lanzamiento ocupa el pie de la columna. Buscar y comparar goals largos exige mucho scroll. | Dar al selector un panel ancho o expandible sobre el área derecha cuando se abre, manteniendo el formulario compacto cuando está cerrado. | [Selector Standard](standard-goals.png). |
+| Media | Runs · ambos modos | Con **0 selected** sigue activo «Launch attack» y se usa silenciosamente el goal predefinido del limerick sobre un gato. La biblioteca está por debajo del botón en Agentic y plegada en Standard. Se puede iniciar un smoke test cuando se creía estar preparando un dataset. No es un fallo técnico del fallback, sino de expectativas. | Mostrar junto al botón «Se ejecutará: goal manual · harmless test» si no hay selección; distinguir claramente «Smoke test» de «Run de dataset» y confirmar antes de lanzar cuando el usuario haya cambiado filtros sin seleccionar filas. | [Agentic builder](../../../site/assets/shot-agentic-builder.png), [Standard](standard-goals.png). Código: `frontend/standalone.html:1564`, `frontend/standalone.html:2412`. |
+| Media | Navegación | Cambiar desde una vista ya desplazada a Statistics o History conserva el scroll del documento. History puede abrir a mitad de la tabla, sin título ni filtros visibles; se pierde la orientación. | En `showView`, volver al inicio al cambiar de sección (conservando el scroll solo al volver explícitamente a un run). | [History abierto a mitad de lista](history-scroll.png). Código: `frontend/standalone.html:1745`. |
+| Media | Plugins | Garak y PyRIT ofrecen «Install» aunque sus tarjetas dicen que los adaptadores de ataque de Myrtia siguen *in progress*. Instalar una dependencia pesada puede no añadir ninguna estrategia utilizable a Runs. | Cambiar el CTA a «Install library (no Myrtia adapter yet)», o deshabilitarlo hasta que exista un adaptador funcional. Separar «integración activa» de «biblioteca instalada». | [Plugins](plugins.png). |
+| Baja | Web pública | El bloque Console dice «Three views» cuando la app tiene cuatro (Runs, Statistics, History, Plugins). La tarjeta de biblioteca dice «278 behaviours, five themes» sin mencionar los datasets descargables. El titular siguiente dice «Six strategies» pero enumera trece ataques. Son señales visibles de documentación obsoleta. | Actualizar las cifras o eliminar los números que cambian a menudo; incluir Plugins y los datasets en la descripción. | [Web pública](site-copy.png). Código: `site/index.html`. |
+
+## Mejoras secundarias
+
+- En History, «Outcome» ofrece umbrales (`Score ≥ 1`, `≥ 3`, `≥ 4`, `5`), pero no filtros directos para **resisted (0–2)** o **not judged**. El nombre sugiere un filtro de estado, no solo de puntuación mínima. [Vista History](history-scroll.png), `frontend/standalone.html:903`.
+- Tras añadir datasets al selector, History y Statistics aún no permiten acotar por dataset. La identidad de origen tampoco aparece en las filas de History. Es una extensión de producto, no un fallo de la funcionalidad solicitada para Runs.
+- En Statistics, «Risk categories» usa el campo libre *theme/tag*; aparecen etiquetas de pruebas como `demo-latent`, `graph-smoke` o `bigger-models` como si fueran categorías de riesgo. Conviene separar **categoría taxonómica** de **etiqueta de ejecución**. [Resumen](stats-summary.png).
+
+## Orden de resolución sugerido
+
+1. Evitar informes de riesgo engañosos: marcar y filtrar smoke tests; diferenciar puntuación automática de hallazgo confirmado.
+2. Corregir el replay de History y el scroll entre vistas para que la navegación no muestre contexto falso o incompleto.
+3. Mejorar la elección de goals en Standard y hacer explícito el fallback manual antes de lanzar.
+4. Aclarar CTAs de Plugins y actualizar la web pública.
+
+## Resolución posterior
+
+Los hallazgos principales y secundarios se han corregido en `frontend/standalone.html`, `backend/myrtia/api/app.py`, `backend/myrtia/store/runs.py`, `backend/myrtia/audit.py` y `site/index.html`:
+
+- Los nuevos runs guardan una finalidad (`security`, `smoke` o `unreviewed`) y el dataset de cada goal. Statistics y `/audit` incluyen por defecto **solo** evaluaciones clasificadas como `security`; el usuario puede cambiar el alcance. Los runs históricos quedan `unreviewed` hasta que se reclasifiquen desde el detalle del run. No se ha supuesto automáticamente que un goal antiguo era benigno o peligroso. Los informes señalan que la severidad es una señal del juez automático, no un hallazgo confirmado.
+- History filtra por propósito, dataset, resisted (0–2) y not judged, y muestra la procedencia en cada fila. El replay oculta el launcher editable y presenta la configuración persistida de solo lectura. El cambio de sección restablece el scroll.
+- Standard usa una biblioteca ancha, desplegada y cargada desde el inicio; Agentic conserva el selector debajo del grafo. Ambos muestran el fallback manual y piden confirmación si se han cambiado filtros sin seleccionar goals. Los goals curados pasan por defecto a `security`; las cargas propias quedan `unreviewed`.
+- Plugins diferencia los adaptadores disponibles de las bibliotecas sin estrategia Myrtia. La web pública elimina cifras obsoletas, menciona los datasets y Plugins, y sustituye la captura antigua de Statistics (con resultados inocuos presentados como riesgo) por una explicación del nuevo alcance.
+
+Verificado en Firefox local (1302 × 768): Standard, Agentic, Statistics, History, replay, Plugins y web pública. Suite offline: **66 pruebas correctas**, 21 E2E omitidas porque necesitan modelo local. No se ejecutaron ataques nuevos para esta comprobación. En esta instalación había 50 runs históricos: todos permanecen `unreviewed` hasta revisión humana, por lo que Statistics aparece vacío por defecto. La vista móvil sigue pendiente de una comprobación visual específica.
