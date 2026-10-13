@@ -66,7 +66,8 @@ def _run(attack: str, goal: str, target_connector) -> dict:
         strat.set_event_emitter(lambda t, p: events.append((t, p)))
     if hasattr(strat, "set_cancel_check"):
         strat.set_cancel_check(lambda: False)
-    strat.load_goals([goal])
+    if hasattr(strat, "load_goals"):  # mirror the orchestrator (not every strategy has it)
+        strat.load_goals([goal])
     results = strat.attack()
     return {"events": events, "results": results or []}
 

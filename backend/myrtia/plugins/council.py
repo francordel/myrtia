@@ -23,6 +23,54 @@ from myrtia.plugins.base import PluginSpec, register
 def _build(config: dict[str, Any], target_connector: Any, *, crescendo: bool):
     from ares_council import CouncilAttack
 
+    class _MyrtiaCouncil(CouncilAttack):
+        # Myrtia-side adapter for the vendored CouncilAttack.
+        def load_goals(self, goals: list[str]) -> None:
+            # Goal-ingestion seam. CouncilAttack otherwise reads its goals from an
+            # input_path file via generate(), which the Myrtia orchestrator never sets,
+            # so without this the operator's goal never reaches the council and attack()
+            # raises "No attack goals". Schema matches assets/attack_goals.json.
+            self.attack_goals = [{"goal": str(g), "label": 1, "context": ""} for g in goals]
+            self.attack_results = [dict(g) for g in self.attack_goals]
+
+        def set_event_emitter(self, emit) -> None:
+            self._myrtia_emit = emit
+
+        def attack(self, **kwargs: Any) -> list[dict]:
+            # This CouncilAttack build has no live per-turn hook, so we replay the
+            # completed deliberation as Myrtia events after the run: the UI gets the
+            # proposals, chairman prompt, target response and judge score per turn
+            # (not streamed live, but populated) instead of a black box.
+            results = super().attack(**kwargs)
+            emit = getattr(self, "_myrtia_emit", None)
+            if emit:
+                for r in results or []:
+                    goal = r.get("goal", "")
+                    try:
+                        emit("goal.started", {"goal": goal, "has_context": bool(r.get("context"))})
+                        for ti, t in enumerate(r.get("council_turns") or []):
+                            emit("turn.started", {"turn": ti + 1, "goal": goal})
+                            for p in (t.get("proposals") or []):
+                                emit("proposal.created",
+                                     {"model": p.get("model"),
+                                      "proposal": p.get("proposal") or p.get("prompt"),
+                                      "borda_rank": p.get("borda_rank")})
+                            if t.get("synthesized_prompt"):
+                                emit("chairman.synthesized",
+                                     {"synthesized_prompt": t.get("synthesized_prompt")})
+                            emit("target.responded",
+                                 {"target_prompt": t.get("target_prompt"),
+                                  "target_response": t.get("target_response")})
+                            if t.get("judge_score") is not None:
+                                emit("judge.scored",
+                                     {"score": t.get("judge_score"),
+                                      "rationale": t.get("judge_rationale")})
+                        emit("goal.finished",
+                             {"goal": goal, "best_score": r.get("best_score") or r.get("best")})
+                    except Exception:  # noqa: BLE001 - emission must never break the run
+                        pass
+            return results
+
     def _prefix(m: str) -> str:
         # Council/chairman/judge route to Ollama unless an explicit provider prefix
         # (openai/, ollama/) is given.
@@ -51,7 +99,7 @@ def _build(config: dict[str, Any], target_connector: Any, *, crescendo: bool):
         cfg["output_path"] = str(
             Path(tempfile.gettempdir()) / f"myrtia_council_{uuid.uuid4().hex}.json"
         )
-    return CouncilAttack(cfg, target_connector)
+    return _MyrtiaCouncil(cfg, target_connector)
 
 
 _COUNCIL_SCHEMA = [
