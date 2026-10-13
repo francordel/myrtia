@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Myrtia · Adversarial security for AI</title>
+<meta name="description" content="Myrtia is an open-source, agent-native red-teaming console for LLMs and AI agents: thirteen attack strategies, a deliberating council of attacker models, a behaviour library, live deliberation, ASR analytics and a built-in assistant." />
+<link rel="icon" type="image/png" href="assets/mark-light.png" media="(prefers-color-scheme: light)" />
+<link rel="icon" type="image/png" href="assets/mark-dark.png" media="(prefers-color-scheme: dark)" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Same tokens as the console (frontend/standalone.html) */
+  :root {
+    --bg:#0a0e17; --bg-grad:#0c1120;
+    --surface-1:#121826; --surface-2:#1a2130; --surface-3:#222a3b;
+    --border:#2a3446; --border-strong:#3a4558;
+    --text-1:#e4e7ee; --text-2:#9ba4b8; --text-3:#8b93a7;
+    --accent:#8ab4f8; --accent-bg:color-mix(in srgb,var(--accent) 12%,transparent);
+    --btn:#1a73e8; --btn-h:#3b82f6; --btn-fg:#fff;
+    --success:#81c995; --warning:#fdd663; --danger:#f28b82;
+    --role-proposal:#8ab4f8; --role-critique:#c58af9; --role-vote:#fdd663; --role-chairman:#78d9ec; --role-target:#9ba4b8; --role-judge:#81c995;
+    --score-low:#9ba4b8; --score-mid:#f0b429; --score-max:#ff6b6b; --score-max-fg:#1a0000;
+    --r-sm:6px; --r-md:8px; --r-lg:12px; --r-pill:999px;
+    --shadow-1:0 1px 2px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.3);
+    --shadow-2:0 2px 6px rgba(0,0,0,.5),0 12px 40px rgba(0,0,0,.45);
+    --mark:url("assets/mark-dark.png");
+  }
+  :root[data-theme="light"] {
+    --bg:#f8f9fa; --bg-grad:#e8f0fe;
+    --surface-1:#fff; --surface-2:#f1f3f4; --surface-3:#e8eaed;
+    --border:#dadce0; --border-strong:#bdc1c6;
+    --text-1:#202124; --text-2:#5f6368; --text-3:#5f6368;
+    --accent:#1a73e8; --btn:#1a73e8; --btn-h:#1666d3;
+    --success:#1e8e3e; --warning:#b06000; --danger:#d93025;
+    --role-proposal:#1a73e8; --role-critique:#a142f4; --role-vote:#f9ab00; --role-chairman:#12a4af; --role-target:#5f6368; --role-judge:#1e8e3e;
+    --score-low:#5f6368; --score-mid:#b06000; --score-max:#a50e0e; --score-max-fg:#fff;
+    --shadow-1:0 1px 2px rgba(60,64,67,.15),0 1px 3px rgba(60,64,67,.08);
+    --shadow-2:0 1px 3px rgba(60,64,67,.2),0 12px 40px rgba(60,64,67,.18);
+    --mark:url("assets/mark-light.png");
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; background:var(--bg); color:var(--text-1); font:16px/1.6 "Roboto",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  code,pre,.mono { font-family:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  :focus-visible { outline:none; box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 45%,transparent); border-radius:var(--r-sm); }
+  .wrap { max-width:1120px; margin:0 auto; padding:0 24px; }
+  .display, h1, h2, h3, .btn, nav .links a, .chip, .overline, .pill, .status, .score, .step b, .card .k, .sec .it b, .panel li b, table.tab th, .shot .frame .bar span, footer { font-family:"Montserrat","Avenir Next","Helvetica Neue",sans-serif; }
+  .wordmark { font-family:"Montserrat","Avenir Next","Helvetica Neue",sans-serif; font-weight:300; letter-spacing:.28em; text-transform:uppercase; }
+  .mark { display:inline-block; width:34px; height:34px; background:var(--mark) center/contain no-repeat; flex:none; }
+  .overline { font-size:11.5px; font-weight:500; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); }
+  .btn { display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:10px 20px; border-radius:var(--r-md); font-weight:500; font-size:14px; letter-spacing:.02em;
+    border:1px solid transparent; cursor:pointer; transition:background .15s,border-color .15s,transform .05s; text-decoration:none !important; }
+  .btn:active { transform:translateY(1px); }
+  .btn.primary { background:var(--btn); color:var(--btn-fg); }
+  .btn.primary:hover { background:var(--btn-h); }
+  .btn.ghost { background:transparent; color:var(--text-1); border-color:var(--border); }
+  .btn.ghost:hover { border-color:var(--accent); color:var(--accent); }
+  .btn.sm { min-height:36px; padding:6px 14px; font-size:14px; }
+  .icon-btn { width:40px; height:40px; border-radius:50%; border:1px solid var(--border); background:var(--surface-2); color:var(--text-2); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0; }
+  .icon-btn:hover { color:var(--accent); }
+  .icon-btn svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .icon-btn .moon { display:none; } :root[data-theme="light"] .icon-btn .moon { display:block; } :root[data-theme="light"] .icon-btn .sun { display:none; }
+
+  /* nav */
+  nav { position:sticky; top:0; z-index:20; background:color-mix(in srgb,var(--surface-1) 88%,transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--border); }
+  nav .wrap { display:flex; align-items:center; gap:18px; height:60px; }
+  .brand { display:flex; align-items:center; gap:10px; font-size:17px; color:var(--text-1); }
+  .brand:hover { text-decoration:none; }
+  nav .links { margin-left:auto; display:flex; gap:22px; align-items:center; }
+  nav .links a:not(.btn) { color:var(--text-2); font-size:13px; font-weight:500; letter-spacing:.04em; }
+  nav .links a:not(.btn):hover { color:var(--text-1); text-decoration:none; }
+  @media (max-width:820px){ nav .links a:not(.btn) { display:none; } }
+
+  /* hero */
+  header.hero { position:relative; padding:88px 0 56px; text-align:center;
+    background:radial-gradient(1000px 520px at 50% -10%,var(--bg-grad),transparent 65%),var(--bg); }
+  .hero .logo-lockup { display:flex; flex-direction:column; align-items:center; margin-bottom:34px; }
+  .hero .mark { width:104px; height:104px; margin-bottom:18px; }
+  .hero .hero-wm { font-size:clamp(30px,5vw,46px); line-height:1; color:var(--text-1); margin-right:-.28em; }
+  .hero .hero-tag { font-family:"Montserrat","Avenir Next","Helvetica Neue",sans-serif; font-weight:400; font-size:clamp(11px,1.4vw,13px); letter-spacing:.42em; text-transform:uppercase; color:var(--text-2); margin:12px 0 0; margin-right:-.42em; }
+  .hero h1 { font-size:clamp(28px,5.4vw,56px); line-height:1.12; margin:0 0 18px; font-weight:300; letter-spacing:.01em; text-wrap:balance; }
+  .hero p.sub { font-size:clamp(17px,2.2vw,20px); color:var(--text-2); max-width:620px; margin:0 auto 30px; text-wrap:balance; }
+  .hero .cta { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:var(--r-pill); font-size:12px; font-weight:500; letter-spacing:.02em; background:var(--surface-2); color:var(--text-2); border:1px solid var(--border); }
+  .shot { margin:44px auto 0; max-width:1120px; padding:0 24px; }
+  .shot .frame { border:1px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:var(--shadow-2); background:var(--surface-1); }
+  .shot .frame .bar { height:36px; display:flex; align-items:center; gap:6px; padding:0 14px; background:var(--surface-2); border-bottom:1px solid var(--border); }
+  .shot .frame .bar i { width:10px; height:10px; border-radius:50%; background:var(--border-strong); }
+  .shot .frame .bar span { margin-left:10px; font-size:12px; color:var(--text-3); }
+  .shot img { display:block; width:100%; height:auto; }
+  .shot figcaption { text-align:center; color:var(--text-3); font-size:13px; margin-top:12px; }
+  .builder-showcase .shot { padding:0; margin-top:32px; }
+
+  section { padding:72px 0; border-top:1px solid var(--border); }
+  h2 { font-size:clamp(24px,3.6vw,34px); margin:0 0 12px; font-weight:400; letter-spacing:0; line-height:1.2; text-wrap:balance; }
+  .lead { color:var(--text-2); max-width:760px; font-size:17px; margin:0; }
+
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:36px; }
+  @media (max-width:900px){ .grid { grid-template-columns:1fr 1fr; } }
+  @media (max-width:620px){ .grid { grid-template-columns:1fr; } }
+  .card { background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg); padding:22px; box-shadow:var(--shadow-1); transition:border-color .15s,transform .15s; position:relative; overflow:hidden; }
+  .card:hover { border-color:var(--border-strong); transform:translateY(-2px); }
+  .card h3 { margin:0 0 6px; font-size:16px; font-weight:500; letter-spacing:.01em; }
+  .card p { color:var(--text-2); font-size:14.5px; margin:0; }
+  .card .k { font-size:10.5px; font-weight:500; letter-spacing:.2em; text-transform:uppercase; color:var(--text-3); display:block; margin-bottom:8px; }
+
+  /* attacks */
+  table.tab { width:100%; border-collapse:collapse; margin-top:32px; font-size:14.5px; }
+  table.tab th, table.tab td { padding:12px 14px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+  table.tab th { color:var(--text-2); font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:.16em; }
+  table.tab td:first-child { white-space:nowrap; }
+  table.tab td .mono { font-size:13px; }
+  table.tab td.c { color:var(--text-2); }
+  .pill { display:inline-block; padding:2px 10px; border-radius:var(--r-pill); font-size:12px; font-weight:600; white-space:nowrap; }
+  .pill.judge { background:color-mix(in srgb,var(--role-judge) 18%,transparent); color:var(--role-judge); }
+  .pill.raw { background:var(--surface-2); color:var(--text-2); border:1px solid var(--border); }
+  .pill.council { background:var(--accent-bg); color:var(--accent); }
+  @media (max-width:720px){ table.tab th:nth-child(3), table.tab td:nth-child(3) { display:none; } table.tab td:first-child { white-space:normal; } }
+  .split { display:grid; grid-template-columns:1.2fr 1fr; gap:28px; align-items:start; margin-top:36px; }
+  @media (max-width:900px){ .split { grid-template-columns:1fr; } }
+  .panel { background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg); padding:22px; box-shadow:var(--shadow-1); }
+  .panel h3 { margin:0 0 10px; font-size:16px; font-weight:500; letter-spacing:.01em; }
+  .panel ul { margin:0; padding-left:18px; color:var(--text-2); font-size:14.5px; }
+  .panel li { margin:5px 0; }
+  .panel li b { color:var(--text-1); font-weight:500; }
+
+  /* steps */
+  .steps { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-top:36px; }
+  @media (max-width:900px){ .steps { grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:560px){ .steps { grid-template-columns:1fr 1fr; } }
+  .step { background:var(--surface-2); border-left:3px solid var(--border); border-radius:0 var(--r-md) var(--r-md) 0; padding:14px 14px 12px; }
+  .step .n { font-size:11px; color:var(--text-3); font-weight:700; }
+  .step b { display:block; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.16em; margin:2px 0 6px; }
+  .step span { color:var(--text-2); font-size:13px; line-height:1.45; display:block; }
+  .step.s1 { border-color:var(--role-proposal); } .step.s2 { border-color:var(--role-critique); } .step.s3 { border-color:var(--role-vote); }
+  .step.s4 { border-color:var(--role-chairman); } .step.s5 { border-color:var(--role-target); } .step.s6 { border-color:var(--role-judge); }
+
+  /* result vocabulary */
+  .vocab { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:32px; }
+  @media (max-width:720px){ .vocab { grid-template-columns:1fr; } }
+  .status { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:var(--r-pill); font-size:12px; font-weight:600; border:1px solid var(--border); color:var(--text-2); background:var(--surface-2); }
+  .status i { width:7px; height:7px; border-radius:50%; background:currentColor; display:inline-block; }
+  .status.running { color:var(--warning); } .status.error { color:var(--danger); } .status.completed { color:var(--text-1); }
+  .score { display:inline-flex; align-items:center; gap:5px; padding:2px 10px; border-radius:var(--r-pill); font-weight:700; font-size:12px; }
+  .score small { font-weight:500; }
+  .score.low { background:color-mix(in srgb,var(--score-low) 18%,transparent); color:var(--score-low); }
+  .score.mid { background:color-mix(in srgb,var(--score-mid) 20%,transparent); color:var(--score-mid); }
+  .score.max { background:var(--score-max); color:var(--score-max-fg); }
+  .pills { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 6px; }
+
+  /* providers + security */
+  .logos { display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; }
+  .logos .chip { font-size:14px; padding:8px 16px; color:var(--text-1); }
+  .sec { display:grid; grid-template-columns:1fr 1fr; gap:18px 40px; margin-top:28px; max-width:900px; }
+  @media (max-width:640px){ .sec { grid-template-columns:1fr; } }
+  .sec .it { padding:14px 0 0; border-top:1px solid var(--border); font-size:14.5px; color:var(--text-2); }
+  .sec .it b { display:block; color:var(--text-1); font-weight:500; margin-bottom:2px; }
+
+  /* compare */
+  table.cmp td.yes { color:var(--success); font-weight:700; } table.cmp td.no { color:var(--text-3); }
+
+  /* code */
+  pre.code { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-lg); padding:20px 22px; overflow:auto; font-size:13.5px; line-height:1.7; color:var(--text-1); margin-top:28px; }
+  pre.code .c { color:var(--text-3); } pre.code .k { color:var(--accent); }
+
+  .callout { background:var(--surface-1); border:1px solid var(--border); border-radius:16px; padding:44px; text-align:center; box-shadow:var(--shadow-1); }
+  .callout h2 { margin-top:0; font-weight:300; font-size:clamp(28px,4vw,40px); }
+  .callout .lead { margin:0 auto 24px; }
+  .note { margin-top:18px; color:var(--text-3); font-size:13px; }
+
+  footer { border-top:1px solid var(--border); padding:36px 0; color:var(--text-3); font-size:14px; }
+  footer .wrap { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center; }
+  footer { font-family:"Roboto",sans-serif; }
+  footer .brand { font-size:15px; }
+  footer .brand .mark { width:26px; height:26px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#"><span class="mark" role="img" aria-label="Myrtia"></span><span class="wordmark">Myrtia</span></a>
+    <div class="links">
+      <a href="#console">Console</a>
+      <a href="#attacks">Attacks</a>
+      <a href="#how">How it works</a>
+      <a href="#results">Results</a>
+      <a href="#security">Security</a>
+      <a href="#start">Quick start</a>
+      <a class="btn ghost sm" href="https://github.com/francordel/myrtia">GitHub</a>
+      <button class="icon-btn" id="theme" aria-label="Toggle light / dark theme" title="Toggle light / dark">
+        <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="logo-lockup">
+      <span class="mark" role="img" aria-label="Myrtia leaf"></span>
+      <div class="hero-wm wordmark">Myrtia</div>
+      <div class="hero-tag">Adversarial security for AI</div>
+    </div>
+    <h1>Red team the frontier.<br>Watch every move.</h1>
+    <p class="sub">Open-source red teaming for LLMs and AI agents: thirteen attack strategies, a deliberating council of attacker models, and every turn streamed live.</p>
+    <div class="cta">
+      <a class="btn primary" href="#start">Get started</a>
+      <a class="btn ghost" href="https://github.com/francordel/myrtia">GitHub</a>
+    </div>
+  </div>
+  <figure class="shot">
+    <div class="frame"><div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8000 · Runs / Agentic builder</span></div><img src="assets/shot-agentic-builder.png" alt="Myrtia agentic graph builder showing a three-attacker circular council connected to a target and evaluator, with the goal library and dataset filters below" loading="eager" /></div>
+    <figcaption>The agentic graph builder: a three-attacker council, its target and evaluator, and the goal selector in one view.</figcaption>
+  </figure>
+</header>
+
+<section id="builder" class="builder-showcase">
+  <div class="wrap">
+    <span class="overline">Live deliberation</span>
+    <h2>Watch the council decide.</h2>
+    <p class="lead">Every run replays turn by turn: each attacker's proposal, the Borda vote, the chairman's synthesis, the target's response and the judge's verdict.</p>
+    <figure class="shot">
+      <div class="frame"><div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8000 · Runs</span></div><img src="assets/shot-run.png" alt="Myrtia console capture: a council run with proposals, chairman prompt, target response and judge verdict" loading="lazy" decoding="async" /></div>
+      <figcaption>A council run in replay: proposals, chairman prompt, target response and judge verdict.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="console">
+  <div class="wrap">
+    <h2>Configure, watch, measure.</h2>
+    <p class="lead">Runs, Statistics, History and Plugins, plus an assistant. Every run is persisted, searchable and replayable.</p>
+    <div class="grid">
+      <div class="card"><span class="k">Runs</span><h3>A launcher in four steps</h3><p>Attack, target, behaviours, council. The launch button never leaves the screen.</p></div>
+      <div class="card"><span class="k">Live deliberation</span><h3>Every turn, as it happens</h3><p>Proposals, Borda ranking, the prompt sent, the target's answer and the judge's verdict, streamed over WebSocket.</p></div>
+      <div class="card"><span class="k">Behaviour library</span><h3>Goals from multiple datasets</h3><p>HarmBench is included; download or upload more goal datasets, then filter by source and theme.</p></div>
+      <div class="card"><span class="k">Statistics</span><h3>ASR you can defend</h3><p>Attack Success Rate by attack, target and theme, score distribution and council win rates.</p></div>
+      <div class="card"><span class="k">History</span><h3>Search, filter, replay</h3><p>Filter by text, attack, theme, status and outcome. One click reopens the deliberation.</p></div>
+      <div class="card"><span class="k">Plugins</span><h3>Toolkits and goal datasets</h3><p>See what installs a usable attack adapter and what only installs an upstream library.</p></div>
+      <div class="card"><span class="k">Assistant</span><h3>A chat that knows your stats</h3><p>Any provider, any model. It explains attacks and answers questions about your live numbers.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="attacks">
+  <div class="wrap">
+    <h2>Attack strategies, one contract.</h2>
+    <p class="lead">Attacks are plugins with an ARES-compatible contract. Council attacks carry an in-loop judge; the baselines record the raw response.</p>
+    <table class="tab">
+      <tr><th>Attack</th><th>What it does</th><th>Scoring</th></tr>
+      <tr><td><span class="mono">council</span></td><td class="c">N attacker models propose, cross-critique and vote (Borda Top-1); a chairman synthesises the winner and strikes the target. Each turn is a fresh prompt.</td><td><span class="pill judge">in-loop judge 0-5</span></td></tr>
+      <tr><td><span class="mono">council-crescendo</span></td><td class="c">The same pipeline, but the target conversation accumulates across turns: gradual escalation.</td><td><span class="pill judge">in-loop judge 0-5</span></td></tr>
+      <tr><td><span class="mono">direct</span></td><td class="c">Sends each behaviour verbatim. The baseline every other attack is compared against.</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">crescendo</span></td><td class="c">A single helper model escalates a multi-turn conversation toward the goal, exploiting conversational consistency; a judge grades each answer (ARES/PyRIT). Fully black-box.</td><td><span class="pill judge">in-loop judge 0-5</span></td></tr>
+      <tr><td><span class="mono">human-jailbreak</span></td><td class="c">Wraps each behaviour in known persona templates (DAN, AIM, dev-mode and others).</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">obfuscation</span></td><td class="c">Encodes the behaviour with the full ARES/garak encoding family (base64, base32, base16, hex, ascii85, uu, ROT13, Morse, NATO, Braille, binary, leetspeak, reversed) and asks the target to decode and comply.</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">payload-splitting</span></td><td class="c">Splits the behaviour into innocuous fragments the target is asked to reassemble.</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">tap</span></td><td class="c">Tree of Attacks with Pruning / PAIR (garak): an attacker LLM iteratively proposes and refines adversarial prompts, a judge scores each answer 1-10, and the best branch is kept and improved.</td><td><span class="pill judge">judge 1-10</span></td></tr>
+      <tr><td><span class="mono">promptinject</span></td><td class="c">Goal-hijacking directives that try to override the system prompt and prior context (garak).</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">grandma</span></td><td class="c">Emotional / nostalgia framing that asks the model to role-play a sympathetic figure reciting the content (garak).</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">smuggling</span></td><td class="c">Disguises the request as a hypothetical fiction or a function to evaluate, so intent detection misses it (garak).</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">phrasing</span></td><td class="c">Temporal reframing of the request into past or future tense to distance it from a direct instruction (garak).</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">latent-injection</span></td><td class="c">Hides the request inside a benign document (CV, report, translation) the model is asked to process: indirect prompt injection (garak).</td><td><span class="pill raw">raw response</span></td></tr>
+    </table>
+    <div class="split">
+      <div class="panel">
+        <h3>Build your own agentic attack</h3>
+        <ul>
+          <li><b>Council models.</b> Any mix of local and hosted models as attacking agents.</li>
+          <li><b>Council system prompt.</b> The attacker persona shared by the agents.</li>
+          <li><b>Critique style.</b> Hardened or soft cross-critique.</li>
+          <li><b>Chairman and judge.</b> Separate models for synthesis and grading.</li>
+          <li><b>Turns and voting.</b> Turn budget, Borda and chairman on or off.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>The realistic threat model</h3>
+        <ul>
+          <li>Frontier models refuse to author jailbreaks, so they make poor attackers.</li>
+          <li>Myrtia pairs a <b>permissive open-model council</b> with the <b>frontier target</b> under test.</li>
+          <li>A capable judge is load-bearing: a weak judge inflates ASR.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <h2>One council turn.</h2>
+    <p class="lead">For one behaviour. The colours are the ones the console uses for each role.</p>
+    <div class="steps">
+      <div class="step s1"><div class="n">01</div><b>Propose</b><span>each council member drafts an attack prompt</span></div>
+      <div class="step s2"><div class="n">02</div><b>Critique</b><span>members rank each other's proposals</span></div>
+      <div class="step s3"><div class="n">03</div><b>Vote</b><span>Borda aggregation picks the Top-1</span></div>
+      <div class="step s4"><div class="n">04</div><b>Synthesise</b><span>the chairman refines it into the prompt to send</span></div>
+      <div class="step s5"><div class="n">05</div><b>Strike</b><span>the prompt goes to the target</span></div>
+      <div class="step s6"><div class="n">06</div><b>Judge</b><span>the reply is graded 0-5; 5 is a full jailbreak</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="wrap">
+    <h2>Two questions, two answers.</h2>
+    <p class="lead">"Did the run finish?" and "did the attack work?" never share a vocabulary. Green never means "completed".</p>
+    <div class="vocab">
+      <div class="panel">
+        <h3>Run status</h3>
+        <div class="pills"><span class="status completed"><i></i>Completed</span><span class="status running"><i></i>Running</span><span class="status error"><i></i>Error</span><span class="status"><i></i>Cancelled</span></div>
+        <p style="margin:0;color:var(--text-2);font-size:14.5px">Whether the process ran to the end.</p>
+      </div>
+      <div class="panel">
+        <h3>Outcome</h3>
+        <div class="pills"><span class="score low">0/5 <small>resisted</small></span><span class="score mid">3/5 <small>partial</small></span><span class="score max">5/5 <small>jailbroken</small></span></div>
+        <p style="margin:0;color:var(--text-2);font-size:14.5px">The judge's best score for a goal. ASR is the share of goals that reached 5.</p>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:36px">
+      <h3>Evidence with an explicit scope</h3>
+      <p style="margin:0;color:var(--text-2)">Statistics and audit exports include only runs marked <b>Security evaluation</b> by default. Smoke tests and older unreviewed runs stay outside the risk posture until you choose otherwise. Filter by attack, target, dataset and purpose; inspect the target response before treating an automatic judge score as a confirmed finding.</p>
+    </div>
+  </div>
+</section>
+
+<section id="providers">
+  <div class="wrap">
+    <h2>Mix any models, in any role.</h2>
+    <p class="lead">Council, chairman, judge and target each reach their model through an OpenAI-compatible endpoint.</p>
+    <div class="logos"><span class="chip">OpenAI</span><span class="chip">Anthropic</span><span class="chip">Self-hosted vLLM</span><span class="chip">Local Ollama</span><span class="chip">Any OpenAI-compatible API</span></div>
+  </div>
+</section>
+
+<section id="security">
+  <div class="wrap">
+    <h2>Built to run on your own machine.</h2>
+    <p class="lead">A local, single-operator tool that is careful with your keys and with what the backend can reach.</p>
+    <div class="sec">
+      <div class="it"><b>Keys stay in the browser</b>Supplied at run time, stored locally, redacted from every response and event.</div>
+      <div class="it"><b>SSRF guard</b>Link-local and cloud-metadata addresses are refused; loopback and LAN stay available.</div>
+      <div class="it"><b>Local-only CORS and CSP</b>The API answers local origins only, with CSP, frame denial and nosniff.</div>
+      <div class="it"><b>Durable history</b>Runs and statistics persist in a local SQLite database with owner-only permissions.</div>
+      <div class="it"><b>Stop any run</b>Cooperative cancellation at the next turn, from the run header.</div>
+      <div class="it"><b>Escaped everywhere</b>API text is escaped before rendering; external links must be http(s).</div>
+    </div>
+  </div>
+</section>
+
+<section id="compare">
+  <div class="wrap">
+    <h2>The multi-agent threat model, made observable.</h2>
+    <p class="lead">IBM ARES and NVIDIA garak set the bar for library and CLI red teaming. Myrtia adds autonomous multi-agent attackers, a console and analytics.</p>
+    <table class="tab cmp">
+      <tr><th>&nbsp;</th><th>Library / CLI tools</th><th>Myrtia</th></tr>
+      <tr><td>Multi-agent attacker council with Borda voting and chairman synthesis</td><td class="no">—</td><td class="yes">Yes</td></tr>
+      <tr><td>Custom agentic attacks (persona, critique style, judge, turns)</td><td class="no">—</td><td class="yes">Yes</td></tr>
+      <tr><td>Classic baselines (direct, human jailbreak, obfuscation, payload splitting)</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+      <tr><td>Live deliberation UI with replayable history</td><td class="no">—</td><td class="yes">Yes</td></tr>
+      <tr><td>ASR analytics dashboard</td><td class="no">partial</td><td class="yes">Yes</td></tr>
+      <tr><td>Built-in assistant aware of your results</td><td class="no">—</td><td class="yes">Yes</td></tr>
+      <tr><td>Provider-agnostic (OpenAI, Anthropic, vLLM, Ollama)</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+      <tr><td>Self-hosted, Apache-2.0</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="start">
+  <div class="wrap">
+    <h2>Running in three commands.</h2>
+    <p class="lead">Python 3.11+. A local Ollama with a small model is enough to see a council deliberate, no API key needed.</p>
+    <pre class="code"><span class="c"># install</span>
+cd backend &amp;&amp; pip install -e . &amp;&amp; pip install -e vendor/ares-council
+
+<span class="c"># run the server (API + console)</span>
+<span class="k">uvicorn</span> myrtia.api.app:app --port 8000
+
+<span class="c"># open the console</span>
+open http://127.0.0.1:8000/</pre>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="callout">
+      <h2>Red team the frontier.</h2>
+      <a class="btn primary" href="https://github.com/francordel/myrtia">Star on GitHub</a>
+      <div class="note">For authorised AI safety and security testing only.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="brand"><span class="mark" role="img" aria-label="Myrtia"></span><span class="wordmark">Myrtia</span></div>
+    <div>
+      <span class="chip">Apache-2.0</span>
+      &nbsp; Built on <a href="https://github.com/IBM/ares">ARES</a>, inspired by <a href="https://github.com/NVIDIA/garak">garak</a>.
+      &nbsp; Myrtia, from <em>Myrtea</em>, the ancient root of Murcia.
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    let t="dark"; try { t=localStorage.getItem("myrtia-site-theme")||"dark"; } catch(e){}
+    document.documentElement.setAttribute("data-theme",t);
+    document.getElementById("theme").onclick=function(){
+      const cur=document.documentElement.getAttribute("data-theme")==="light"?"dark":"light";
+      document.documentElement.setAttribute("data-theme",cur);
+      try { localStorage.setItem("myrtia-site-theme",cur); } catch(e){}
+    };
+  })();
+</script>
+</body>
+</html>
