@@ -161,6 +161,10 @@ class Orchestrator:
                 EventType.RUN_FINISHED,
                 {"status": run.status.value, "error": run.error},
             )
+        finally:
+            # Always release the per-run cancel Event so it never leaks for the
+            # lifetime of the process (success and failure paths included).
+            self._cancels.pop(run.id, None)
 
 
 ORCHESTRATOR = Orchestrator()

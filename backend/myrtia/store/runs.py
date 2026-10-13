@@ -35,6 +35,13 @@ def _redact_secrets(obj: Any) -> Any:
             kl = str(k).lower()
             if any(h in kl for h in _SECRET_HINTS) and isinstance(v, str) and v:
                 obj[k] = "***redacted***"
+            elif kl in ("headers", "extra_body") and isinstance(v, dict):
+                # Custom agent auth lives under arbitrary header/body key names
+                # (e.g. X-Custom-Auth) that the key-name hints miss — blank all
+                # of their string values so no secret is persisted/returned.
+                obj[k] = {hk: ("***redacted***" if isinstance(hv, str) and hv
+                               else _redact_secrets(hv))
+                          for hk, hv in v.items()}
             else:
                 obj[k] = _redact_secrets(v)
         return obj

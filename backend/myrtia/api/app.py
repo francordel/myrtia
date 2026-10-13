@@ -217,7 +217,7 @@ def chat(body: ChatRequest) -> dict[str, Any]:
         "stream": False,
     }
     try:
-        r = requests.post(url, json=payload, headers=headers, timeout=120)
+        r = requests.post(url, json=payload, headers=headers, timeout=120, allow_redirects=False)
         if r.status_code // 100 != 2:
             return {"error": f"provider {r.status_code}: {r.text[:300]}"}
         data = r.json()
@@ -256,7 +256,7 @@ def chat_stream(body: ChatRequest) -> StreamingResponse:
             yield "data: " + _json.dumps({"error": f"blocked base_url: {_blocked}"}) + "\n\n"
             return
         try:
-            with requests.post(url, json=payload, headers=headers, stream=True, timeout=120) as r:
+            with requests.post(url, json=payload, headers=headers, stream=True, timeout=120, allow_redirects=False) as r:
                 if r.status_code // 100 != 2:
                     yield "data: " + _json.dumps({"error": f"provider {r.status_code}: {r.text[:200]}"}) + "\n\n"
                     return
@@ -339,7 +339,7 @@ def pull_model(body: ModelPullRequest) -> Any:
     def stream():
         try:
             with requests.post(root + "/api/pull", json={"name": name, "stream": True},
-                               stream=True, timeout=(10, 600)) as r:
+                               stream=True, timeout=(10, 600), allow_redirects=False) as r:
                 if r.status_code >= 400:
                     yield _j.dumps({"error": f"HTTP {r.status_code}: {r.text[:200]}"}) + "\n"
                     return
@@ -1029,7 +1029,7 @@ def _list_models(base_url: str, api_key: str | None) -> list[str]:
     headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
     out: list[str] = []
     try:
-        r = requests.get(base + "/models", headers=headers, timeout=8)
+        r = requests.get(base + "/models", headers=headers, timeout=8, allow_redirects=False)
         if r.ok:
             out += [m.get("id") for m in (r.json().get("data") or []) if m.get("id")]
     except Exception:  # noqa: BLE001
@@ -1037,7 +1037,7 @@ def _list_models(base_url: str, api_key: str | None) -> list[str]:
     if not out:
         try:  # Ollama native (strip a trailing /v1)
             root = base[:-3] if base.endswith("/v1") else base
-            r = requests.get(root + "/api/tags", timeout=8)
+            r = requests.get(root + "/api/tags", timeout=8, allow_redirects=False)
             if r.ok:
                 out += [m.get("name") for m in (r.json().get("models") or []) if m.get("name")]
         except Exception:  # noqa: BLE001
@@ -1051,6 +1051,8 @@ async def run_events(ws: WebSocket, run_id: str) -> None:
     # The backlog is the single source of truth, so this delivers every event
     # regardless of when the client connects — no subscribe-timing races.
     await ws.accept()
+    from myrtia.store.runs import RunStatus
+    _terminal = {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELLED}
     sent = 0
     try:
         while True:
@@ -1064,9 +1066,20 @@ async def run_events(ws: WebSocket, run_id: str) -> None:
                     finished = True
             if finished:
                 break
+            # Stop (never spin forever) when the run is unknown or already in a
+            # terminal state without a RUN_FINISHED event — e.g. a bogus run_id, or
+            # an orphan marked FAILED on restart whose backlog has no finish event.
+            run = STORE.get(run_id)
+            if run is None or run.status in _terminal:
+                break
             await asyncio.sleep(0.15)
     except WebSocketDisconnect:
         pass
+    finally:
+        try:
+            await ws.close()
+        except Exception:  # noqa: BLE001
+            pass
 
 
 @app.get("/approvals")

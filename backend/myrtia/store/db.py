@@ -68,7 +68,8 @@ def save_run(run_id: str, created_at: float, status: str, error: str | None,
         c.execute(
             "INSERT INTO runs(id,created_at,status,error,spec_json,results_json) "
             "VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET "
-            "status=excluded.status, error=excluded.error, results_json=excluded.results_json",
+            "status=excluded.status, error=excluded.error, "
+            "spec_json=excluded.spec_json, results_json=excluded.results_json",
             (run_id, created_at, status, error,
              _dumps(spec), _dumps(results)),
         )

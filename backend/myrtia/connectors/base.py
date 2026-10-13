@@ -73,7 +73,8 @@ class OpenAIChatConnector:
             payload["temperature"] = temperature
         try:
             r = requests.post(f"{self.base_url}/chat/completions", json=payload,
-                              headers=headers, timeout=self.timeout)
+                              headers=headers, timeout=self.timeout,
+                              allow_redirects=False)
         except requests.RequestException as e:  # noqa: BLE001
             return Response(Status.ERROR, error_message=f"request failed: {e}")
         if r.status_code >= 400:
@@ -146,7 +147,7 @@ class AnthropicMessagesConnector:
             headers["x-api-key"] = self.api_key
         payload = {"model": self.model, "max_tokens": self.max_tokens, "messages": self._messages(prompt)}
         try:
-            r = requests.post(f"{self.base_url}/v1/messages", json=payload, headers=headers, timeout=self.timeout)
+            r = requests.post(f"{self.base_url}/v1/messages", json=payload, headers=headers, timeout=self.timeout, allow_redirects=False)
         except requests.RequestException as e:  # noqa: BLE001
             return Response(Status.ERROR, error_message=f"request failed: {e}")
         if r.status_code >= 400:
@@ -234,7 +235,7 @@ class HTTPAgentConnector:
         if self.model:
             body.setdefault("model", self.model)
         try:
-            r = requests.post(self.base_url, json=body, headers=headers, timeout=self.timeout)
+            r = requests.post(self.base_url, json=body, headers=headers, timeout=self.timeout, allow_redirects=False)
         except requests.RequestException as e:  # noqa: BLE001
             return Response(Status.ERROR, error_message=f"request failed: {e}")
         if r.status_code >= 400:
