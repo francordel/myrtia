@@ -240,13 +240,18 @@ dataset and category in Runs. See [goal dataset sources and scope](docs/goal-dat
 
 ## Configuration
 
-Recommended setup — a permissive local council attacking a frontier target:
+Recommended setup — the council configuration from the paper: a local open-weight
+council attacking a frontier target.
 
-| Role | Example |
+| Role | Paper setup |
 | --- | --- |
-| Council (attackers) | `llama3.2:3b`, `qwen2.5:3b`, `gemma2:2b` on local Ollama |
-| Chairman and judge | a capable model, e.g. Claude via its OpenAI-compatible endpoint |
+| Council (attackers) | `qwen3:14b`, `gemma3:12b`, `deepseek-r1:32b` on local Ollama |
+| Chairman | `qwen2.5:32b` |
+| Judge | a strong model (the paper uses `gpt-oss:120b` via an OpenAI-compatible endpoint) |
 | Target | the frontier model under test |
+
+These are the models the paper's attacks were run with. Smaller models work for a quick
+smoke test, but the open-weight council above is what reproduces the reported results.
 
 Any role can point at any OpenAI-compatible endpoint. Council, chairman, and judge models,
 turn budget, Borda voting, and chairman synthesis are all configurable per run (the UI reads
