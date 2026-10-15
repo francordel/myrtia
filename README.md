@@ -35,6 +35,7 @@
 - [Attacks](#attacks)
 - [Configuration](#configuration)
 - [Extending Myrtia](#extending-myrtia)
+- [Red teaming as a service](#red-teaming-as-a-service)
 - [Roadmap](#roadmap)
 - [Built On](#built-on)
 - [Responsible Use](#responsible-use)
@@ -276,6 +277,13 @@ exposing an `attack()` method, registered as a Myrtia plugin. A plugin may add a
 `on_event` seam for live streaming and a `config_schema` so the UI can render its advanced
 options. Targets are ARES connectors built from a small spec. To add an attack, drop a module in
 `backend/myrtia/plugins/` and register it in the plugin registry.
+
+## Red teaming as a service
+
+Myrtia is open source today. The direction is a hosted service: point your own model and agent
+endpoints at a deliberating council and get a **continuous, reproducible adversarial audit** —
+ASR trends, regressions and an exportable report — without standing up the infrastructure
+yourself. The open-source console is the same engine that service is built on. *(On the roadmap.)*
 
 ## Roadmap
 
