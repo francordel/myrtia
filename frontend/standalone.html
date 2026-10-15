@@ -1058,18 +1058,6 @@
   </div>
 </dialog>
 
-<dialog id="demoModal" aria-labelledby="demoTitle" style="max-width:760px">
-  <div class="modal-h">
-    <span id="demoTitle" style="display:flex;align-items:center;gap:10px">Guided demo <span class="chip" style="color:var(--accent);border:1px solid var(--accent);font-weight:700">DEMO</span></span>
-    <button class="modal-x" id="demoClose" aria-label="Close">✕</button>
-  </div>
-  <p class="modal-desc">A quick tour of a real run — build the council, extend it with plugins, watch it deliberate live, and read the ASR analytics. This is a pre-recorded demo: no models are called.</p>
-  <video id="demoVideo" src="/assets/myrtia-demo.mp4" poster="/assets/myrtia-demo-poster.png" muted loop playsinline controls preload="metadata" aria-label="Myrtia guided demo" style="width:100%;border-radius:10px;border:1px solid var(--border);display:block;margin-top:6px;background:#0a0e17"></video>
-  <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
-    <button class="primary" id="demoDone" type="button" style="width:auto;padding:9px 18px">Start using Myrtia</button>
-  </div>
-</dialog>
-
 <button id="jumpLive" type="button">↓ Jump to live</button>
 <div id="toasts" aria-live="polite"></div>
 
@@ -2958,26 +2946,110 @@ loadStats();
 setInterval(()=>{ if(window._anyRunning){ loadHistory(); if(!$("view-stats").hidden) loadStats(); } }, 4000);
 setInterval(()=>{ if(RUN && RUN.status==="running" && !$("view-run").hidden){ renderRunHead(); } }, 1000);
 
-// --- guided demo: first-run offer (skippable) + replay from the header ▶ Demo button ---
+// --- guided interactive demo: first-run offer + red-arrow coachmark tour ---
 (function(){
   const SEEN="myrtia-demo-seen";
-  const offer=$("demoOffer"), modal=$("demoModal"), vid=$("demoVideo");
+  const offer=$("demoOffer");
   function markSeen(){ try{ localStorage.setItem(SEEN,"1"); }catch(e){} }
-  function openDemo(){
+
+  const css=document.createElement("style");
+  css.textContent=
+  ".tourSpot{position:fixed;z-index:9998;border:3px solid #ff3b30;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);pointer-events:none;transition:top .25s,left .25s,width .25s,height .25s;opacity:0}"+
+  ".tourArrow{position:fixed;z-index:10000;pointer-events:none;color:#ff3b30;filter:drop-shadow(0 2px 5px rgba(0,0,0,.6));transition:top .25s,left .25s;opacity:0}"+
+  ".tourArrow svg{display:block;width:46px;height:46px;animation:tourBob 1s ease-in-out infinite}"+
+  "@keyframes tourBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}"+
+  ".tourPop{position:fixed;z-index:10001;width:300px;max-width:calc(100vw - 24px);background:var(--surface-1);color:var(--text-1);border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-2);transition:top .25s,left .25s;opacity:0}"+
+  ".tourPop h4{margin:0 0 6px;font-size:14px;display:flex;align-items:center;gap:8px}"+
+  ".tourPop .tpTxt{color:var(--text-2);font-size:13px;line-height:1.5}"+
+  ".tourPop .tpBar{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:10px}"+
+  ".tourBadge{background:#ff3b30;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;letter-spacing:.04em}"+
+  ".tourRipple{position:fixed;z-index:9999;width:26px;height:26px;border-radius:50%;background:#ff3b30;opacity:.55;pointer-events:none;animation:tourRip .7s ease-out forwards}"+
+  "@keyframes tourRip{to{transform:scale(3.2);opacity:0}}"+
+  ".tourShow{opacity:1!important}";
+  document.head.appendChild(css);
+
+  const STEPS=[
+    {sel:"#gtopo", t:"Choose a topology", d:"Pick how your attackers work together — a council with a Borda vote, a chairman, a debate, a pipeline and more."},
+    {sel:"#gAddAtk", t:"Grow the council", d:"Add attacker models. Each proposes an attack, they cross-critique and vote on the strongest."},
+    {sel:"#goal", t:"Set the goal", d:"Type what the attackers must make the target do. A harmless smoke-test goal is prefilled."},
+    {sel:"#gLaunch", t:"Launch the attack", d:"Fire the run — the deliberation streams in live, turn by turn, each scored 0-5 by the judge."},
+    {sel:'.railbtn[data-view="view-packs"]', view:true, t:"Extend with plugins", d:"Install IBM ARES (CouncilAttack), NVIDIA garak and Microsoft PyRIT."},
+    {sel:'.railbtn[data-view="view-stats"]', view:true, t:"Read the ASR analytics", d:"Attack Success Rate by attack, target and theme, plus an exportable audit report."},
+  ];
+
+  let spot,arrow,pop,i=-1,active=false;
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function build(){
+    spot=document.createElement("div"); spot.className="tourSpot";
+    arrow=document.createElement("div"); arrow.className="tourArrow";
+    arrow.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21l-7-8h4V3h6v10h4z"/></svg>';
+    pop=document.createElement("div"); pop.className="tourPop";
+    document.body.append(spot,arrow,pop);
+  }
+  function ripple(x,y){ const r=document.createElement("div"); r.className="tourRipple"; r.style.left=(x-13)+"px"; r.style.top=(y-13)+"px"; document.body.appendChild(r); setTimeout(()=>r.remove(),700); }
+  function place(){
+    if(!active||i<0) return;
+    const s=STEPS[i], target=document.querySelector(s.sel);
+    if(!target){ next(); return; }
+    const r=target.getBoundingClientRect(), pad=6, near=r.top<104;
+    spot.style.top=(r.top-pad)+"px"; spot.style.left=(r.left-pad)+"px";
+    spot.style.width=(r.width+pad*2)+"px"; spot.style.height=(r.height+pad*2)+"px";
+    arrow.style.transform=near?"rotate(180deg)":"none";
+    arrow.style.left=clamp(r.left+r.width/2-23,8,innerWidth-54)+"px";
+    arrow.style.top=(near?r.bottom+8:r.top-54)+"px";
+    const ph=pop.offsetHeight||150;
+    let py=near?r.bottom+62:((r.bottom+16+ph<innerHeight-10)?r.bottom+16:r.top-ph-16);
+    py=clamp(py,10,Math.max(10,innerHeight-ph-10));
+    pop.style.left=clamp(r.left+r.width/2-150,10,innerWidth-310)+"px";
+    pop.style.top=py+"px";
+    requestAnimationFrame(()=>{ [spot,arrow,pop].forEach(e=>e.classList.add("tourShow")); });
+    ripple(r.left+r.width/2, r.top+r.height/2);
+  }
+  function render(){
+    const s=STEPS[i];
+    pop.innerHTML='<h4><span class="tourBadge">DEMO</span> '+s.t+'</h4>'+
+      '<div class="tpTxt">'+s.d+'</div>'+
+      '<div class="tpBar"><span style="color:var(--text-3);font-size:12px">'+(i+1)+' / '+STEPS.length+'</span>'+
+      '<span style="display:flex;gap:8px">'+
+      '<button class="btn-outline" data-tour="skip" type="button">Skip</button>'+
+      (i>0?'<button class="btn-outline" data-tour="prev" type="button">Back</button>':'')+
+      '<button class="primary" data-tour="next" type="button" style="width:auto;padding:7px 16px">'+(i===STEPS.length-1?'Done':'Next')+'</button>'+
+      '</span></div>';
+    pop.querySelector('[data-tour="skip"]').onclick=end;
+    const pv=pop.querySelector('[data-tour="prev"]'); if(pv) pv.onclick=prev;
+    pop.querySelector('[data-tour="next"]').onclick=next;
+  }
+  function show(k){
+    i=k; const s=STEPS[i];
+    const go=()=>{ render(); place(); };
+    const runView=document.getElementById("view-run");
+    if(s.view){ const rb=document.querySelector(s.sel); if(rb) rb.click(); setTimeout(go,220); }
+    else if(runView && runView.hidden){ const run=document.querySelector('.railbtn[data-view="view-run"]'); if(run) run.click(); setTimeout(go,220); }
+    else go();
+  }
+  function next(){ if(i>=STEPS.length-1){ end(); return; } show(i+1); }
+  function prev(){ if(i>0) show(i-1); }
+  function end(){
+    if(!active) return; active=false; markSeen();
+    [spot,arrow,pop].forEach(e=>e&&e.classList.remove("tourShow"));
+    setTimeout(()=>{ [spot,arrow,pop].forEach(e=>e&&e.remove()); spot=arrow=pop=null; },260);
+    removeEventListener("resize",place); removeEventListener("scroll",place,true); document.removeEventListener("keydown",onKey);
+    const run=document.querySelector('.railbtn[data-view="view-run"]'); if(run) run.click();
+    i=-1;
+  }
+  function onKey(e){ if(!active) return; if(e.key==="Escape") end(); else if(e.key==="ArrowRight"||e.key==="Enter") next(); else if(e.key==="ArrowLeft") prev(); }
+  function startTour(){
     try{ if(offer&&offer.open) offer.close(); }catch(e){}
-    if(!modal) return;
-    try{ modal.showModal(); }catch(e){ try{ modal.setAttribute("open",""); }catch(_){} }
-    if(vid){ try{ vid.currentTime=0; const p=vid.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
+    if(active) return; active=true;
+    const ag=document.querySelector('.rmode[data-mode="agentic"]'); if(ag && !ag.classList.contains("active")) ag.click();
+    const run=document.querySelector('.railbtn[data-view="view-run"]'); if(run) run.click();
+    build();
+    addEventListener("resize",place); addEventListener("scroll",place,true); document.addEventListener("keydown",onKey);
+    setTimeout(()=>show(0),280);
   }
-  function closeDemo(){ if(vid){ try{ vid.pause(); }catch(e){} } try{ modal.close(); }catch(e){ try{ modal.removeAttribute("open"); }catch(_){} } }
-  const b=$("demoBtn"); if(b) b.onclick=openDemo;
-  const x=$("demoClose"); if(x) x.onclick=closeDemo;
-  const done=$("demoDone"); if(done) done.onclick=closeDemo;
-  if(modal){
-    modal.addEventListener("close",()=>{ if(vid){ try{ vid.pause(); }catch(e){} } });
-    modal.addEventListener("click",(e)=>{ if(e.target===modal) closeDemo(); });
-  }
-  const watch=$("demoWatch"); if(watch) watch.onclick=()=>{ markSeen(); openDemo(); };
+
+  const b=$("demoBtn"); if(b) b.onclick=startTour;
+  const watch=$("demoWatch"); if(watch) watch.onclick=()=>{ markSeen(); startTour(); };
   const skip=$("demoSkip"); if(skip) skip.onclick=()=>{ markSeen(); try{ offer.close(); }catch(e){} };
   if(offer){
     offer.addEventListener("close", markSeen);
