@@ -91,7 +91,7 @@
   .shot .frame .bar { height:36px; display:flex; align-items:center; gap:6px; padding:0 14px; background:var(--surface-2); border-bottom:1px solid var(--border); }
   .shot .frame .bar i { width:10px; height:10px; border-radius:50%; background:var(--border-strong); }
   .shot .frame .bar span { margin-left:10px; font-size:12px; color:var(--text-3); }
-  .shot img { display:block; width:100%; height:auto; }
+  .shot img, .shot video { display:block; width:100%; height:auto; }
   .shot figcaption { text-align:center; color:var(--text-3); font-size:13px; margin-top:12px; }
   .builder-showcase .shot { padding:0; margin-top:32px; }
 
@@ -215,8 +215,8 @@
     </div>
   </div>
   <figure class="shot">
-    <div class="frame"><div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8000 · Runs / Agentic builder</span></div><img src="assets/shot-agentic-builder.png" alt="Myrtia agentic graph builder showing a three-attacker circular council connected to a target and evaluator, with the goal library and dataset filters below" loading="eager" /></div>
-    <figcaption>The agentic graph builder: a three-attacker council, its target and evaluator, and the goal selector in one view.</figcaption>
+    <div class="frame"><div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8000 · Myrtia console</span></div><video src="assets/myrtia-demo.mp4" autoplay muted loop playsinline preload="metadata" poster="assets/shot-agentic-builder.png" aria-label="Myrtia demo: build a council, watch it deliberate live turn by turn, and read the ASR analytics"></video></div>
+    <figcaption>From council to verdict: build the council, watch it deliberate live, and read the ASR analytics.</figcaption>
   </figure>
 </header>
 
