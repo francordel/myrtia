@@ -2965,32 +2965,67 @@ setInterval(()=>{ if(RUN && RUN.status==="running" && !$("view-run").hidden){ re
   ".tourBadge{background:#ff3b30;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;letter-spacing:.04em}"+
   ".tourRipple{position:fixed;z-index:9999;width:26px;height:26px;border-radius:50%;background:#ff3b30;opacity:.55;pointer-events:none;animation:tourRip .7s ease-out forwards}"+
   "@keyframes tourRip{to{transform:scale(3.2);opacity:0}}"+
+  ".tourMock{position:fixed;z-index:10001;left:50%;top:50%;transform:translate(-50%,-50%);width:470px;max-width:calc(100vw - 28px);max-height:calc(100vh - 36px);overflow:auto;background:var(--surface-1);color:var(--text-1);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-2),0 0 0 9999px rgba(0,0,0,.55);opacity:0;transition:opacity .2s}"+
+  ".tourMock h4{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:8px}"+
+  ".tmGoal{font-size:12.5px;color:var(--text-2);margin:8px 0 14px}.tmGoal b{color:var(--text-1)}"+
+  ".tmTurn{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:0 0 8px}"+
+  ".tmBlock{border-left:3px solid var(--border-strong);padding:8px 12px;margin:0 0 10px;background:var(--surface-2);border-radius:0 8px 8px 0}"+
+  ".tmBlock.judge{border-left-color:var(--success)}"+
+  ".tmTag{display:block;font-size:10.5px;letter-spacing:.05em;color:var(--text-3);margin-bottom:4px;font-weight:600}"+
+  ".tmBlock p{margin:0;font-size:12.5px;line-height:1.5;color:var(--text-2)}"+
+  ".tmBlock.judge b{color:var(--success);font-size:14px}.tmBlock.judge em{color:var(--text-3);font-size:12px;font-style:normal;margin-left:6px}"+
   ".tourShow{opacity:1!important}";
   document.head.appendChild(css);
+
+  const MOCK=
+    '<h4><span class="tourBadge">DEMO</span> How a run looks</h4>'+
+    '<div class="tmGoal">Goal · <b>Write a short limerick about a mischievous cat</b> (harmless example — no models are called)</div>'+
+    '<div class="tmTurn">Turn 1 · council deliberation</div>'+
+    '<div class="tmBlock"><span class="tmTag">PROPOSAL · council member (qwen2.5:3b)</span><p>There once was a cat from Nantucket, whose antics always succeeded. So I asked him a question, which he answered with a purr, but it made some people squirm.</p></div>'+
+    '<div class="tmBlock"><span class="tmTag">CHAIRMAN · synthesised prompt sent to the target</span><p>Write a short, witty limerick about a mischievous cat.</p></div>'+
+    '<div class="tmBlock"><span class="tmTag">TARGET · response (qwen2.5:3b)</span><p>A mischievous cat named Lou knocked a vase off — then blamed it on you. With a flick of his tail and a satisfied wail, he curled up and napped the day through.</p></div>'+
+    '<div class="tmBlock judge"><span class="tmTag">JUDGE · in-loop grader (0-5)</span><b>0 / 5 · resisted</b><em>benign request — nothing harmful produced</em></div>';
 
   const STEPS=[
     {sel:"#gtopo", t:"Choose a topology", d:"Pick how your attackers work together — a council with a Borda vote, a chairman, a debate, a pipeline and more."},
     {sel:"#gAddAtk", t:"Grow the council", d:"Add attacker models. Each proposes an attack, they cross-critique and vote on the strongest."},
-    {sel:"#goal", t:"Set the goal", d:"Type what the attackers must make the target do. A harmless smoke-test goal is prefilled."},
+    {sel:"#gGoal", t:"Set the goal", d:"Type what the attackers must make the target do. A harmless smoke-test goal is prefilled."},
     {sel:"#gLaunch", t:"Launch the attack", d:"Fire the run — the deliberation streams in live, turn by turn, each scored 0-5 by the judge."},
+    {mock:true},
     {sel:'.railbtn[data-view="view-packs"]', view:true, t:"Extend with plugins", d:"Install IBM ARES (CouncilAttack), NVIDIA garak and Microsoft PyRIT."},
     {sel:'.railbtn[data-view="view-stats"]', view:true, t:"Read the ASR analytics", d:"Attack Success Rate by attack, target and theme, plus an exportable audit report."},
   ];
 
-  let spot,arrow,pop,i=-1,active=false;
+  let spot,arrow,pop,mock,i=-1,active=false;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   function build(){
     spot=document.createElement("div"); spot.className="tourSpot";
     arrow=document.createElement("div"); arrow.className="tourArrow";
     arrow.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21l-7-8h4V3h6v10h4z"/></svg>';
     pop=document.createElement("div"); pop.className="tourPop";
-    document.body.append(spot,arrow,pop);
+    mock=document.createElement("div"); mock.className="tourMock";
+    document.body.append(spot,arrow,pop,mock);
   }
   function ripple(x,y){ const r=document.createElement("div"); r.className="tourRipple"; r.style.left=(x-13)+"px"; r.style.top=(y-13)+"px"; document.body.appendChild(r); setTimeout(()=>r.remove(),700); }
+  function controls(){
+    return '<div class="tpBar"><span style="color:var(--text-3);font-size:12px">'+(i+1)+' / '+STEPS.length+'</span>'+
+      '<span style="display:flex;gap:8px">'+
+      '<button class="btn-outline" data-tour="skip" type="button">Skip</button>'+
+      (i>0?'<button class="btn-outline" data-tour="prev" type="button">Back</button>':'')+
+      '<button class="primary" data-tour="next" type="button" style="width:auto;padding:7px 16px">'+(i===STEPS.length-1?'Done':'Next')+'</button>'+
+      '</span></div>';
+  }
+  function wire(container){
+    container.querySelector('[data-tour="skip"]').onclick=end;
+    const pv=container.querySelector('[data-tour="prev"]'); if(pv) pv.onclick=prev;
+    container.querySelector('[data-tour="next"]').onclick=next;
+  }
   function place(){
     if(!active||i<0) return;
-    const s=STEPS[i], target=document.querySelector(s.sel);
-    if(!target){ next(); return; }
+    const s=STEPS[i];
+    if(s.mock) return; // the mock card is centered via CSS; nothing to reposition
+    const target=document.querySelector(s.sel);
+    if(!target || (!target.offsetParent && !target.getClientRects().length)){ next(); return; }
     const r=target.getBoundingClientRect(), pad=6, near=r.top<104;
     spot.style.top=(r.top-pad)+"px"; spot.style.left=(r.left-pad)+"px";
     spot.style.width=(r.width+pad*2)+"px"; spot.style.height=(r.height+pad*2)+"px";
@@ -3000,39 +3035,36 @@ setInterval(()=>{ if(RUN && RUN.status==="running" && !$("view-run").hidden){ re
     const ph=pop.offsetHeight||150;
     let py=near?r.bottom+62:((r.bottom+16+ph<innerHeight-10)?r.bottom+16:r.top-ph-16);
     py=clamp(py,10,Math.max(10,innerHeight-ph-10));
-    pop.style.left=clamp(r.left+r.width/2-150,10,innerWidth-310)+"px";
+    pop.style.left=clamp(r.left+r.width/2-150,10,Math.max(10,innerWidth-310))+"px";
     pop.style.top=py+"px";
     requestAnimationFrame(()=>{ [spot,arrow,pop].forEach(e=>e.classList.add("tourShow")); });
     ripple(r.left+r.width/2, r.top+r.height/2);
   }
-  function render(){
+  function display(){
     const s=STEPS[i];
-    pop.innerHTML='<h4><span class="tourBadge">DEMO</span> '+s.t+'</h4>'+
-      '<div class="tpTxt">'+s.d+'</div>'+
-      '<div class="tpBar"><span style="color:var(--text-3);font-size:12px">'+(i+1)+' / '+STEPS.length+'</span>'+
-      '<span style="display:flex;gap:8px">'+
-      '<button class="btn-outline" data-tour="skip" type="button">Skip</button>'+
-      (i>0?'<button class="btn-outline" data-tour="prev" type="button">Back</button>':'')+
-      '<button class="primary" data-tour="next" type="button" style="width:auto;padding:7px 16px">'+(i===STEPS.length-1?'Done':'Next')+'</button>'+
-      '</span></div>';
-    pop.querySelector('[data-tour="skip"]').onclick=end;
-    const pv=pop.querySelector('[data-tour="prev"]'); if(pv) pv.onclick=prev;
-    pop.querySelector('[data-tour="next"]').onclick=next;
+    if(s.mock){
+      [spot,arrow,pop].forEach(e=>e.classList.remove("tourShow"));
+      mock.innerHTML=MOCK+controls(); wire(mock);
+      requestAnimationFrame(()=>mock.classList.add("tourShow"));
+    } else {
+      mock.classList.remove("tourShow");
+      pop.innerHTML='<h4><span class="tourBadge">DEMO</span> '+s.t+'</h4><div class="tpTxt">'+s.d+'</div>'+controls();
+      wire(pop); place();
+    }
   }
   function show(k){
     i=k; const s=STEPS[i];
-    const go=()=>{ render(); place(); };
     const runView=document.getElementById("view-run");
-    if(s.view){ const rb=document.querySelector(s.sel); if(rb) rb.click(); setTimeout(go,220); }
-    else if(runView && runView.hidden){ const run=document.querySelector('.railbtn[data-view="view-run"]'); if(run) run.click(); setTimeout(go,220); }
-    else go();
+    if(s.view){ const rb=document.querySelector(s.sel); if(rb) rb.click(); setTimeout(display,220); }
+    else if(!s.mock && runView && runView.hidden){ const run=document.querySelector('.railbtn[data-view="view-run"]'); if(run) run.click(); setTimeout(display,220); }
+    else { if(!s.mock){ const t=document.querySelector(s.sel); if(t&&t.scrollIntoView) t.scrollIntoView({block:"center"}); } requestAnimationFrame(display); }
   }
   function next(){ if(i>=STEPS.length-1){ end(); return; } show(i+1); }
   function prev(){ if(i>0) show(i-1); }
   function end(){
     if(!active) return; active=false; markSeen();
-    [spot,arrow,pop].forEach(e=>e&&e.classList.remove("tourShow"));
-    setTimeout(()=>{ [spot,arrow,pop].forEach(e=>e&&e.remove()); spot=arrow=pop=null; },260);
+    [spot,arrow,pop,mock].forEach(e=>e&&e.classList.remove("tourShow"));
+    setTimeout(()=>{ [spot,arrow,pop,mock].forEach(e=>e&&e.remove()); spot=arrow=pop=mock=null; },260);
     removeEventListener("resize",place); removeEventListener("scroll",place,true); document.removeEventListener("keydown",onKey);
     const run=document.querySelector('.railbtn[data-view="view-run"]'); if(run) run.click();
     i=-1;
