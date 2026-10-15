@@ -168,7 +168,8 @@ _STANDALONE = Path(__file__).resolve().parents[3] / "frontend" / "standalone.htm
 
 
 _FRONTEND = Path(__file__).resolve().parents[3] / "frontend"
-_ASSETS = {"icon.png", "icon-light.png", "icon-dark.png"}
+_ASSETS = {"icon.png", "icon-light.png", "icon-dark.png",
+           "myrtia-demo.mp4", "myrtia-demo-poster.png"}
 
 
 @app.get("/")

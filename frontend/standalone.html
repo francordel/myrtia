@@ -672,6 +672,7 @@
       <div id="liveMenuList"></div>
     </div>
   </div>
+  <button class="chip btn" id="demoBtn" type="button" title="Watch the guided demo" aria-haspopup="dialog" style="margin-right:4px">▶ Demo</button>
   <button class="icon-btn" id="theme" aria-label="Toggle light / dark theme" title="Toggle light / dark">
     <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
     <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -1046,6 +1047,27 @@
   <p class="modal-desc" id="infoDesc"></p>
   <ol class="modal-steps" id="infoSteps"></ol>
   <div id="infoPaper"></div>
+</dialog>
+
+<dialog id="demoOffer" aria-labelledby="demoOfferTitle">
+  <div class="modal-h"><span id="demoOfferTitle">Welcome to Myrtia</span></div>
+  <p class="modal-desc">New here? Watch a short guided demo of a real run, or jump straight in. You can replay it anytime from the <b>▶ Demo</b> button up top.</p>
+  <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+    <button class="btn-outline" id="demoSkip" type="button">Skip</button>
+    <button class="primary" id="demoWatch" type="button" style="width:auto;padding:9px 18px">Watch demo</button>
+  </div>
+</dialog>
+
+<dialog id="demoModal" aria-labelledby="demoTitle" style="max-width:760px">
+  <div class="modal-h">
+    <span id="demoTitle" style="display:flex;align-items:center;gap:10px">Guided demo <span class="chip" style="color:var(--accent);border:1px solid var(--accent);font-weight:700">DEMO</span></span>
+    <button class="modal-x" id="demoClose" aria-label="Close">✕</button>
+  </div>
+  <p class="modal-desc">A quick tour of a real run — build the council, extend it with plugins, watch it deliberate live, and read the ASR analytics. This is a pre-recorded demo: no models are called.</p>
+  <video id="demoVideo" src="/assets/myrtia-demo.mp4" poster="/assets/myrtia-demo-poster.png" muted loop playsinline controls preload="metadata" aria-label="Myrtia guided demo" style="width:100%;border-radius:10px;border:1px solid var(--border);display:block;margin-top:6px;background:#0a0e17"></video>
+  <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+    <button class="primary" id="demoDone" type="button" style="width:auto;padding:9px 18px">Start using Myrtia</button>
+  </div>
 </dialog>
 
 <button id="jumpLive" type="button">↓ Jump to live</button>
@@ -2935,6 +2957,35 @@ loadStats();
 // keep History + Stats live while any run is executing
 setInterval(()=>{ if(window._anyRunning){ loadHistory(); if(!$("view-stats").hidden) loadStats(); } }, 4000);
 setInterval(()=>{ if(RUN && RUN.status==="running" && !$("view-run").hidden){ renderRunHead(); } }, 1000);
+
+// --- guided demo: first-run offer (skippable) + replay from the header ▶ Demo button ---
+(function(){
+  const SEEN="myrtia-demo-seen";
+  const offer=$("demoOffer"), modal=$("demoModal"), vid=$("demoVideo");
+  function markSeen(){ try{ localStorage.setItem(SEEN,"1"); }catch(e){} }
+  function openDemo(){
+    try{ if(offer&&offer.open) offer.close(); }catch(e){}
+    if(!modal) return;
+    try{ modal.showModal(); }catch(e){ try{ modal.setAttribute("open",""); }catch(_){} }
+    if(vid){ try{ vid.currentTime=0; const p=vid.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
+  }
+  function closeDemo(){ if(vid){ try{ vid.pause(); }catch(e){} } try{ modal.close(); }catch(e){ try{ modal.removeAttribute("open"); }catch(_){} } }
+  const b=$("demoBtn"); if(b) b.onclick=openDemo;
+  const x=$("demoClose"); if(x) x.onclick=closeDemo;
+  const done=$("demoDone"); if(done) done.onclick=closeDemo;
+  if(modal){
+    modal.addEventListener("close",()=>{ if(vid){ try{ vid.pause(); }catch(e){} } });
+    modal.addEventListener("click",(e)=>{ if(e.target===modal) closeDemo(); });
+  }
+  const watch=$("demoWatch"); if(watch) watch.onclick=()=>{ markSeen(); openDemo(); };
+  const skip=$("demoSkip"); if(skip) skip.onclick=()=>{ markSeen(); try{ offer.close(); }catch(e){} };
+  if(offer){
+    offer.addEventListener("close", markSeen);
+    offer.addEventListener("click",(e)=>{ if(e.target===offer){ markSeen(); try{ offer.close(); }catch(_){} } });
+  }
+  let seen=true; try{ seen=!!localStorage.getItem(SEEN); }catch(e){ seen=false; }
+  if(!seen && offer){ setTimeout(()=>{ try{ offer.showModal(); }catch(e){} }, 700); }
+})();
 </script>
 </body>
 </html>
