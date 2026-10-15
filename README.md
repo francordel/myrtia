@@ -18,15 +18,7 @@
 
 <br />
 
-<img alt="Live council deliberation" src="docs/shot-run.png" width="85%" />
-
-<sub>The council deliberating against a target, streamed live turn by turn.</sub>
-
-<br /><br />
-
-<img alt="Agentic attack builder" src="docs/shot-agentic-builder.png" width="85%" />
-
-<sub>The agentic builder — compose the attack as a graph of proposer, critic and chairman nodes.</sub>
+<img alt="Myrtia demo — build a council, watch it deliberate live, and read the ASR analytics" src="docs/myrtia-demo.gif" width="90%" />
 
 </div>
 
