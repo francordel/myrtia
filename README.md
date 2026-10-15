@@ -16,6 +16,18 @@
 
 *A council of attacker models deliberates, votes and strikes — and you watch it live.*
 
+<br />
+
+<img alt="Live council deliberation" src="docs/shot-run.png" width="85%" />
+
+<sub>The council deliberating against a target, streamed live turn by turn.</sub>
+
+<br /><br />
+
+<img alt="Agentic attack builder" src="docs/shot-agentic-builder.png" width="85%" />
+
+<sub>The agentic builder — compose the attack as a graph of proposer, critic and chairman nodes.</sub>
+
 </div>
 
 ---
