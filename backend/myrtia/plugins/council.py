@@ -5,9 +5,14 @@ We do NOT copy its 2141 lines — the factory imports the real class lazily so t
 module (and the registry) load even where `ares-council` is not installed; the
 import only fires when a run is actually launched.
 
-Live streaming: once the plugin gains the optional `on_event` seam, wrap the class
-here so `set_event_emitter` maps the plugin's per-turn callbacks to Myrtia Events.
-Until then the orchestrator emits run/goal-level events on its own.
+Live streaming: the vendored CouncilAttack exposes the `on_event` seam
+(`set_event_emitter` + an internal `_emit` fired turn-by-turn during the run). When
+that seam is present we wire the orchestrator's emitter straight into it, so the
+console streams proposals, critiques, Borda votes, chairman synthesis, target
+responses and judge scores live, with turn and original_index intact (the
+per-member statistics depend on them). Older ares-council builds that predate the
+seam fall back to a coarser post-hoc replay so the UI still gets populated instead
+of a black box.
 """
 
 from __future__ import annotations
@@ -34,14 +39,28 @@ def _build(config: dict[str, Any], target_connector: Any, *, crescendo: bool):
             self.attack_results = [dict(g) for g in self.attack_goals]
 
         def set_event_emitter(self, emit) -> None:
+            # Prefer the vendored live seam: current ares-council emits every
+            # deliberation event turn-by-turn DURING the run, with turn/original_index/
+            # vote payloads intact (the per-member stats need them). Wire the
+            # orchestrator's emitter straight into that native hook. Builds that predate
+            # the seam have no base set_event_emitter, so we also keep the emitter for a
+            # post-hoc replay fallback (see attack()).
             self._myrtia_emit = emit
+            base = getattr(super(), "set_event_emitter", None)
+            if callable(base):
+                base(emit)
+                self._live_seam = True
+            else:
+                self._live_seam = False
 
         def attack(self, **kwargs: Any) -> list[dict]:
-            # This CouncilAttack build has no live per-turn hook, so we replay the
-            # completed deliberation as Myrtia events after the run: the UI gets the
-            # proposals, chairman prompt, target response and judge score per turn
-            # (not streamed live, but populated) instead of a black box.
             results = super().attack(**kwargs)
+            # Live seam already streamed everything during the run — nothing to replay.
+            if getattr(self, "_live_seam", False):
+                return results
+            # Fallback for seam-less builds: replay the completed deliberation as Myrtia
+            # events so the UI gets the proposals, chairman prompt, target response and
+            # judge score per turn (not live, but populated) instead of a black box.
             emit = getattr(self, "_myrtia_emit", None)
             if emit:
                 for r in results or []:

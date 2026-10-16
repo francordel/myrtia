@@ -12,6 +12,10 @@ authors = [
 ]
 license = "Apache-2.0"
 dependencies = [
+    # ARES core: council_attack.py imports ares.connectors / ares.strategies /
+    # ares.utils, so the core package must be present. Without it, `import
+    # ares_council` fails and Myrtia silently unregisters the council plugins.
+    "ares-redteamer",
     "requests",
     "tqdm",
 ]

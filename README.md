@@ -275,7 +275,8 @@ pip install -e vendor/ares-council
 </details>
 
 > The second line installs the **CouncilAttack plugin** (`ares-council`, vendored under
-> `backend/vendor/`). It is a separate install on purpose: Myrtia's core has **no hard
+> `backend/vendor/`). It pulls in **IBM ARES core** (`ares-redteamer`) automatically, since the
+> council runs on top of it. It is a separate install on purpose: Myrtia's core has **no hard
 > dependency on any attack pack**, so plugins are opt-in and the plugin registers itself only
 > when its library is present. It enables the `council` / `council-crescendo` attacks (Myrtia's
 > headline); every other attack runs without it.
@@ -314,7 +315,7 @@ dataset and category in Runs. See [goal dataset sources and scope](docs/goal-dat
 | PowerShell: *"running scripts is disabled on this system"* | Script execution policy blocks the venv activation | `Set-ExecutionPolicy -Scope Process RemoteSigned`, then re-run `.\.venv\Scripts\Activate.ps1`. |
 | `401 Unauthorized` / `invalid api key` | Missing or wrong API key for a frontier provider | Set the key for that provider in the UI (per-run), or use a local Ollama endpoint. |
 | `[Errno 48] Address already in use` / port **8000** busy | Another process holds the port | Run on another port: `uvicorn myrtia.api.app:app --port 8010`. |
-| `KeyError: 'council'` / council attacks missing | The `ares-council` plugin isn't installed | Run the second install line (`pip install -e vendor/ares-council`); it is opt-in. |
+| `KeyError: 'council'` / council attacks missing | The `ares-council` plugin (or its **ARES core** dependency `ares-redteamer`) isn't installed | Run `pip install -e vendor/ares-council` — it pulls in `ares-redteamer` automatically. If you installed the pack before ARES core was declared, re-run it, or `pip install ares-redteamer` directly. |
 
 In the console, failed turns now show a short explanation (e.g. *"Can't reach the model
 endpoint"*) with the raw error tucked under **Details**.
