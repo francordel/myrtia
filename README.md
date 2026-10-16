@@ -13,6 +13,9 @@
 [![Status](https://img.shields.io/badge/status-alpha-orange.svg)](BACKLOG.md)
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776ab.svg)](backend/pyproject.toml)
 [![Built on ARES](https://img.shields.io/badge/built%20on-ARES-555.svg)](https://github.com/IBM/ares)
+[![Site: myrtia.ai](https://img.shields.io/badge/site-myrtia.ai-1a73e8.svg)](https://myrtia.ai)
+
+**[myrtia.ai](https://myrtia.ai)**
 
 *A council of attacker models deliberates, votes and strikes — and you watch it live.*
 
