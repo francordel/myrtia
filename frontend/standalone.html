@@ -435,6 +435,11 @@
   .packcard .pinstalled { display:inline-flex; align-items:center; gap:6px; color:var(--success); font-size:13px; font-weight:500; }
   .packcard .pnote { font-size:12px; color:var(--text-3); }
   .packcard .ptag { font-size:11px; font-weight:600; letter-spacing:.3px; padding:1px 8px; border-radius:var(--r-pill); background:var(--surface-2); color:var(--text-2); border:1px solid var(--border); }
+  .packcard .pbadge { margin-left:auto; font-size:11px; font-weight:700; letter-spacing:.3px; padding:1px 8px; border-radius:var(--r-pill); white-space:nowrap; }
+  .packcard .pbadge.strat { background:var(--accent-bg); color:var(--accent); border:1px solid var(--accent); }
+  .packcard .pbadge.lib { background:var(--surface-2); color:var(--text-2); border:1px solid var(--border); }
+  .packcard .pbadge.installed { background:color-mix(in srgb,var(--success) 15%,transparent); color:var(--success); border:1px solid var(--success); }
+  .packcard .pnote.warn { color:var(--warning); font-weight:500; }
   .pack-section-title { font-size:17px; font-weight:600; margin:var(--sp-5) 0 var(--sp-3); }
   .pack-section-title:first-child { margin-top:0; }
   .dataset-note { margin-top:var(--sp-3); }
@@ -2084,16 +2089,16 @@ async function loadPacks(){ initAccessToken();
   (d.packs||[]).forEach(p=>{
     const c=document.createElement("div"); c.className="packcard";
     const adds=(p.adds||[]).map(a=>`<span class="tagpill">${esc(a)}</span>`).join("");
-    c.innerHTML=`<div class="ph"><h3>${esc(p.name)}</h3>${p.adapter?"":'<span class="ptag">library</span>'}</div>
+    c.innerHTML=`<div class="ph"><h3>${esc(p.name)}</h3>${p.installed?'<span class="pbadge installed">✓ Installed</span>':(p.adapter?'<span class="pbadge strat">Adds strategy</span>':'<span class="pbadge lib">Library only</span>')}</div>
       <div class="pdesc">${esc(p.description)}</div>
       ${adds?`<div class="padds">${adds}</div>`:""}
       <div class="pfoot"></div>
       <div class="packlog" id="packlog-${esc(p.id)}"></div>`;
     const foot=c.querySelector(".pfoot");
     if(p.installed){ foot.innerHTML=`<span class="pinstalled">✓ ${p.adapter?"Installed · strategy available":"Library installed · no Myrtia strategy"}</span>`; }
-    else { const btn=document.createElement("button"); btn.className="btn-outline"; btn.textContent=p.adapter?"Install strategy":"Install library only"; btn.title=p.adapter?"Adds a Myrtia strategy":"Installs the upstream library, but does not add a Myrtia attack strategy"; btn.onclick=()=>installPack(p,btn); foot.appendChild(btn); }
+    else { const btn=document.createElement("button"); btn.className=p.adapter?"primary":"btn-outline"; if(p.adapter) btn.style.cssText="width:auto;padding:7px 16px"; btn.textContent=p.adapter?"Install strategy":"Install library only"; btn.title=p.adapter?"Adds a Myrtia strategy":"Installs the upstream library, but does not add a Myrtia attack strategy"; btn.onclick=()=>installPack(p,btn); foot.appendChild(btn); }
     if(p.homepage){ const a=document.createElement("a"); a.href=p.homepage; a.target="_blank"; a.rel="noopener"; a.textContent="Source ›"; a.style.marginLeft="auto"; foot.appendChild(a); }
-    if(p.note){ const n=document.createElement("span"); n.className="pnote"; n.textContent=p.note; foot.appendChild(n); }
+    if(p.note){ const n=document.createElement("span"); n.className="pnote warn"; n.textContent="↓ "+p.note; foot.appendChild(n); }
     g.appendChild(c);
   });
 }
