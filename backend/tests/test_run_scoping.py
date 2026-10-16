@@ -49,6 +49,33 @@ def test_stats_and_audit_exclude_smoke_and_legacy_by_default(monkeypatch) -> Non
     assert "automatic judge" in audit["methodology_note"]
 
 
+def test_stats_collapse_multivariant_goal_started(monkeypatch) -> None:
+    """Multi-variant attacks emit one goal.started per variant of the same goal; stats
+    must count distinct goals (best score across variants), not one per variant."""
+    run = Run(
+        id="multivariant",
+        spec=RunSpec(attack_id="obfuscation", target={"model": "test-model"},
+                     goals=["A", "B"], purpose="security", goal_datasets=[]),
+        status=RunStatus.SUCCEEDED, results=[],
+    )
+    monkeypatch.setattr(appmod.STORE, "list", lambda: [run])
+    # Goal A tried with 3 variants (best = 5 -> jailbreak); goal B with 2 variants (no hit).
+    stream = [("A", 2), ("A", 0), ("A", 5), ("B", 1), ("B", 1)]
+
+    def backlog(run_id: str) -> list[Event]:
+        events = []
+        for goal, score in stream:
+            events.append(Event(run_id, EventType.GOAL_STARTED, {"goal": goal, "variant": "v"}))
+            events.append(Event(run_id, EventType.JUDGE_SCORED, {"score": score}))
+        return events
+
+    monkeypatch.setattr(appmod.BUS, "backlog", backlog)
+    data = TestClient(appmod.app).get("/stats").json()
+    assert data["total_goals"] == 2          # two distinct goals, not five variants
+    assert data["jailbroken"] == 1           # goal A, best-of-variants >= 5
+    assert data["asr"] == 50
+
+
 def test_history_filters_and_reclassification(monkeypatch) -> None:
     resisted = _run("resisted", "security", ["harmbench"], [2])
     unjudged = _run("unjudged", "unreviewed", [], [])

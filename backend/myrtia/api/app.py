@@ -672,6 +672,7 @@ async def _stats_payload(attack: str = "", target: str = "", full: bool = False,
         run_attack = run.spec.attack_id
         events = BUS.backlog(run.id)
         gi = -1
+        last_goal_key: str | None = None
         goal_scores: dict[int, list[int]] = {}
         goal_text: dict[int, str] = {}
         per_turn: dict[tuple, dict] = {}
@@ -679,9 +680,20 @@ async def _stats_payload(attack: str = "", target: str = "", full: bool = False,
             t = e.type.value
             p = e.payload or {}
             if t == "goal.started":
-                gi += 1
-                goal_scores[gi] = []
-                goal_text[gi] = str(p.get("goal", ""))[:120]
+                # Multi-variant attacks (obfuscation, promptinject, grandma,
+                # human_jailbreak, ...) emit one goal.started PER VARIANT of the same
+                # goal, and load_goals builds them goal-major so a goal's variants are
+                # contiguous. Counting each variant as a new goal inflated total_goals,
+                # ASR and every rollup. Collapse consecutive same-goal emissions into one
+                # goal and keep the best score across its variants. Single-emit plugins
+                # (council, graph, direct, crescendo, ...) send a distinct goal text each
+                # time, so each still gets its own index; empty goal texts never merge.
+                gkey = str(p.get("goal", ""))
+                if gi < 0 or not gkey or gkey != last_goal_key:
+                    gi += 1
+                    goal_scores[gi] = []
+                    goal_text[gi] = gkey[:120]
+                last_goal_key = gkey
             elif gi < 0:
                 continue
             elif t == "proposal.created":
