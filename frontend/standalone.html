@@ -755,6 +755,7 @@
         <button class="btn-outline" id="gCompare" title="Run the same attack with and without the shields, then show the ASR drop">Compare shields</button>
         <button class="primary gb-launch" id="gLaunch">Launch attack</button>
         <div class="source-note" id="gLaunchSummary">Will run the manual smoke-test goal above · 0 library goals selected</div>
+        <div class="source-note reco-note" id="gReco" hidden></div>
       </div>
       <details class="adv graph-goals" id="glibwrap" open>
         <summary><span class="goals-icon" aria-hidden="true">◎</span><span class="goals-title">Choose goals from the library<small>Search, filter and select multiple behaviours for this run</small></span><span class="goals-count" id="glibSel">0 selected</span></summary>
@@ -2390,6 +2391,37 @@ function gsLoad(){ try{ const s=JSON.parse(localStorage.getItem("myrtia-graph")|
     GS.chairmen.forEach((c,i)=>{ if(!c.id) c.id="c"+(i+1); }); if(!Array.isArray(GS.defenses)) GS.defenses=[];
     if(!Array.isArray(GS.edges)) GS.edges=[]; if(GS.contextualMode) GS.accumulate=false; } }catch(e){} }
 function gsSave(){ try{ localStorage.setItem("myrtia-graph",JSON.stringify(GS)); }catch(e){} }
+// Hardware-aware model default: ask the backend what this machine can run so new users
+// don't start on a model too small to attack well (issue: default was qwen2.5:3b everywhere).
+let SYS=null; const DEF_MODEL="qwen2.5:3b";
+async function loadSystemReco(){
+  try{ SYS=await (await fetch(API()+"/system")).json(); }catch(e){ return; }
+  const rec=SYS&&SYS.recommended_model, el=$("gReco");
+  if(!rec){ if(el) el.hidden=true; return; }
+  // Once per browser, upgrade roles still on the tiny default to the recommended model, so a
+  // new council uses a capable model. Only touches values still at DEF_MODEL, so a model the
+  // user deliberately chose is never overwritten; the one-time flag then respects saved state.
+  let applied=false; try{ applied=!!localStorage.getItem("myrtia-reco-applied"); }catch(e){}
+  if(!applied){
+    (GS.attackers||[]).forEach(a=>{ if(a.model===DEF_MODEL) a.model=rec; });
+    (GS.chairmen||[]).forEach(c=>{ if(c.model===DEF_MODEL) c.model=rec; });
+    if(GS.evaluator&&GS.evaluator.model===DEF_MODEL) GS.evaluator.model=rec;
+    if(GS.target&&GS.target.model===DEF_MODEL) GS.target.model=rec;
+    gsSave(); try{ renderGraph(); }catch(e){}
+    try{ localStorage.setItem("myrtia-reco-applied","1"); }catch(e){}
+  }
+  ["gTmodel","tmodel"].forEach(id=>{ const f=$(id); if(f && f.value.trim()===DEF_MODEL) f.value=rec; });
+  if(el && rec!==DEF_MODEL){
+    const spec=(SYS.gpu&&SYS.gpu.vram_gb)?`${SYS.gpu.vram_gb} GB VRAM`:(SYS.ram_gb?`${SYS.ram_gb} GB RAM`:"this machine");
+    el.innerHTML=`💡 This machine (${esc(spec)}) can run <b>${esc(rec)}</b> — <a href="#" id="gRecoApply">use it for every role</a>`;
+    el.hidden=false;
+    const a=$("gRecoApply"); if(a) a.onclick=(e)=>{ e.preventDefault(); try{gCheckpoint();}catch(_){}
+      (GS.attackers||[]).forEach(x=>x.model=rec); (GS.chairmen||[]).forEach(x=>x.model=rec);
+      if(GS.evaluator) GS.evaluator.model=rec; if(GS.target) GS.target.model=rec;
+      const tm=$("gTmodel"); if(tm) tm.value=rec; gsSave(); try{renderGraph();}catch(_){}
+      toast(`Set every role to ${rec}.`,"ok"); };
+  } else if(el){ el.hidden=true; }
+}
 const G_HISTORY_LIMIT=50, gUndoStack=[], gRedoStack=[];
 function gHistoryButtons(){ $("gUndo").disabled=!gUndoStack.length; $("gRedo").disabled=!gRedoStack.length; }
 function gCheckpoint(){
@@ -3007,6 +3039,7 @@ setRunMode(_runmode);
 renderEmpty();
 loadPlugins();
 loadProfiles();
+loadSystemReco();
 loadHistory();
 loadStats();
 // keep History + Stats live while any run is executing
