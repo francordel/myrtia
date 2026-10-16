@@ -1140,7 +1140,7 @@ $("theme").onclick = () => {
 };
 
 // ---- score vocabulary (shared by stream, history, stats) ----
-function scoreCls(sc){ return sc>=5?"max":sc>=4?"high":sc>=3?"mid":"low"; }
+function scoreCls(sc){ return sc>=5?"max":sc>=3?"mid":"low"; } // red = full jailbreak (5) only; 3-4 = amber partial; 0-2 = muted resisted
 function scoreWord(sc){ return sc>=5?"jailbroken":sc>=3?"partial":"resisted"; }
 function scorePill(sc, prefix){
   if(sc===null||sc===undefined||!(sc>=0&&sc<=5)) return "";
@@ -1944,7 +1944,8 @@ function asrBars(rows){
   return rows.map(r=>{
     const cls = r.asr>=67?"hot":(r.asr>=34?"warm":"cold");
     const tick = (r.avg_score!=null) ? `<span class="tick" style="left:${Math.min(100,100*r.avg_score/5)}%" title="avg best score ${r.avg_score}/5"></span>` : "";
-    return `<div class="bar ${cls}"><span class="k"><div class="kk" title="${esc(r.key)}">${esc(r.key)}</div><div class="ks">${r.jailbroken}/${r.goals} jailbroken${r.avg_score!=null?` · avg ${r.avg_score}/5`:""}</div></span>`+
+    const kLabel=(r.key===""||r.key==="(none)")?"Untagged":r.key;
+    return `<div class="bar ${cls}"><span class="k"><div class="kk" title="${esc(kLabel)}">${esc(kLabel)}</div><div class="ks">${r.jailbroken}/${r.goals} jailbroken${r.avg_score!=null?` · avg ${r.avg_score}/5`:""}</div></span>`+
       `<span class="track"><span class="fill" style="width:${r.asr}%"></span>${tick}</span>`+
       `<span class="v num">${r.asr}%</span></div>`;
   }).join("");
@@ -1953,8 +1954,10 @@ const SCORE_FILL=["color-mix(in srgb,var(--score-low) 45%,transparent)","color-m
 let LAST_BEH=[];
 const SEV_ORDER=["critical","high","medium","low","informational","passed"];
 const SEV_LABEL={critical:"Critical",high:"High",medium:"Medium",low:"Low",informational:"Informational",passed:"Passed"};
-const SEV_COLOR={critical:"#c0392b",high:"#e67e22",medium:"#d4a017",low:"#3b82c4",informational:"#7a8494",passed:"#1e8449"};
-const POSTURE_COLOR={Critical:"#c0392b",High:"#e67e22",Medium:"#d4a017",Low:"#3b82c4",Clean:"#1e8449"};
+// Theme-token palette so the bar reads as part of the UI: solid red = full jailbreak only,
+// amber for partial severities, a muted green for "passed" so it doesn't dominate the ink.
+const SEV_COLOR={critical:"var(--danger)",high:"color-mix(in srgb,var(--danger) 50%,var(--warning))",medium:"var(--warning)",low:"var(--info)",informational:"var(--text-3)",passed:"color-mix(in srgb,var(--success) 48%,var(--surface-3))"};
+const POSTURE_COLOR={Critical:"var(--danger)",High:"color-mix(in srgb,var(--danger) 50%,var(--warning))",Medium:"var(--warning)",Low:"var(--info)",Clean:"var(--success)"};
 let LAST_STATS=null;
 function scopeChips(){
   const a=$("statAttack").value, t=$("statTarget").value; const out=[];
@@ -1989,7 +1992,7 @@ async function loadStats(){
   // severity distribution bar + legend
   const stot=Math.max(1,SEV_ORDER.reduce((a,k)=>a+(sev[k]||0),0));
   $("sevBar").innerHTML=SEV_ORDER.map(k=>(sev[k]?`<i style="width:${100*sev[k]/stot}%;background:${SEV_COLOR[k]}" title="${SEV_LABEL[k]}: ${sev[k]}"></i>`:"")).join("");
-  $("sevLegend").innerHTML=SEV_ORDER.map(k=>`<div class="l"><i style="background:${SEV_COLOR[k]}"></i>${SEV_LABEL[k]} <b class="num">${sev[k]||0}</b></div>`).join("");
+  $("sevLegend").innerHTML=SEV_ORDER.filter(k=>sev[k]).map(k=>`<div class="l"><i style="background:${SEV_COLOR[k]}"></i>${SEV_LABEL[k]} <b class="num">${sev[k]}</b></div>`).join("");
   // raw score distribution (kept, collapsed)
   const dist=d.score_distribution||[0,0,0,0,0,0]; const tot=dist.reduce((a,b)=>a+b,0);
   $("scoreChart").innerHTML = `<div class="stack">`+dist.map((n,ss)=>n?`<i style="width:${100*n/Math.max(1,tot)}%;background:${SCORE_FILL[ss]}" title="score ${ss}: ${n}"></i>`:"").join("")+`</div>`+
