@@ -392,19 +392,26 @@
 
   /* ---- history ---- */
   .filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:var(--sp-2); align-items:end; }
+  .filters[hidden] { display:none; }
   .filters .fq { grid-column:span 2; }
   .filters label { margin:0 0 4px; }
   .fsum { display:flex; align-items:center; gap:var(--sp-3); margin:var(--sp-3) 0 var(--sp-2); font-size:12px; color:var(--text-2); flex-wrap:wrap; }
   .fsum .clear { margin-left:auto; }
   .runtab { display:flex; flex-direction:column; }
-  .runrow, .runhdr { display:grid; grid-template-columns:minmax(0,1fr) 110px 150px 110px 130px 150px; gap:var(--sp-3); align-items:center; padding:10px var(--sp-3); }
+  .runrow, .runhdr { display:grid; grid-template-columns:minmax(0,1fr) 110px 150px 130px 150px; gap:var(--sp-3); align-items:center; padding:10px var(--sp-3); }
   .runhdr { font-size:12px; color:var(--text-2); font-weight:500; border-bottom:1px solid var(--border); }
   .runhdr button { border:0; background:transparent; color:inherit; padding:0; cursor:pointer; font-weight:500; font-size:12px; text-align:left; }
   .runhdr button:hover { color:var(--accent); }
   .runrow { border-bottom:1px solid var(--border); cursor:pointer; transition:background .12s; border-radius:var(--r-sm); }
   .runrow:hover { background:var(--surface-2); }
   .runrow .g { min-width:0; }
-  .runrow .g .gt { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .runrow .g .gt { white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .filters-bar { display:flex; gap:var(--sp-2); align-items:flex-end; margin-bottom:var(--sp-2); }
+  .filters-bar .fq { flex:1; }
+  .fcount { display:inline-block; min-width:16px; margin-left:6px; padding:0 5px; border-radius:var(--r-pill); background:var(--accent); color:#fff; font-size:11px; font-weight:700; text-align:center; }
+  .fcount:empty { display:none; }
+  .runrow .st-badge { display:inline-flex; align-items:center; gap:4px; padding:0 6px; border-radius:var(--r-pill); font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-right:6px; }
+  .runrow .st-badge.running { color:var(--warning); border:1px solid var(--warning); } .runrow .st-badge.error { color:var(--danger); border:1px solid var(--danger); } .runrow .st-badge.cancelled { color:var(--text-2); border:1px solid var(--border-strong); }
   .runrow .g .gm { display:block; margin-top:3px; font-size:11px; color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .runrow .mobile-meta { display:none; }
   .runrow .c { font-size:13px; color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -630,7 +637,7 @@
     .charts2 { grid-template-columns:1fr; }
     .filters { grid-template-columns:1fr 1fr; }
     .filters .fq { grid-column:1 / -1; }
-    .runrow, .runhdr { grid-template-columns:minmax(0,1fr) 110px 130px 140px; }
+    .runrow, .runhdr { grid-template-columns:minmax(0,1fr) 110px 130px; }
     .runrow .c.hide-md, .runhdr .hide-md { display:none; }
   }
   @media (max-width:820px){
@@ -1003,8 +1010,11 @@
     <div class="card" id="history">
       <div class="card-h"><span>History</span><span class="caption" id="histCount"></span></div>
       <div class="card-b">
-        <div class="filters">
+        <div class="filters-bar">
           <div class="fq"><label for="fq">Search</label><input id="fq" placeholder="Goal, theme, attack or model…" /></div>
+          <button type="button" class="btn-outline" id="histFilterBtn" aria-expanded="false" aria-controls="histFiltersAdv">⚙ Filters<span class="fcount" id="histFilterCount"></span></button>
+        </div>
+        <div class="filters" id="histFiltersAdv" hidden>
           <div><label for="fattack">Attack</label><select id="fattack"><option value="">All attacks</option></select></div>
           <div><label for="ftheme">Theme</label><select id="ftheme"><option value="">All themes</option></select></div>
           <div><label for="fdataset">Dataset</label><select id="fdataset"><option value="">All datasets</option></select></div>
@@ -1029,7 +1039,7 @@
         <div class="fsum" id="fsum"></div>
         <div class="runtab">
           <div class="runhdr">
-            <span>Goal</span><span>Attack</span><span class="hide-md">Target</span><span>Status</span><span><button id="sortScore" type="button">Outcome ↕</button></span><span class="hide-md"><button id="sortDate" type="button">Date ↓</button></span>
+            <span>Goal</span><span>Attack</span><span class="hide-md">Target</span><span><button id="sortScore" type="button">Outcome ↕</button></span><span class="hide-md"><button id="sortDate" type="button">Date ↓</button></span>
           </div>
           <div id="runlist"></div>
         </div>
@@ -1373,6 +1383,7 @@ let RUN=null;           // {id, spec, status, created_at, error}
 let ACTIVE_RUNS=[];      // unfiltered /runs active_runs; independent of History filters
 let LIVE_MENU_SIG="";
 function fmtTime(ts){ try{ return new Date(ts*1000).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}); }catch(e){ return ""; } }
+function fmtRel(ts){ if(!ts) return ""; const s=Math.max(0,Date.now()/1000-ts); if(s<60) return "just now"; const m=Math.floor(s/60); if(m<60) return m+"m ago"; const h=Math.floor(m/60); if(h<24) return h+"h ago"; const d=Math.floor(h/24); if(d<30) return d+"d ago"; const mo=Math.floor(d/30); if(mo<12) return mo+"mo ago"; return Math.floor(mo/12)+"y ago"; }
 function fmtDur(sec){ sec=Math.max(0,Math.round(sec)); if(sec<60) return sec+"s"; const m=Math.floor(sec/60), s=sec%60; if(m<60) return m+"m"+(s?" "+s+"s":""); const h=Math.floor(m/60); if(h<24) return h+"h "+(m%60)+"m"; const d=Math.floor(h/24); return d+"d "+(h%24)+"h"; }
 function closeLiveMenu(focusChip=false){
   if($("liveMenu").hidden) return;
@@ -1892,6 +1903,8 @@ async function loadHistory(){
   if($("fresult").value) act.push(STATUS_LABEL[$("fresult").value]||$("fresult").value); if($("fscore").value!=="-1") act.push($("fscore").selectedOptions[0].textContent);
   if($("fdataset").value) act.push(`dataset: ${$("fdataset").value}`);
   if($("fpurpose").value) act.push(`purpose: ${$("fpurpose").value}`);
+  const advCount=($("fattack").value?1:0)+($("ftheme").value?1:0)+($("fdataset").value?1:0)+($("fpurpose").value?1:0)+($("fresult").value?1:0)+($("fscore").value!=="-1"?1:0);
+  if($("histFilterCount")) $("histFilterCount").textContent=advCount||"";
   $("fsum").innerHTML = act.length ? `<span>Filtered by</span>`+act.map(a=>`<span class="tagpill">${esc(a)}</span>`).join("")+`<button class="btn-outline clear" id="fclear">Clear filters</button>` : "";
   if($("fclear")) $("fclear").onclick=()=>{ $("fq").value=""; $("fattack").value=""; $("ftheme").value=""; $("fresult").value=""; $("fscore").value="-1"; $("fdataset").value=""; $("fpurpose").value=""; loadHistory(); };
   LAST_RUNS=data.runs||[]; renderHistory();
@@ -1905,12 +1918,13 @@ function renderHistory(){
     const row=document.createElement("div"); row.className="runrow"; row.tabIndex=0; row.setAttribute("role","button");
     const goal=(r.goals&&r.goals[0])||"(no goal)"; const n=(r.goals||[]).length;
     const score=(r.best_score!==null&&r.best_score!==undefined)?scorePill(r.best_score):`<span class="caption">${r.status==="running"?"in progress":"not judged"}</span>`;
-    row.innerHTML=`<div class="g"><div class="gt"></div><div class="gm"><span class="mobile-meta">${esc(r.attack_id)} · ${esc(r.target_model||"?")} · ${esc(fmtTime(r.created_at))} · </span>${esc(r.purpose||"unreviewed")} · ${esc((r.goal_datasets||[]).filter((v,i,a)=>a.indexOf(v)===i).join(", ")||"dataset unknown")}</div></div>
+    const st=r.status, stBadge=(st&&st!=="succeeded")?`<span class="st-badge ${st==="failed"?"error":st}">${st==="failed"?"error":st}</span>`:"";
+    const rel=fmtRel(r.created_at);
+    row.innerHTML=`<div class="g"><div class="gt"></div><div class="gm">${stBadge}<span class="mobile-meta">${esc(r.attack_id)} · ${esc(r.target_model||"?")} · </span>${rel?esc(rel)+" · ":""}${esc(r.purpose||"unreviewed")} · ${esc((r.goal_datasets||[]).filter((v,i,a)=>a.indexOf(v)===i).join(", ")||"dataset unknown")}</div></div>
       <span class="c mono">${esc(r.attack_id)}</span>
       <span class="c mono hide-md">${esc(r.target_model||"?")}</span>
-      <span class="c keep">${statusPill(r.status)}</span>
       <span class="c keep">${score}</span>
-      <span class="c hide-md">${esc(fmtTime(r.created_at))}</span>`;
+      <span class="c hide-md" title="${esc(fmtTime(r.created_at))}">${esc(rel)}</span>`;
     const goalLabel=(n>1?`${n} goals · `:"")+goal;
     row.querySelector(".gt").textContent=r.title||goalLabel; row.querySelector(".gt").title=r.title||goal;
     if(r.title){ const preview=document.createElement("div"); preview.className="gm goal-preview"; preview.textContent=`Goal · ${goalLabel}`; preview.title=goal; row.querySelector(".gt").after(preview); }
@@ -1922,6 +1936,7 @@ function renderHistory(){
 }
 $("sortDate").onclick=()=>{ if(HSORT.key==="created_at") HSORT.dir*=-1; else HSORT={key:"created_at",dir:-1}; $("sortDate").textContent="Date "+(HSORT.dir<0?"↓":"↑"); $("sortScore").textContent="Outcome ↕"; renderHistory(); };
 $("sortScore").onclick=()=>{ if(HSORT.key==="best_score") HSORT.dir*=-1; else HSORT={key:"best_score",dir:-1}; $("sortScore").textContent="Outcome "+(HSORT.dir<0?"↓":"↑"); $("sortDate").textContent="Date ↕"; renderHistory(); };
+if($("histFilterBtn")) $("histFilterBtn").onclick=()=>{ const adv=$("histFiltersAdv"), open=adv.hidden; adv.hidden=!open; $("histFilterBtn").setAttribute("aria-expanded",String(open)); };
 $("liveChip").onclick=()=>{
   if(ACTIVE_RUNS.length===1){ openRunFromSummary(ACTIVE_RUNS[0]); return; }
   if(ACTIVE_RUNS.length<2) return;
