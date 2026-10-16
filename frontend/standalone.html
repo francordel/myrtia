@@ -336,8 +336,11 @@
   .scope { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
   .scope .fchip { display:inline-flex; align-items:center; gap:6px; padding:3px 6px 3px 10px; border-radius:var(--r-pill); font-size:12px; background:var(--accent-bg); color:var(--accent); border:1px solid transparent; }
   .scope .fchip button { border:0; background:transparent; color:inherit; cursor:pointer; padding:0 4px; font-size:14px; line-height:1; }
-  .statgrid { display:grid; grid-template-columns:repeat(5,1fr); gap:var(--sp-3); margin:var(--sp-4) 0; }
-  .statbox.posturebox .statnum { font-size:22px; line-height:30px; }
+  .statgrid { display:grid; grid-template-columns:repeat(6,1fr); gap:var(--sp-3); margin:var(--sp-4) 0; }
+  .statbox.hero, .statbox.big { grid-column:span 3; }
+  .statbox.hero .statnum { font-size:40px; line-height:1.15; }
+  .statbox.minor { grid-column:span 2; }
+  .statbox.minor .statnum { font-size:22px; color:var(--text-2); }
   /* audit / stats redesign */
   .card-h .exportbar { display:flex; align-items:center; gap:14px; margin-left:auto; flex-wrap:wrap; }
   .exportbar .xgrp { display:flex; gap:6px; flex-wrap:wrap; }
@@ -638,7 +641,7 @@
   /* ---- responsive ---- */
   @media (max-width:1100px){
     #view-run { grid-template-columns:340px minmax(0,1fr); }
-    .statgrid { grid-template-columns:repeat(2,1fr); }
+    .statgrid { grid-template-columns:repeat(2,1fr); } .statgrid .statbox { grid-column:auto; }
     .charts2 { grid-template-columns:1fr; }
     .filters { grid-template-columns:1fr 1fr; }
     .filters .fq { grid-column:1 / -1; }
@@ -660,7 +663,7 @@
     #jumpLive { bottom:84px; }
     #toasts { bottom:84px; }
     #chatPanel { right:0; bottom:0; left:0; top:0; width:auto; max-width:none; height:auto; max-height:none; border-radius:0; z-index:80; }
-    .statgrid { grid-template-columns:repeat(2,1fr); }
+    .statgrid { grid-template-columns:repeat(2,1fr); } .statgrid .statbox { grid-column:auto; }
     .pipe { grid-template-columns:1fr 1fr; }
     .runhead { grid-template-columns:1fr; }
     .runhead .acts { justify-content:flex-start; }
@@ -955,11 +958,11 @@
           <!-- 1 · Executive summary -->
           <div class="sechead"><span class="secn">1</span><h3>Executive summary</h3></div>
           <div class="statgrid">
-            <div class="statbox posturebox"><div class="statnum" id="stPosture">—</div><div class="statlbl">risk posture</div></div>
-            <div class="statbox hot"><div class="statnum num" id="stAsr">0%</div><div class="statlbl">attack success rate</div></div>
-            <div class="statbox"><div class="statnum num" id="stJb">0</div><div class="statlbl">jailbroken · of <span id="stGoals">0</span> tests</div></div>
-            <div class="statbox"><div class="statnum num" id="stFindings">0</div><div class="statlbl">findings · medium+</div></div>
-            <div class="statbox"><div class="statnum num" id="stRuns">0</div><div class="statlbl">runs analysed</div></div>
+            <div class="statbox posturebox hero"><div class="statnum" id="stPosture">—</div><div class="statlbl">risk posture</div></div>
+            <div class="statbox hot big"><div class="statnum num" id="stAsr">0%</div><div class="statlbl">attack success rate</div></div>
+            <div class="statbox minor"><div class="statnum num" id="stJb">0</div><div class="statlbl">jailbroken · of <span id="stGoals">0</span> tests</div></div>
+            <div class="statbox minor"><div class="statnum num" id="stFindings">0</div><div class="statlbl">findings · medium+</div></div>
+            <div class="statbox minor"><div class="statnum num" id="stRuns">0</div><div class="statlbl">runs analysed</div></div>
           </div>
 
           <!-- 2 · Findings by severity -->
