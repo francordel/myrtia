@@ -232,6 +232,12 @@
   .next-run button.primary { width:auto; min-width:210px; flex:none; }
   @media (max-width:620px){ .next-run { flex-direction:column; align-items:stretch; } .next-run button.primary { width:100%; } }
   .runhead .pills { grid-column:1 / -1; display:flex; gap:var(--sp-2); flex-wrap:wrap; align-items:center; }
+  .run-progress { grid-column:1 / -1; margin:2px 0; }
+  .run-progress .rp-track { height:6px; border-radius:var(--r-pill); background:var(--surface-3); overflow:hidden; }
+  .run-progress .rp-track i { display:block; height:100%; width:0; background:var(--accent); border-radius:inherit; transition:width .45s ease; }
+  .run-progress.running .rp-track i { background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 55%,var(--info))); }
+  .run-progress.done .rp-track i { background:var(--success); } .run-progress.failed .rp-track i { background:var(--danger); }
+  .run-progress .rp-txt { display:block; margin-top:5px; }
   .run-purpose, .run-config { grid-column:1 / -1; }
   .run-purpose { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
   .run-purpose label { margin:0; }
@@ -882,6 +888,10 @@
       </div>
       <div class="run-purpose"><label for="rhPurpose">Purpose</label><select id="rhPurpose"><option value="unreviewed">Unreviewed · excluded from reports</option><option value="security">Security evaluation</option><option value="smoke">Smoke test</option></select><span class="caption" id="rhPurposeNote">Automatic judge scores are signals, not confirmed findings.</span></div>
       <details class="run-config"><summary>Run configuration · read-only</summary><pre id="rhConfig"></pre></details>
+      <div class="run-progress" id="rhProgress" hidden>
+        <div class="rp-track"><i id="rhProgFill"></i></div>
+        <span class="caption rp-txt" id="rhProgTxt"></span>
+      </div>
       <div class="pills">
         <span class="status" id="rhStatus"><i></i>—</span>
         <span id="rhBest"></span>
@@ -1361,7 +1371,7 @@ let RUN=null;           // {id, spec, status, created_at, error}
 let ACTIVE_RUNS=[];      // unfiltered /runs active_runs; independent of History filters
 let LIVE_MENU_SIG="";
 function fmtTime(ts){ try{ return new Date(ts*1000).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}); }catch(e){ return ""; } }
-function fmtDur(sec){ sec=Math.max(0,Math.round(sec)); if(sec<60) return sec+"s"; const m=Math.floor(sec/60), s=sec%60; if(m<60) return m+"m"+(s?" "+s+"s":""); const h=Math.floor(m/60); return h+"h "+(m%60)+"m"; }
+function fmtDur(sec){ sec=Math.max(0,Math.round(sec)); if(sec<60) return sec+"s"; const m=Math.floor(sec/60), s=sec%60; if(m<60) return m+"m"+(s?" "+s+"s":""); const h=Math.floor(m/60); if(h<24) return h+"h "+(m%60)+"m"; const d=Math.floor(h/24); return d+"d "+(h%24)+"h"; }
 function closeLiveMenu(focusChip=false){
   if($("liveMenu").hidden) return;
   $("liveMenu").hidden=true; $("liveChip").setAttribute("aria-expanded","false"); LIVE_MENU_SIG="";
@@ -1456,22 +1466,40 @@ function renderRunHead(){
   $("rhBest").innerHTML = best!==null ? scorePill(best,"best") : "";
   const turns=new Set(events.filter(e=>e.payload&&e.payload.turn!==undefined).map(e=>(e.payload.goal_index??"g")+":"+e.payload.turn)).size;
   const tk=(RUN.token_usage&&RUN.token_usage.target)||null;
-  // Live progress + ETA (issue #24): goals done/total and elapsed, with a rough ETA
-  // while running (elapsed per completed goal × goals remaining).
-  let prog="";
-  const started=new Set(events.filter(e=>e.type==="goal.started").map(e=>e.payload&&e.payload.goal_index)).size
-              || events.filter(e=>e.type==="goal.started").length;
-  const finished=events.filter(e=>e.type==="goal.finished").length;
-  if(nGoals>1){ const done=(RUN.status!=="running")?nGoals:Math.min(started||1,nGoals); prog=` · goal ${done}/${nGoals}`; }
-  if(RUN.created_at){
-    const elapsed=Math.max(0,(Date.now()/1000)-RUN.created_at);
-    prog+=` · ${fmtDur(elapsed)}`;
-    if(RUN.status==="running"){
-      const doneG=finished||Math.max(0,(started||1)-1);
-      if(nGoals>1 && doneG>0){ const per=elapsed/doneG, left=per*(nGoals-doneG); if(left>0) prog+=` · ~${fmtDur(left)} left`; }
+  // Live progress bar + ETA + trustworthy elapsed (issue #24).
+  const running = RUN.status==="running";
+  const maxTurns = Number((contextCfg||{}).max_turns) || null;
+  const finished = events.filter(e=>e.type==="goal.finished").length;
+  const started = new Set(events.filter(e=>e.type==="goal.started").map(e=>e.payload&&e.payload.goal_index)).size
+                || events.filter(e=>e.type==="goal.started").length;
+  // Elapsed: wall clock only while running; the real finish time when terminal; nothing when unknown
+  // (imported/old runs have no finish time, so we never show a bogus "74h" since-creation value).
+  const endT = running ? (Date.now()/1000) : (RUN.finished_at || null);
+  const elapsed = (RUN.created_at && endT!=null) ? Math.max(0, endT - RUN.created_at) : null;
+  const prog=$("rhProgress"), fill=$("rhProgFill"), ptxt=$("rhProgTxt");
+  let frac=null;
+  if(maxTurns){
+    const totalUnits = Math.max(1,nGoals)*maxTurns;
+    frac = terminal ? 1 : Math.min(1, turns/totalUnits);
+    const curTurn = Math.min(maxTurns, Math.max(1, turns - (nGoals>1?finished*maxTurns:0)));
+    let ptext;
+    if(running){
+      let eta="";
+      if(turns>=1 && elapsed!=null){ const left=(elapsed/turns)*(totalUnits-turns); if(left>0) eta=` · ~${fmtDur(left)} left`; }
+      ptext=(nGoals>1?`Goal ${Math.min(started||1,nGoals)}/${nGoals} · `:"")+`Turn ${curTurn}/${maxTurns}`+(elapsed!=null?` · ${fmtDur(elapsed)} elapsed`:"")+eta;
+    } else {
+      const word=STATUS_LABEL[RUN.status]||RUN.status;
+      ptext=`${turns} turn${turns!==1?"s":""}`+(nGoals>1?` · ${nGoals} goals`:"")+(elapsed!=null?` · ${word} in ${fmtDur(elapsed)}`:` · ${word}`);
     }
-  }
-  $("rhCounts").textContent = `${events.length} events${turns?` · ${turns} turn${turns!==1?"s":""}`:""}${tk&&tk.total?` · ${tk.total.toLocaleString()} target tokens`:""}${prog}`;
+    prog.hidden=false;
+    prog.classList.toggle("running",running);
+    prog.classList.toggle("done",terminal && RUN.status==="succeeded");
+    prog.classList.toggle("failed",terminal && RUN.status!=="succeeded");
+    fill.style.width=Math.round(frac*100)+"%";
+    ptxt.textContent=ptext;
+  } else { prog.hidden=true; }
+  const elapsedStr = (!maxTurns && elapsed!=null) ? ` · ${fmtDur(elapsed)}` : "";
+  $("rhCounts").textContent = `${events.length} events${(!maxTurns&&turns)?` · ${turns} turn${turns!==1?"s":""}`:""}${tk&&tk.total?` · ${tk.total.toLocaleString()} target tokens`:""}${elapsedStr}`;
   if(RUN.id){ $("expCsv").href=API()+"/runs/"+RUN.id+"/export?format=csv"; $("expJson").href=API()+"/runs/"+RUN.id+"/export?format=json"; if($("expReport")) $("expReport").href=API()+"/runs/"+RUN.id+"/report"; }
   updJump();
 }
@@ -1780,9 +1808,11 @@ function connectRun(runId, keepEvents){
     const stick = RUN && RUN.status==="running" && nearBottom();
     events.push(ev);
     if(ev.type==="run.started" && ev.payload && ev.payload.spec){ RUN.spec=RUN.spec||ev.payload.spec; }
-    if(ev.type==="run.finished"){ wsFinished=true; const st=ev.payload.status; RUN.status=st; fetchRunMeta(wsRunId);
-      // Backlog replay re-sends run.finished right after open; only toast for a live finish.
-      if(Date.now()-wsOpenedAt>1500) toast(`Run ${STATUS_LABEL[st]||st}.`, st==="succeeded"?"ok":(st==="cancelled"?"info":"err"));
+    if(ev.type==="run.finished"){ wsFinished=true; const st=ev.payload.status; RUN.status=st;
+      // Backlog replay re-sends run.finished right after open; only treat it as a LIVE finish
+      // (record the real finish time + toast) when it arrives well after the socket opened.
+      if(Date.now()-wsOpenedAt>1500){ RUN.finished_at=Date.now()/1000; toast(`Run ${STATUS_LABEL[st]||st}.`, st==="succeeded"?"ok":(st==="cancelled"?"info":"err")); }
+      fetchRunMeta(wsRunId);
       loadHistory(); loadStats(); $("stop").disabled=false; $("stop").textContent="Stop run"; }
     render();
     updApproval();
