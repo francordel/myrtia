@@ -190,6 +190,87 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+def _total_ram_gb() -> float | None:
+    """Best-effort total physical RAM in GB, dependency-light and cross-platform."""
+    try:
+        import psutil  # optional; only in [dev]
+        return round(psutil.virtual_memory().total / 1e9, 1)
+    except Exception:
+        pass
+    try:  # POSIX (macOS / Linux)
+        return round(os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 1e9, 1)
+    except (ValueError, AttributeError, OSError):
+        pass
+    try:  # Windows
+        import ctypes
+
+        class _MS(ctypes.Structure):
+            _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
+                        ("ullTotalPhys", ctypes.c_ulonglong), ("ullAvailPhys", ctypes.c_ulonglong),
+                        ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
+                        ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
+                        ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+        ms = _MS(); ms.dwLength = ctypes.sizeof(_MS)
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(ms))  # type: ignore[attr-defined]
+        return round(ms.ullTotalPhys / 1e9, 1)
+    except Exception:
+        return None
+
+
+def _nvidia_vram_gb() -> tuple[str | None, float | None]:
+    """(name, VRAM GB) of the first NVIDIA GPU via nvidia-smi, or (None, None)."""
+    import shutil
+    import subprocess
+    if not shutil.which("nvidia-smi"):
+        return None, None
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=4)
+        line = (out.stdout or "").strip().splitlines()[0]
+        name, mib = [x.strip() for x in line.split(",")]
+        return name, round(float(mib) / 1024, 1)
+    except Exception:
+        return None, None
+
+
+# Largest-first ladder of good local open-weight chat models with their approx Q4 memory (GB).
+_MODEL_LADDER = [
+    ("llama3.1:70b", 42.0), ("qwen2.5:32b", 21.0), ("gpt-oss:20b", 13.0),
+    ("qwen2.5:14b", 10.0), ("qwen2.5:7b", 5.5), ("qwen2.5:3b", 2.5),
+]
+
+
+@app.get("/system")
+async def system_info() -> dict[str, Any]:
+    """Local machine capability + a sensible default model, so the UI doesn't suggest a
+    model too small (or too big) for the box running Myrtia."""
+    import platform
+    ram = _total_ram_gb()
+    arch = platform.machine()
+    osname = platform.system()
+    apple_silicon = osname == "Darwin" and arch in ("arm64", "aarch64")
+    gpu_name, vram = _nvidia_vram_gb()
+    # Memory a local model can realistically use (headroom for the OS and app).
+    if vram:
+        budget = vram                       # NVIDIA: model lives in VRAM
+    elif apple_silicon and ram:
+        budget = ram * 0.7                  # unified memory, keep headroom
+    elif ram:
+        budget = ram * 0.6                  # CPU-only: works but slower
+    else:
+        budget = 0.0
+    recommended = next((m for m, need in _MODEL_LADDER if budget >= need), "qwen2.5:3b")
+    return {
+        "os": osname, "arch": arch, "apple_silicon": apple_silicon,
+        "cpu_count": os.cpu_count(), "ram_gb": ram,
+        "gpu": ({"name": gpu_name, "vram_gb": vram} if vram else None),
+        "model_budget_gb": round(budget, 1) if budget else None,
+        "recommended_model": recommended,
+        "note": (None if ram else "Could not read system memory; defaulting conservatively."),
+    }
+
+
 @app.post("/chat", dependencies=[Depends(require_token)])
 def chat(body: ChatRequest) -> dict[str, Any]:
     """Proxy a chat completion to any OpenAI-compatible provider.
