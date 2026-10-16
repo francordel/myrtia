@@ -2521,7 +2521,7 @@ document.addEventListener("pointermove",ev=>{
   if(gNodeDrag){
     const cv=$("gcanvas"), el=document.querySelector('.gnode[data-id="'+gNodeDrag.id+'"]'); if(!cv||!el) return;
     const r=cv.getBoundingClientRect(), x=Math.max(100,Math.min(cv.clientWidth-100,ev.clientX-r.left)), y=Math.max(55,Math.min(cv.clientHeight-45,ev.clientY-r.top));
-    if(!gNodeDrag.moved && Math.hypot(x-gNodeDrag.x,y-gNodeDrag.y)>4){ gCheckpoint(); gNodeDrag.moved=true; }
+    if(!gNodeDrag.moved && Math.hypot(x-gNodeDrag.x,y-gNodeDrag.y)>4){ if(GS.topo!=="custom") gForkToCustom(); else gCheckpoint(); gNodeDrag.moved=true; }
     if(gNodeDrag.moved){ GS.nodePos[gNodeDrag.id]={x,y}; el.style.left=x+"px"; el.style.top=y+"px"; renderGraph(); }
     return;
   }
@@ -2540,7 +2540,7 @@ document.addEventListener("pointerup",ev=>{
   if(!drag.moved) return;
   gSuppressNodeClick=true;
   const node=ev.target.closest&&ev.target.closest(".gnode");
-  if(node && node.dataset.id!==drag.from) gCustomEdgeAdd(drag.from,node.dataset.id);
+  if(node && node.dataset.id!==drag.from){ if(GS.topo!=="custom") gForkToCustom(); gCustomEdgeAdd(drag.from,node.dataset.id); }
   else renderGraph();
   setTimeout(()=>{ gSuppressNodeClick=false; },0);
 });
@@ -2603,6 +2603,50 @@ function gLine(a,ka,b,kb,cls){
   if(Math.abs(dx) > Math.abs(dy)*1.4){ const c=(p.x+q.x)/2; return `<path class="${cls}" d="M${p.x},${p.y} C${c},${p.y} ${c},${q.y} ${q.x},${q.y}" marker-end="url(#garrow)"/>`; }
   return `<path class="${cls}" d="M${p.x},${p.y} L${q.x},${q.y}" marker-end="url(#garrow)"/>`;
 }
+// The directed strike edges a preset topology draws, as {from,to} node-id pairs — the single
+// source of truth used both to render presets and to seed a graph when it forks to Custom.
+function gPresetEdges(){
+  const atk=GS.attackers.map(a=>a.id), ch=(GS.chairmen||[]).map(c=>c.id), n=atk.length;
+  const sink=(GS.defenses&&GS.defenses.length)?GS.defenses[0].id:"target";
+  const E=[], t=GS.topo;
+  if(t==="chairman" && ch.length){
+    atk.forEach(a=>E.push({from:a,to:ch[0]}));
+    for(let i=0;i<ch.length-1;i++) E.push({from:ch[i],to:ch[i+1]});
+    E.push({from:ch[ch.length-1],to:sink});
+  } else if(t==="parallel" && ch.length){
+    atk.forEach(a=>ch.forEach(c=>E.push({from:a,to:c})));
+    ch.forEach(c=>E.push({from:c,to:sink}));
+  } else if((t==="debate"||t==="moa") && ch.length){
+    atk.forEach(a=>E.push({from:a,to:ch[0]}));
+    E.push({from:ch[0],to:sink});
+  } else if(t==="pipeline"){
+    for(let i=0;i<n-1;i++) E.push({from:atk[i],to:atk[i+1]});
+    if(n) E.push({from:atk[n-1],to:sink});
+  } else { // circular / default council
+    atk.forEach(a=>E.push({from:a,to:sink}));
+  }
+  return E;
+}
+// Any structural edit on a preset "forks" it into a Custom graph seeded with the preset's
+// current nodes, positions and edges — so every topology is editable, not just Custom.
+function gForkToCustom(){
+  if(GS.topo==="custom") return;
+  gCheckpoint();
+  // Presets that don't use a chairman (circular council, pipeline) shouldn't leave an orphan
+  // chairman node behind when forked to Custom.
+  if(!(GS.topo==="chairman"||GS.topo==="parallel"||GS.topo==="moa"||GS.topo==="debate")) GS.chairmen=[];
+  const cv=$("gcanvas"), W=cv?(cv.clientWidth||900):900, H=cv?(cv.clientHeight||400):400;
+  const pos=gLayout(W,H);
+  GS.nodePos=GS.nodePos||{};
+  GS.attackers.forEach(a=>{ if(pos[a.id]) GS.nodePos[a.id]={x:pos[a.id].x,y:pos[a.id].y}; });
+  (pos.chairmen||[]).forEach(cp=>{ GS.nodePos[cp.id]={x:cp.x,y:cp.y}; });
+  if(pos.target) GS.nodePos.target={x:pos.target.x,y:pos.target.y};
+  if(pos.evaluator) GS.nodePos.evaluator={x:pos.evaluator.x,y:pos.evaluator.y};
+  (pos.defenses||[]).forEach(dp=>{ GS.nodePos[dp.id]={x:dp.x,y:dp.y}; });
+  GS.edges=gPresetEdges();
+  GS.forkedFrom=GS.topo;
+  GS.topo="custom"; gEdgeDraft=null; gSelectedEdge=-1;
+}
 function renderGraph(){
   const cv=$("gcanvas"); if(!cv) return;
   const n=GS.attackers.length;
@@ -2657,9 +2701,9 @@ function renderGraph(){
   const mk=(kind,id,x,y,role,model,sub,removable)=>{
     const d=document.createElement("div"); d.className="gnode "+kind+(gSel===id?" sel":"")+(gEdgeDraft===id?" edge-source":""); d.style.left=x+"px"; d.style.top=y+"px"; d.dataset.id=id; d.tabIndex=0; d.setAttribute("role","button");
     d.innerHTML=`<div class="gr"><i></i>${esc(role)}</div><div class="gm">${esc(model||"—")}</div>${sub!==null?`<div class="gp">${esc(sub)}</div>`:""}${removable?'<span class="gx" title="Remove">×</span>':""}`;
-    if(GS.topo==="custom"){ const port=document.createElement("button"); port.type="button"; port.className="gport"; port.title="Drag to connect"; port.textContent="+"; d.appendChild(port); }
+    { const port=document.createElement("button"); port.type="button"; port.className="gport"; port.title="Drag to connect"; port.textContent="+"; d.appendChild(port); }
     d.onpointerdown=ev=>{
-      if(GS.topo!=="custom"||ev.target.classList.contains("gx")) return;
+      if(ev.target.classList.contains("gx")) return;
       const r=$("gcanvas").getBoundingClientRect();
       if(ev.target.closest(".gport")){
         gEdgeDrag={from:id,x:ev.clientX-r.left,y:ev.clientY-r.top,clientX:ev.clientX,clientY:ev.clientY,moved:false};
@@ -2693,9 +2737,12 @@ function renderGraph(){
   $("gTurns").value=GS.turns; $("gBorda").checked=GS.borda; $("gAccum").checked=!!GS.accumulate; $("gContext").checked=!!GS.contextualMode; if($("gRounds")) $("gRounds").value=GS.rounds;
   $("gModeNote").textContent=GS.contextualMode?"Contextual priming · each target query starts fresh with a fabricated dialogue; agents use the previous response and judge feedback to refine the next attempt.":GS.accumulate?"Crescendo · the target sees its real conversation history across attack turns; agents also use the judge feedback.":"Isolated · each target request is fresh; agents still use the previous response and judge feedback.";
   $("gTitle").value=GS.title||""; $("gGoal").value=GS.goal; $("gTmodel").value=GS.target.model; $("gTurl").value=GS.target.url;
-  $("gGuide").innerHTML=GS.topo==="custom"
-    ?"Custom: drag a node to move it. Drag the + handle to connect. Click an arrow, then its × button to delete; double-click to edit."
-    :"Click a node to edit its model and persona. Use <b>+ Attacker</b> to grow the council.";
+  const forked = GS.topo==="custom" && GS.forkedFrom;
+  $("gGuide").innerHTML = GS.topo==="custom"
+    ? ("Custom: drag a node to move it. Drag the + handle to connect. Click an arrow, then its × button to delete; double-click to edit."
+       + (forked ? ` · <a href="#" id="gResetPreset">↺ Reset to ${esc(GS.forkedFrom)}</a>` : ""))
+    : "Click a node to edit it, or <b>drag a node / its + handle</b> to customise this topology.";
+  if(forked){ const rp=$("gResetPreset"); if(rp) rp.onclick=(ev)=>{ ev.preventDefault(); gCheckpoint(); GS.topo=GS.forkedFrom; GS.forkedFrom=null; GS.edges=[]; GS.nodePos={}; gEdgeDraft=null; gSelectedEdge=-1; renderGraph(); }; }
   gToolbarVis(); gsSave();
 }
 function gToolbarVis(){ const ac=$("gAddChair"), rw=$("gRoundsWrap"); if(ac) ac.style.display=(gUsesChairmen()||GS.topo==="debate")?"":"none"; if(rw) rw.style.display=(GS.topo==="debate"||GS.topo==="moa")?"":"none";
@@ -2840,7 +2887,7 @@ function gRemove(id){
 }
 $("gAddAtk").onclick=()=>{ if(GS.attackers.length>=8){ toast("Eight attackers is the canvas limit for now.","info"); return; } gCheckpoint(); const id=gNextId(); GS.attackers.push({id,model:GS.attackers[GS.attackers.length-1].model||"qwen2.5:3b",system:"",endpoint:""}); renderGraph(); const d=document.querySelector(`.gnode[data-id="${id}"]`); if(d) openGDialog("attacker",id,d); };
 $("gAddChair").onclick=()=>{ if(GS.chairmen.length>=4){ toast("Four chairmen is the limit.","info"); return; } gCheckpoint(); const id=gNextChairId(); GS.chairmen.push({id,model:GS.attackers[0].model||"qwen2.5:3b",system:"",endpoint:""}); renderGraph(); const d=document.querySelector(`.gnode[data-id="${id}"]`); if(d) openGDialog("chairman",id,d); };
-document.querySelectorAll("#gtopo button[data-topo]").forEach(b=>b.addEventListener("click",()=>{ if(b.disabled||GS.topo===b.dataset.topo) return; gCheckpoint(); GS.topo=b.dataset.topo; gEdgeDraft=null; gSelectedEdge=-1; if(gUsesChairmen() && (!GS.chairmen||!GS.chairmen.length)) GS.chairmen=[{id:"c1",model:(GS.attackers[0]&&GS.attackers[0].model)||"qwen2.5:3b",system:"",endpoint:""}]; closeGDialog(); renderGraph(); }));
+document.querySelectorAll("#gtopo button[data-topo]").forEach(b=>b.addEventListener("click",()=>{ if(b.disabled||GS.topo===b.dataset.topo) return; gCheckpoint(); GS.topo=b.dataset.topo; GS.forkedFrom=null; gEdgeDraft=null; gSelectedEdge=-1; if(gUsesChairmen() && (!GS.chairmen||!GS.chairmen.length)) GS.chairmen=[{id:"c1",model:(GS.attackers[0]&&GS.attackers[0].model)||"qwen2.5:3b",system:"",endpoint:""}]; closeGDialog(); renderGraph(); }));
 $("gcanvas").addEventListener("click",ev=>{ if(GS.topo==="custom" && (ev.target===$("gcanvas")||ev.target===$("gedges")) && gEdgeDraft){ gEdgeDraft=null; renderGraph(); } });
 $("gTurns").addEventListener("input",()=>{ GS.turns=Math.max(1,Math.min(10,Number($("gTurns").value)||1)); renderGraph(); });
 if($("gRounds")) $("gRounds").addEventListener("input",()=>{ GS.rounds=Math.max(1,Math.min(6,Number($("gRounds").value)||1)); gsSave(); });
