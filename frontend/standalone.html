@@ -287,6 +287,13 @@
   .ev .sent .code { margin:0; padding:0 10px 10px; white-space:pre-wrap; word-break:break-word; font-size:12.5px; line-height:1.55; color:var(--text-1); font-family:"Roboto Mono",ui-monospace,monospace; }
   .morebtn { width:auto; margin:8px 0 0; min-height:28px; padding:3px 10px; font-size:12px; background:transparent; color:var(--accent); border:1px solid var(--border); border-radius:var(--r-sm); cursor:pointer; }
   .morebtn:hover { background:var(--surface-3); }
+  .ev.has-error { border-left-color:var(--danger); background:color-mix(in srgb,var(--danger) 8%,var(--surface-2)); }
+  .ev .everr .everr-t { display:block; font-weight:700; font-size:13.5px; color:var(--danger); }
+  .ev .everr .everr-h { display:block; margin-top:3px; color:var(--text-2); font-size:13px; line-height:1.5; }
+  .ev .everr .everr-d { margin-top:8px; }
+  .ev .everr .everr-d > summary { cursor:pointer; list-style:none; font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--text-3); }
+  .ev .everr .everr-d > summary::-webkit-details-marker { display:none; }
+  .ev .everr .everr-d .code { margin:6px 0 0; padding:8px 10px; white-space:pre-wrap; word-break:break-word; font-size:12px; line-height:1.5; color:var(--text-2); background:var(--bg); border:1px solid var(--border); border-radius:var(--r-sm); font-family:"Roboto Mono",ui-monospace,monospace; }
   .ev.proposal { border-left-color:var(--role-proposal); } .ev.proposal .role { color:var(--role-proposal); }
   .ev.critique { border-left-color:var(--role-critique); } .ev.critique .role { color:var(--role-critique); }
   .ev.vote { border-left-color:var(--role-vote); } .ev.vote .role { color:var(--role-vote); }
@@ -1567,6 +1574,25 @@ function renderEmpty(){
 
 // ---- stream rendering ----
 const KIND=(t)=>t.split(".")[0];
+// Connector failures are surfaced by the backend with an "[ERROR]"/"[judge error]" prefix.
+function isErrorBody(s){ return typeof s==="string" && /^\s*\[(error|judge error)\]/i.test(s); }
+// Map a raw endpoint error to a short, friendly explanation (title + hint).
+function classifyError(msg){
+  const raw=String(msg||""), m=raw.toLowerCase();
+  const hm=raw.match(/host=['"]?([\w.\-]+)['"]?,\s*port=(\d+)/i)||raw.match(/https?:\/\/([\w.\-]+):(\d+)/i);
+  const where=hm?(hm[1]+":"+hm[2]):null;
+  if(/winerror\s*10061|actively refused|connection refused|failed to establish a new connection|max retries exceeded|newconnectionerror|connection aborted|\[errno 6[01]\]/.test(m))
+    return {title:"Can't reach the model endpoint", hint:(where?`Nothing is responding at ${where}. `:"")+"If this is a local Ollama, make sure it is running and the model is pulled."};
+  if(/timed out|timeout|deadline exceeded/.test(m))
+    return {title:"The model timed out", hint:"The endpoint took too long. Try a smaller model, fewer turns, or a higher timeout."};
+  if(/\b401\b|unauthorized|invalid api key|incorrect api key|invalid_api_key|authentication/.test(m))
+    return {title:"Authentication failed", hint:"Check the API key for this provider"+(where?` (${where}).`:".")};
+  if(/\b404\b|model not found|does not exist|no such model|try pulling/.test(m))
+    return {title:"Model not found", hint:"That model isn't available at the endpoint. Pull it (e.g. ollama pull <model>) or check the name."};
+  if(/\b429\b|rate limit|too many requests/.test(m))
+    return {title:"Rate limited", hint:"The provider is throttling requests. Wait a moment and retry."};
+  return {title:"The request failed", hint:"The endpoint returned an error."};
+}
 const LABELS={proposal:"Proposal",critique:"Critique",vote:"Borda vote",chairman:"Chairman",target:"Target",judge:"Judge",agent:"Agent",defense:"Defense",log:"Log"};
 function evNode(ev){
   const p=ev.payload||{}, k=KIND(ev.type);
@@ -1590,14 +1616,25 @@ function evNode(ev){
     det.appendChild(pre); d.querySelector(".lab").after(det);
   }
   if(body){
-    const pre=d.querySelector(".body"); pre.textContent=body;
-    if(body.length>320){
-      const evkey=ev.id||"";
-      const expanded=expandedEv.has(evkey);
-      if(!expanded) pre.classList.add("clamp");
-      const btn=document.createElement("button"); btn.className="morebtn"; btn.textContent=expanded?"Show less":"Read more";
-      btn.onclick=()=>{ const c=pre.classList.toggle("clamp"); if(c) expandedEv.delete(evkey); else expandedEv.add(evkey); btn.textContent=c?"Read more":"Show less"; };
-      d.appendChild(btn);
+    const pre=d.querySelector(".body");
+    if(isErrorBody(body)){
+      const info=classifyError(body);
+      d.classList.add("has-error"); pre.classList.add("everr"); pre.classList.remove("mono");
+      pre.innerHTML=`<span class="everr-t">⚠ ${esc(info.title)}</span><span class="everr-h">${esc(info.hint)}</span>`;
+      const det=document.createElement("details"); det.className="everr-d";
+      const sm=document.createElement("summary"); sm.textContent="Details"; det.appendChild(sm);
+      const raw=document.createElement("pre"); raw.className="code"; raw.textContent=body;
+      det.appendChild(raw); pre.appendChild(det);
+    } else {
+      pre.textContent=body;
+      if(body.length>320){
+        const evkey=ev.id||"";
+        const expanded=expandedEv.has(evkey);
+        if(!expanded) pre.classList.add("clamp");
+        const btn=document.createElement("button"); btn.className="morebtn"; btn.textContent=expanded?"Show less":"Read more";
+        btn.onclick=()=>{ const c=pre.classList.toggle("clamp"); if(c) expandedEv.delete(evkey); else expandedEv.add(evkey); btn.textContent=c?"Read more":"Show less"; };
+        d.appendChild(btn);
+      }
     }
   }
   return d;
@@ -2612,7 +2649,7 @@ async function preflightTarget(spec,btn){
   try{
     const d=await (await fetch(API()+"/preflight",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({target:spec})})).json();
     if(Array.isArray(d.models)&&d.models.length){ $("modelsDL").innerHTML=d.models.map(m=>`<option value="${esc(m)}"></option>`).join(""); }
-    if(d.ok) toast(`Target reachable · ${d.latency_ms} ms${d.models&&d.models.length?` · ${d.models.length} models`:""}`,"ok"); else toast(`Target unreachable: ${d.error||"error"}`,"err");
+    if(d.ok) toast(`Target reachable · ${d.latency_ms} ms${d.models&&d.models.length?` · ${d.models.length} models`:""}`,"ok"); else { const info=classifyError(d.error||""); toast(`${info.title}. ${info.hint}`,"err"); }
   }catch(e){ toast("Preflight request failed.","err"); }
   finally{ if(btn){ btn.disabled=false; btn.textContent=label; } }
 }
