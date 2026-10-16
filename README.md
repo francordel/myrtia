@@ -218,19 +218,59 @@ See [`docs/architecture.md`](docs/architecture.md) for the full design.
 
 ## Quick Start
 
+Requirements: **Python 3.11+** (and, optionally, a local [Ollama](https://ollama.com) with a
+small model to watch a council deliberate with no API key).
+
+**1 · Create a virtual environment and install** — pick your OS:
+
+<details open>
+<summary><b>macOS / Linux</b> (bash / zsh)</summary>
+
 ```bash
-# 1. Backend
 cd backend
-python -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
 pip install -e vendor/ares-council        # the CouncilAttack plugin (Apache-2.0)
-
-# 2. Run the server (serves the API and the web UI)
-uvicorn myrtia.api.app:app --port 8000
-
-# 3. Open the UI
-open http://127.0.0.1:8000/
 ```
+</details>
+
+<details>
+<summary><b>Windows · PowerShell</b></summary>
+
+```powershell
+cd backend
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1               # if blocked: Set-ExecutionPolicy -Scope Process RemoteSigned
+pip install -e .
+pip install -e vendor/ares-council         # the CouncilAttack plugin (Apache-2.0)
+```
+</details>
+
+<details>
+<summary><b>Windows · Command Prompt (cmd)</b></summary>
+
+```bat
+cd backend
+py -m venv .venv
+.venv\Scripts\activate.bat
+pip install -e .
+pip install -e vendor/ares-council
+```
+</details>
+
+**2 · Run the server** (serves the API and the web UI) — all platforms:
+
+```bash
+uvicorn myrtia.api.app:app --port 8000
+```
+
+**3 · Open the console** at **http://127.0.0.1:8000/**
+
+| OS | Command |
+| --- | --- |
+| macOS | `open http://127.0.0.1:8000/` |
+| Linux | `xdg-open http://127.0.0.1:8000/` |
+| Windows | `start http://127.0.0.1:8000/` |
 
 In the UI, pick an attack, choose a target (OpenAI-compatible base URL and model), select
 behaviours from the library or type a goal, and launch. The deliberation streams in live, the
