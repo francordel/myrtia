@@ -218,8 +218,23 @@ See [`docs/architecture.md`](docs/architecture.md) for the full design.
 
 ## Quick Start
 
-Requirements: **Python 3.11+** (and, optionally, a local [Ollama](https://ollama.com) with a
-small model to watch a council deliberate with no API key).
+Requirements: **Python 3.11+**, and — to run the default **local council** — a running
+[Ollama](https://ollama.com) with a small model (no API key needed). You can also point every
+role at any OpenAI-compatible endpoint instead.
+
+**0 · Local models (Ollama)** — needed for the local council, chairman, judge and target:
+
+1. Install Ollama from [ollama.com/download](https://ollama.com/download) (macOS, Windows, Linux)
+   and make sure it is running — on Windows it lives in the system tray; `ollama serve` otherwise.
+2. Pull the demo model:
+   ```bash
+   ollama pull qwen2.5:3b
+   ```
+3. Verify it is up: open **http://127.0.0.1:11434/** (it should say *"Ollama is running"*) or run
+   `ollama list`.
+
+> If a run fails with `Connection refused` / `WinError 10061` on port **11434**, Ollama is not
+> running or not reachable — start it (step 1) or point the roles at the right endpoint in the UI.
 
 **1 · Create a virtual environment and install** — pick your OS:
 
@@ -257,6 +272,12 @@ pip install -e .
 pip install -e vendor/ares-council
 ```
 </details>
+
+> The second line installs the **CouncilAttack plugin** (`ares-council`, vendored under
+> `backend/vendor/`). It is a separate install on purpose: Myrtia's core has **no hard
+> dependency on any attack pack**, so plugins are opt-in and the plugin registers itself only
+> when its library is present. It enables the `council` / `council-crescendo` attacks (Myrtia's
+> headline); every other attack runs without it.
 
 **2 · Run the server** (serves the API and the web UI) — all platforms:
 
