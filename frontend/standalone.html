@@ -336,8 +336,11 @@
   .scope { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
   .scope .fchip { display:inline-flex; align-items:center; gap:6px; padding:3px 6px 3px 10px; border-radius:var(--r-pill); font-size:12px; background:var(--accent-bg); color:var(--accent); border:1px solid transparent; }
   .scope .fchip button { border:0; background:transparent; color:inherit; cursor:pointer; padding:0 4px; font-size:14px; line-height:1; }
-  .statgrid { display:grid; grid-template-columns:repeat(5,1fr); gap:var(--sp-3); margin:var(--sp-4) 0; }
-  .statbox.posturebox .statnum { font-size:22px; line-height:30px; }
+  .statgrid { display:grid; grid-template-columns:repeat(6,1fr); gap:var(--sp-3); margin:var(--sp-4) 0; }
+  .statbox.hero, .statbox.big { grid-column:span 3; }
+  .statbox.hero .statnum { font-size:40px; line-height:1.15; }
+  .statbox.minor { grid-column:span 2; }
+  .statbox.minor .statnum { font-size:22px; color:var(--text-2); }
   /* audit / stats redesign */
   .card-h .exportbar { display:flex; align-items:center; gap:14px; margin-left:auto; flex-wrap:wrap; }
   .exportbar .xgrp { display:flex; gap:6px; flex-wrap:wrap; }
@@ -392,19 +395,26 @@
 
   /* ---- history ---- */
   .filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:var(--sp-2); align-items:end; }
+  .filters[hidden] { display:none; }
   .filters .fq { grid-column:span 2; }
   .filters label { margin:0 0 4px; }
   .fsum { display:flex; align-items:center; gap:var(--sp-3); margin:var(--sp-3) 0 var(--sp-2); font-size:12px; color:var(--text-2); flex-wrap:wrap; }
   .fsum .clear { margin-left:auto; }
   .runtab { display:flex; flex-direction:column; }
-  .runrow, .runhdr { display:grid; grid-template-columns:minmax(0,1fr) 110px 150px 110px 130px 150px; gap:var(--sp-3); align-items:center; padding:10px var(--sp-3); }
+  .runrow, .runhdr { display:grid; grid-template-columns:minmax(0,1fr) 110px 150px 130px 150px; gap:var(--sp-3); align-items:center; padding:10px var(--sp-3); }
   .runhdr { font-size:12px; color:var(--text-2); font-weight:500; border-bottom:1px solid var(--border); }
   .runhdr button { border:0; background:transparent; color:inherit; padding:0; cursor:pointer; font-weight:500; font-size:12px; text-align:left; }
   .runhdr button:hover { color:var(--accent); }
   .runrow { border-bottom:1px solid var(--border); cursor:pointer; transition:background .12s; border-radius:var(--r-sm); }
   .runrow:hover { background:var(--surface-2); }
   .runrow .g { min-width:0; }
-  .runrow .g .gt { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .runrow .g .gt { white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .filters-bar { display:flex; gap:var(--sp-2); align-items:flex-end; margin-bottom:var(--sp-2); }
+  .filters-bar .fq { flex:1; }
+  .fcount { display:inline-block; min-width:16px; margin-left:6px; padding:0 5px; border-radius:var(--r-pill); background:var(--accent); color:#fff; font-size:11px; font-weight:700; text-align:center; }
+  .fcount:empty { display:none; }
+  .runrow .st-badge { display:inline-flex; align-items:center; gap:4px; padding:0 6px; border-radius:var(--r-pill); font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-right:6px; }
+  .runrow .st-badge.running { color:var(--warning); border:1px solid var(--warning); } .runrow .st-badge.error { color:var(--danger); border:1px solid var(--danger); } .runrow .st-badge.cancelled { color:var(--text-2); border:1px solid var(--border-strong); }
   .runrow .g .gm { display:block; margin-top:3px; font-size:11px; color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .runrow .mobile-meta { display:none; }
   .runrow .c { font-size:13px; color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -428,6 +438,11 @@
   .packcard .pinstalled { display:inline-flex; align-items:center; gap:6px; color:var(--success); font-size:13px; font-weight:500; }
   .packcard .pnote { font-size:12px; color:var(--text-3); }
   .packcard .ptag { font-size:11px; font-weight:600; letter-spacing:.3px; padding:1px 8px; border-radius:var(--r-pill); background:var(--surface-2); color:var(--text-2); border:1px solid var(--border); }
+  .packcard .pbadge { margin-left:auto; font-size:11px; font-weight:700; letter-spacing:.3px; padding:1px 8px; border-radius:var(--r-pill); white-space:nowrap; }
+  .packcard .pbadge.strat { background:var(--accent-bg); color:var(--accent); border:1px solid var(--accent); }
+  .packcard .pbadge.lib { background:var(--surface-2); color:var(--text-2); border:1px solid var(--border); }
+  .packcard .pbadge.installed { background:color-mix(in srgb,var(--success) 15%,transparent); color:var(--success); border:1px solid var(--success); }
+  .packcard .pnote.warn { color:var(--warning); font-weight:500; }
   .pack-section-title { font-size:17px; font-weight:600; margin:var(--sp-5) 0 var(--sp-3); }
   .pack-section-title:first-child { margin-top:0; }
   .dataset-note { margin-top:var(--sp-3); }
@@ -527,6 +542,11 @@
   .ginline { display:inline-flex; align-items:center; gap:6px; margin:0; font-size:12.5px; color:var(--text-2); }
   .ginline input[type=number] { width:64px; min-height:32px; padding:4px 8px; }
   .ginline input[type=checkbox] { width:16px; height:16px; min-height:0; accent-color:var(--btn); }
+  .gadv > summary { cursor:pointer; list-style:none; font-size:12.5px; color:var(--text-2); padding:8px var(--sp-4); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:6px; }
+  .gadv > summary::-webkit-details-marker { display:none; }
+  .gadv > summary::before { content:"▸"; color:var(--text-3); font-size:11px; display:inline-block; transition:transform .15s; }
+  .gadv[open] > summary::before { transform:rotate(90deg); }
+  .gadv > summary b { color:var(--text-1); } .gadv > summary:hover { color:var(--text-1); }
   .gcontext-modes { display:flex; align-items:center; flex-wrap:wrap; gap:8px 22px; padding:9px var(--sp-4); border-bottom:1px solid var(--border); }
   .gcontext-modes .gmode-label { color:var(--text-3); font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
   .gmode-note { padding:7px var(--sp-4); border-bottom:1px solid var(--border); background:var(--surface-2); color:var(--text-2); font-size:12px; }
@@ -626,11 +646,11 @@
   /* ---- responsive ---- */
   @media (max-width:1100px){
     #view-run { grid-template-columns:340px minmax(0,1fr); }
-    .statgrid { grid-template-columns:repeat(2,1fr); }
+    .statgrid { grid-template-columns:repeat(2,1fr); } .statgrid .statbox { grid-column:auto; }
     .charts2 { grid-template-columns:1fr; }
     .filters { grid-template-columns:1fr 1fr; }
     .filters .fq { grid-column:1 / -1; }
-    .runrow, .runhdr { grid-template-columns:minmax(0,1fr) 110px 130px 140px; }
+    .runrow, .runhdr { grid-template-columns:minmax(0,1fr) 110px 130px; }
     .runrow .c.hide-md, .runhdr .hide-md { display:none; }
   }
   @media (max-width:820px){
@@ -648,7 +668,7 @@
     #jumpLive { bottom:84px; }
     #toasts { bottom:84px; }
     #chatPanel { right:0; bottom:0; left:0; top:0; width:auto; max-width:none; height:auto; max-height:none; border-radius:0; z-index:80; }
-    .statgrid { grid-template-columns:repeat(2,1fr); }
+    .statgrid { grid-template-columns:repeat(2,1fr); } .statgrid .statbox { grid-column:auto; }
     .pipe { grid-template-columns:1fr 1fr; }
     .runhead { grid-template-columns:1fr; }
     .runhead .acts { justify-content:flex-start; }
@@ -734,12 +754,15 @@
         <label class="ginline gborda"><input type="checkbox" id="gBorda" checked> Borda vote</label>
       </div>
       <div id="gTopoDesc" style="font-size:12.5px;color:var(--text-2);padding:1px 2px 2px"></div>
-      <div class="gcontext-modes" aria-label="Target conversation mode">
-        <span class="gmode-label">Target context · choose one</span>
-        <label class="ginline" id="gAccumWrap" title="Crescendo preserves real user/assistant turns in the target. Agents also receive the judge feedback."><input type="checkbox" id="gAccum"> Crescendo · real target history</label>
-        <label class="ginline" id="gContextWrap" title="CouncilAttack: each target call contains a new fabricated dialogue; only the agents carry the previous attempt, target response and judge feedback forward."><input type="checkbox" id="gContext"> Contextual priming · simulated history</label>
-      </div>
-      <div class="gmode-note" id="gModeNote" aria-live="polite">Agent memory is always on: prior response and judge feedback inform the next turn. The target starts fresh.</div>
+      <details class="gadv" id="gCtxDetails">
+        <summary id="gCtxSummary">Target context · <b>Isolated</b> <span class="caption">(advanced)</span></summary>
+        <div class="gcontext-modes" aria-label="Target conversation mode">
+          <span class="gmode-label">choose one</span>
+          <label class="ginline" id="gAccumWrap" title="Crescendo preserves real user/assistant turns in the target. Agents also receive the judge feedback."><input type="checkbox" id="gAccum"> Crescendo · real target history</label>
+          <label class="ginline" id="gContextWrap" title="CouncilAttack: each target call contains a new fabricated dialogue; only the agents carry the previous attempt, target response and judge feedback forward."><input type="checkbox" id="gContext"> Contextual priming · simulated history</label>
+        </div>
+        <div class="gmode-note" id="gModeNote" aria-live="polite">Agent memory is always on: prior response and judge feedback inform the next turn. The target starts fresh.</div>
+      </details>
       <div class="gcanvas" id="gcanvas">
         <svg id="gedges" aria-hidden="true"></svg>
         <div id="gnodes"></div>
@@ -943,11 +966,11 @@
           <!-- 1 · Executive summary -->
           <div class="sechead"><span class="secn">1</span><h3>Executive summary</h3></div>
           <div class="statgrid">
-            <div class="statbox posturebox"><div class="statnum" id="stPosture">—</div><div class="statlbl">risk posture</div></div>
-            <div class="statbox hot"><div class="statnum num" id="stAsr">0%</div><div class="statlbl">attack success rate</div></div>
-            <div class="statbox"><div class="statnum num" id="stJb">0</div><div class="statlbl">jailbroken · of <span id="stGoals">0</span> tests</div></div>
-            <div class="statbox"><div class="statnum num" id="stFindings">0</div><div class="statlbl">findings · medium+</div></div>
-            <div class="statbox"><div class="statnum num" id="stRuns">0</div><div class="statlbl">runs analysed</div></div>
+            <div class="statbox posturebox hero"><div class="statnum" id="stPosture">—</div><div class="statlbl">risk posture</div></div>
+            <div class="statbox hot big"><div class="statnum num" id="stAsr">0%</div><div class="statlbl">attack success rate</div></div>
+            <div class="statbox minor"><div class="statnum num" id="stJb">0</div><div class="statlbl">jailbroken · of <span id="stGoals">0</span> tests</div></div>
+            <div class="statbox minor"><div class="statnum num" id="stFindings">0</div><div class="statlbl">findings · medium+</div></div>
+            <div class="statbox minor"><div class="statnum num" id="stRuns">0</div><div class="statlbl">runs analysed</div></div>
           </div>
 
           <!-- 2 · Findings by severity -->
@@ -1003,8 +1026,11 @@
     <div class="card" id="history">
       <div class="card-h"><span>History</span><span class="caption" id="histCount"></span></div>
       <div class="card-b">
-        <div class="filters">
+        <div class="filters-bar">
           <div class="fq"><label for="fq">Search</label><input id="fq" placeholder="Goal, theme, attack or model…" /></div>
+          <button type="button" class="btn-outline" id="histFilterBtn" aria-expanded="false" aria-controls="histFiltersAdv">⚙ Filters<span class="fcount" id="histFilterCount"></span></button>
+        </div>
+        <div class="filters" id="histFiltersAdv" hidden>
           <div><label for="fattack">Attack</label><select id="fattack"><option value="">All attacks</option></select></div>
           <div><label for="ftheme">Theme</label><select id="ftheme"><option value="">All themes</option></select></div>
           <div><label for="fdataset">Dataset</label><select id="fdataset"><option value="">All datasets</option></select></div>
@@ -1029,7 +1055,7 @@
         <div class="fsum" id="fsum"></div>
         <div class="runtab">
           <div class="runhdr">
-            <span>Goal</span><span>Attack</span><span class="hide-md">Target</span><span>Status</span><span><button id="sortScore" type="button">Outcome ↕</button></span><span class="hide-md"><button id="sortDate" type="button">Date ↓</button></span>
+            <span>Goal</span><span>Attack</span><span class="hide-md">Target</span><span><button id="sortScore" type="button">Outcome ↕</button></span><span class="hide-md"><button id="sortDate" type="button">Date ↓</button></span>
           </div>
           <div id="runlist"></div>
         </div>
@@ -1373,6 +1399,7 @@ let RUN=null;           // {id, spec, status, created_at, error}
 let ACTIVE_RUNS=[];      // unfiltered /runs active_runs; independent of History filters
 let LIVE_MENU_SIG="";
 function fmtTime(ts){ try{ return new Date(ts*1000).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}); }catch(e){ return ""; } }
+function fmtRel(ts){ if(!ts) return ""; const s=Math.max(0,Date.now()/1000-ts); if(s<60) return "just now"; const m=Math.floor(s/60); if(m<60) return m+"m ago"; const h=Math.floor(m/60); if(h<24) return h+"h ago"; const d=Math.floor(h/24); if(d<30) return d+"d ago"; const mo=Math.floor(d/30); if(mo<12) return mo+"mo ago"; return Math.floor(mo/12)+"y ago"; }
 function fmtDur(sec){ sec=Math.max(0,Math.round(sec)); if(sec<60) return sec+"s"; const m=Math.floor(sec/60), s=sec%60; if(m<60) return m+"m"+(s?" "+s+"s":""); const h=Math.floor(m/60); if(h<24) return h+"h "+(m%60)+"m"; const d=Math.floor(h/24); return d+"d "+(h%24)+"h"; }
 function closeLiveMenu(focusChip=false){
   if($("liveMenu").hidden) return;
@@ -1892,6 +1919,8 @@ async function loadHistory(){
   if($("fresult").value) act.push(STATUS_LABEL[$("fresult").value]||$("fresult").value); if($("fscore").value!=="-1") act.push($("fscore").selectedOptions[0].textContent);
   if($("fdataset").value) act.push(`dataset: ${$("fdataset").value}`);
   if($("fpurpose").value) act.push(`purpose: ${$("fpurpose").value}`);
+  const advCount=($("fattack").value?1:0)+($("ftheme").value?1:0)+($("fdataset").value?1:0)+($("fpurpose").value?1:0)+($("fresult").value?1:0)+($("fscore").value!=="-1"?1:0);
+  if($("histFilterCount")) $("histFilterCount").textContent=advCount||"";
   $("fsum").innerHTML = act.length ? `<span>Filtered by</span>`+act.map(a=>`<span class="tagpill">${esc(a)}</span>`).join("")+`<button class="btn-outline clear" id="fclear">Clear filters</button>` : "";
   if($("fclear")) $("fclear").onclick=()=>{ $("fq").value=""; $("fattack").value=""; $("ftheme").value=""; $("fresult").value=""; $("fscore").value="-1"; $("fdataset").value=""; $("fpurpose").value=""; loadHistory(); };
   LAST_RUNS=data.runs||[]; renderHistory();
@@ -1905,12 +1934,13 @@ function renderHistory(){
     const row=document.createElement("div"); row.className="runrow"; row.tabIndex=0; row.setAttribute("role","button");
     const goal=(r.goals&&r.goals[0])||"(no goal)"; const n=(r.goals||[]).length;
     const score=(r.best_score!==null&&r.best_score!==undefined)?scorePill(r.best_score):`<span class="caption">${r.status==="running"?"in progress":"not judged"}</span>`;
-    row.innerHTML=`<div class="g"><div class="gt"></div><div class="gm"><span class="mobile-meta">${esc(r.attack_id)} · ${esc(r.target_model||"?")} · ${esc(fmtTime(r.created_at))} · </span>${esc(r.purpose||"unreviewed")} · ${esc((r.goal_datasets||[]).filter((v,i,a)=>a.indexOf(v)===i).join(", ")||"dataset unknown")}</div></div>
+    const st=r.status, stBadge=(st&&st!=="succeeded")?`<span class="st-badge ${st==="failed"?"error":st}">${st==="failed"?"error":st}</span>`:"";
+    const rel=fmtRel(r.created_at);
+    row.innerHTML=`<div class="g"><div class="gt"></div><div class="gm">${stBadge}<span class="mobile-meta">${esc(r.attack_id)} · ${esc(r.target_model||"?")} · </span>${rel?esc(rel)+" · ":""}${esc(r.purpose||"unreviewed")} · ${esc((r.goal_datasets||[]).filter((v,i,a)=>a.indexOf(v)===i).join(", ")||"dataset unknown")}</div></div>
       <span class="c mono">${esc(r.attack_id)}</span>
       <span class="c mono hide-md">${esc(r.target_model||"?")}</span>
-      <span class="c keep">${statusPill(r.status)}</span>
       <span class="c keep">${score}</span>
-      <span class="c hide-md">${esc(fmtTime(r.created_at))}</span>`;
+      <span class="c hide-md" title="${esc(fmtTime(r.created_at))}">${esc(rel)}</span>`;
     const goalLabel=(n>1?`${n} goals · `:"")+goal;
     row.querySelector(".gt").textContent=r.title||goalLabel; row.querySelector(".gt").title=r.title||goal;
     if(r.title){ const preview=document.createElement("div"); preview.className="gm goal-preview"; preview.textContent=`Goal · ${goalLabel}`; preview.title=goal; row.querySelector(".gt").after(preview); }
@@ -1922,6 +1952,7 @@ function renderHistory(){
 }
 $("sortDate").onclick=()=>{ if(HSORT.key==="created_at") HSORT.dir*=-1; else HSORT={key:"created_at",dir:-1}; $("sortDate").textContent="Date "+(HSORT.dir<0?"↓":"↑"); $("sortScore").textContent="Outcome ↕"; renderHistory(); };
 $("sortScore").onclick=()=>{ if(HSORT.key==="best_score") HSORT.dir*=-1; else HSORT={key:"best_score",dir:-1}; $("sortScore").textContent="Outcome "+(HSORT.dir<0?"↓":"↑"); $("sortDate").textContent="Date ↕"; renderHistory(); };
+if($("histFilterBtn")) $("histFilterBtn").onclick=()=>{ const adv=$("histFiltersAdv"), open=adv.hidden; adv.hidden=!open; $("histFilterBtn").setAttribute("aria-expanded",String(open)); };
 $("liveChip").onclick=()=>{
   if(ACTIVE_RUNS.length===1){ openRunFromSummary(ACTIVE_RUNS[0]); return; }
   if(ACTIVE_RUNS.length<2) return;
@@ -2069,16 +2100,16 @@ async function loadPacks(){ initAccessToken();
   (d.packs||[]).forEach(p=>{
     const c=document.createElement("div"); c.className="packcard";
     const adds=(p.adds||[]).map(a=>`<span class="tagpill">${esc(a)}</span>`).join("");
-    c.innerHTML=`<div class="ph"><h3>${esc(p.name)}</h3>${p.adapter?"":'<span class="ptag">library</span>'}</div>
+    c.innerHTML=`<div class="ph"><h3>${esc(p.name)}</h3>${p.installed?'<span class="pbadge installed">✓ Installed</span>':(p.adapter?'<span class="pbadge strat">Adds strategy</span>':'<span class="pbadge lib">Library only</span>')}</div>
       <div class="pdesc">${esc(p.description)}</div>
       ${adds?`<div class="padds">${adds}</div>`:""}
       <div class="pfoot"></div>
       <div class="packlog" id="packlog-${esc(p.id)}"></div>`;
     const foot=c.querySelector(".pfoot");
     if(p.installed){ foot.innerHTML=`<span class="pinstalled">✓ ${p.adapter?"Installed · strategy available":"Library installed · no Myrtia strategy"}</span>`; }
-    else { const btn=document.createElement("button"); btn.className="btn-outline"; btn.textContent=p.adapter?"Install strategy":"Install library only"; btn.title=p.adapter?"Adds a Myrtia strategy":"Installs the upstream library, but does not add a Myrtia attack strategy"; btn.onclick=()=>installPack(p,btn); foot.appendChild(btn); }
+    else { const btn=document.createElement("button"); btn.className=p.adapter?"primary":"btn-outline"; if(p.adapter) btn.style.cssText="width:auto;padding:7px 16px"; btn.textContent=p.adapter?"Install strategy":"Install library only"; btn.title=p.adapter?"Adds a Myrtia strategy":"Installs the upstream library, but does not add a Myrtia attack strategy"; btn.onclick=()=>installPack(p,btn); foot.appendChild(btn); }
     if(p.homepage){ const a=document.createElement("a"); a.href=p.homepage; a.target="_blank"; a.rel="noopener"; a.textContent="Source ›"; a.style.marginLeft="auto"; foot.appendChild(a); }
-    if(p.note){ const n=document.createElement("span"); n.className="pnote"; n.textContent=p.note; foot.appendChild(n); }
+    if(p.note){ const n=document.createElement("span"); n.className="pnote warn"; n.textContent="↓ "+p.note; foot.appendChild(n); }
     g.appendChild(c);
   });
 }
@@ -2742,6 +2773,7 @@ function renderGraph(){
     if(td) td.innerHTML = ab ? ('<b>'+esc(ab.textContent.trim().replace(/\s+/g," "))+'</b> — '+esc(ab.getAttribute("title")||"")) : ""; }
   $("gTurns").value=GS.turns; $("gBorda").checked=GS.borda; $("gAccum").checked=!!GS.accumulate; $("gContext").checked=!!GS.contextualMode; if($("gRounds")) $("gRounds").value=GS.rounds;
   $("gModeNote").textContent=GS.contextualMode?"Contextual priming · each target query starts fresh with a fabricated dialogue; agents use the previous response and judge feedback to refine the next attempt.":GS.accumulate?"Crescendo · the target sees its real conversation history across attack turns; agents also use the judge feedback.":"Isolated · each target request is fresh; agents still use the previous response and judge feedback.";
+  { const m=GS.contextualMode?"Contextual priming":GS.accumulate?"Crescendo":"Isolated"; const s=$("gCtxSummary"); if(s) s.innerHTML='Target context · <b>'+m+'</b> <span class="caption">(advanced)</span>'; }
   $("gTitle").value=GS.title||""; $("gGoal").value=GS.goal; $("gTmodel").value=GS.target.model; $("gTurl").value=GS.target.url;
   const forked = GS.topo==="custom" && GS.forkedFrom;
   $("gGuide").innerHTML = GS.topo==="custom"
