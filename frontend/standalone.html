@@ -542,6 +542,11 @@
   .ginline { display:inline-flex; align-items:center; gap:6px; margin:0; font-size:12.5px; color:var(--text-2); }
   .ginline input[type=number] { width:64px; min-height:32px; padding:4px 8px; }
   .ginline input[type=checkbox] { width:16px; height:16px; min-height:0; accent-color:var(--btn); }
+  .gadv > summary { cursor:pointer; list-style:none; font-size:12.5px; color:var(--text-2); padding:8px var(--sp-4); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:6px; }
+  .gadv > summary::-webkit-details-marker { display:none; }
+  .gadv > summary::before { content:"▸"; color:var(--text-3); font-size:11px; display:inline-block; transition:transform .15s; }
+  .gadv[open] > summary::before { transform:rotate(90deg); }
+  .gadv > summary b { color:var(--text-1); } .gadv > summary:hover { color:var(--text-1); }
   .gcontext-modes { display:flex; align-items:center; flex-wrap:wrap; gap:8px 22px; padding:9px var(--sp-4); border-bottom:1px solid var(--border); }
   .gcontext-modes .gmode-label { color:var(--text-3); font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
   .gmode-note { padding:7px var(--sp-4); border-bottom:1px solid var(--border); background:var(--surface-2); color:var(--text-2); font-size:12px; }
@@ -749,12 +754,15 @@
         <label class="ginline gborda"><input type="checkbox" id="gBorda" checked> Borda vote</label>
       </div>
       <div id="gTopoDesc" style="font-size:12.5px;color:var(--text-2);padding:1px 2px 2px"></div>
-      <div class="gcontext-modes" aria-label="Target conversation mode">
-        <span class="gmode-label">Target context · choose one</span>
-        <label class="ginline" id="gAccumWrap" title="Crescendo preserves real user/assistant turns in the target. Agents also receive the judge feedback."><input type="checkbox" id="gAccum"> Crescendo · real target history</label>
-        <label class="ginline" id="gContextWrap" title="CouncilAttack: each target call contains a new fabricated dialogue; only the agents carry the previous attempt, target response and judge feedback forward."><input type="checkbox" id="gContext"> Contextual priming · simulated history</label>
-      </div>
-      <div class="gmode-note" id="gModeNote" aria-live="polite">Agent memory is always on: prior response and judge feedback inform the next turn. The target starts fresh.</div>
+      <details class="gadv" id="gCtxDetails">
+        <summary id="gCtxSummary">Target context · <b>Isolated</b> <span class="caption">(advanced)</span></summary>
+        <div class="gcontext-modes" aria-label="Target conversation mode">
+          <span class="gmode-label">choose one</span>
+          <label class="ginline" id="gAccumWrap" title="Crescendo preserves real user/assistant turns in the target. Agents also receive the judge feedback."><input type="checkbox" id="gAccum"> Crescendo · real target history</label>
+          <label class="ginline" id="gContextWrap" title="CouncilAttack: each target call contains a new fabricated dialogue; only the agents carry the previous attempt, target response and judge feedback forward."><input type="checkbox" id="gContext"> Contextual priming · simulated history</label>
+        </div>
+        <div class="gmode-note" id="gModeNote" aria-live="polite">Agent memory is always on: prior response and judge feedback inform the next turn. The target starts fresh.</div>
+      </details>
       <div class="gcanvas" id="gcanvas">
         <svg id="gedges" aria-hidden="true"></svg>
         <div id="gnodes"></div>
@@ -2765,6 +2773,7 @@ function renderGraph(){
     if(td) td.innerHTML = ab ? ('<b>'+esc(ab.textContent.trim().replace(/\s+/g," "))+'</b> — '+esc(ab.getAttribute("title")||"")) : ""; }
   $("gTurns").value=GS.turns; $("gBorda").checked=GS.borda; $("gAccum").checked=!!GS.accumulate; $("gContext").checked=!!GS.contextualMode; if($("gRounds")) $("gRounds").value=GS.rounds;
   $("gModeNote").textContent=GS.contextualMode?"Contextual priming · each target query starts fresh with a fabricated dialogue; agents use the previous response and judge feedback to refine the next attempt.":GS.accumulate?"Crescendo · the target sees its real conversation history across attack turns; agents also use the judge feedback.":"Isolated · each target request is fresh; agents still use the previous response and judge feedback.";
+  { const m=GS.contextualMode?"Contextual priming":GS.accumulate?"Crescendo":"Isolated"; const s=$("gCtxSummary"); if(s) s.innerHTML='Target context · <b>'+m+'</b> <span class="caption">(advanced)</span>'; }
   $("gTitle").value=GS.title||""; $("gGoal").value=GS.goal; $("gTmodel").value=GS.target.model; $("gTurl").value=GS.target.url;
   const forked = GS.topo==="custom" && GS.forkedFrom;
   $("gGuide").innerHTML = GS.topo==="custom"
