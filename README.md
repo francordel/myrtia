@@ -32,6 +32,7 @@
 - [Current Capability Boundaries](#current-capability-boundaries)
 - [Architecture](#architecture)
 - [Quick Start](#quick-start)
+- [Troubleshooting](#troubleshooting)
 - [Attacks](#attacks)
 - [Configuration](#configuration)
 - [Extending Myrtia](#extending-myrtia)
@@ -233,9 +234,6 @@ role at any OpenAI-compatible endpoint instead.
 3. Verify it is up: open **http://127.0.0.1:11434/** (it should say *"Ollama is running"*) or run
    `ollama list`.
 
-> If a run fails with `Connection refused` / `WinError 10061` on port **11434**, Ollama is not
-> running or not reachable — start it (step 1) or point the roles at the right endpoint in the UI.
-
 **1 · Create a virtual environment and install** — pick your OS:
 
 <details open>
@@ -303,6 +301,20 @@ scores are automatic signals, not confirmed vulnerabilities.
 HarmBench goals are included. In **Plugins → Goal datasets**, download JailbreakBench,
 AdvBench or StrongREJECT to add their goals to both run modes. Search and filter by
 dataset and category in Runs. See [goal dataset sources and scope](docs/goal-datasets.md).
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `Connection refused` / `WinError 10061` / `Max retries exceeded` on port **11434** | Ollama isn't running or isn't reachable | Start Ollama (step 0) and confirm **http://127.0.0.1:11434/** says *"Ollama is running"*. If it runs elsewhere, set the base URL in the UI. |
+| `model "…" not found` / `try pulling it first` | The model isn't downloaded | `ollama pull <model>` (e.g. `ollama pull qwen2.5:3b`), then check `ollama list`. |
+| PowerShell: *"running scripts is disabled on this system"* | Script execution policy blocks the venv activation | `Set-ExecutionPolicy -Scope Process RemoteSigned`, then re-run `.\.venv\Scripts\Activate.ps1`. |
+| `401 Unauthorized` / `invalid api key` | Missing or wrong API key for a frontier provider | Set the key for that provider in the UI (per-run), or use a local Ollama endpoint. |
+| `[Errno 48] Address already in use` / port **8000** busy | Another process holds the port | Run on another port: `uvicorn myrtia.api.app:app --port 8010`. |
+| `KeyError: 'council'` / council attacks missing | The `ares-council` plugin isn't installed | Run the second install line (`pip install -e vendor/ares-council`); it is opt-in. |
+
+In the console, failed turns now show a short explanation (e.g. *"Can't reach the model
+endpoint"*) with the raw error tucked under **Details**.
 
 ## Configuration
 
