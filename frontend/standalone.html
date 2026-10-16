@@ -733,6 +733,7 @@
         <label class="ginline">Turns <input id="gTurns" type="number" min="1" max="10" value="3"></label>
         <label class="ginline gborda"><input type="checkbox" id="gBorda" checked> Borda vote</label>
       </div>
+      <div id="gTopoDesc" style="font-size:12.5px;color:var(--text-2);padding:1px 2px 2px"></div>
       <div class="gcontext-modes" aria-label="Target conversation mode">
         <span class="gmode-label">Target context · choose one</span>
         <label class="ginline" id="gAccumWrap" title="Crescendo preserves real user/assistant turns in the target. Agents also receive the judge feedback."><input type="checkbox" id="gAccum"> Crescendo · real target history</label>
@@ -2737,6 +2738,8 @@ function renderGraph(){
   mk("evaluator","evaluator",pos.evaluator.x,pos.evaluator.y,"Evaluator · 0-5",GS.evaluator.model,null,false);
   (pos.defenses||[]).forEach(dp=>{ const spec=(DEFENSES_LIST||[]).find(x=>x.id===dp.id); mk("defense",dp.id,dp.x,dp.y,"🛡",spec?spec.name:dp.id,null,true); });
   document.querySelectorAll("#gtopo button").forEach(b=>b.classList.toggle("active",b.dataset.topo===GS.topo));
+  { const ab=document.querySelector('#gtopo button[data-topo="'+GS.topo+'"]'), td=$("gTopoDesc");
+    if(td) td.innerHTML = ab ? ('<b>'+esc(ab.textContent.trim().replace(/\s+/g," "))+'</b> — '+esc(ab.getAttribute("title")||"")) : ""; }
   $("gTurns").value=GS.turns; $("gBorda").checked=GS.borda; $("gAccum").checked=!!GS.accumulate; $("gContext").checked=!!GS.contextualMode; if($("gRounds")) $("gRounds").value=GS.rounds;
   $("gModeNote").textContent=GS.contextualMode?"Contextual priming · each target query starts fresh with a fabricated dialogue; agents use the previous response and judge feedback to refine the next attempt.":GS.accumulate?"Crescendo · the target sees its real conversation history across attack turns; agents also use the judge feedback.":"Isolated · each target request is fresh; agents still use the previous response and judge feedback.";
   $("gTitle").value=GS.title||""; $("gGoal").value=GS.goal; $("gTmodel").value=GS.target.model; $("gTurl").value=GS.target.url;
