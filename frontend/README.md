@@ -22,6 +22,7 @@ synthesis, the target response and the judge score, grouped by goal and turn.
 - `standalone.html` — the whole app (styles, canvas builder, event stream, history,
   statistics, assistant). One file, edited directly.
 - `icon*.png` — brand marks, served from `/assets/{name}`.
+- `fonts/` — provenance and licence (OFL-1.1) of the fonts inlined in `standalone.html`.
 
 An earlier React + Vite scaffold was removed (issue #29): it was never wired up, and
 the single-file page is the shipped UI.
