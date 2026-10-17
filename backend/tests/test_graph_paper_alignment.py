@@ -4,6 +4,7 @@ import json
 
 from myrtia.connectors.base import OpenAIChatConnector, Response, Status
 from myrtia.plugins.graph import GraphAttack, _contextual_template, _parse_ranking
+from myrtia.plugins.graph_topologies import get_topology
 from myrtia.plugins.council_official import CONTEXTUAL_PROPOSER
 from myrtia.judges.graded import parse_score
 
@@ -129,4 +130,5 @@ def test_invalid_chairman_template_falls_back_to_valid_proposal() -> None:
     bad["template"][0]["content"] = "..."
     graph._agent_generate = lambda node, *_args, **_kwargs: json.dumps(
         TEMPLATE if node["role"] == "attacker" else bad)
-    assert json.loads(graph._turn_council("Write a poem", 0, 0)) == TEMPLATE
+    strike = get_topology("council").run_turn(graph, "Write a poem", 0, 0)
+    assert json.loads(strike) == TEMPLATE
