@@ -2492,7 +2492,7 @@ function renderPresets(){ const bar=$("gtopo"); if(!bar) return;
   s.title="Save the current topology as a named preset"; s.style.opacity=".85"; s.onclick=savePreset; bar.appendChild(s); }
 function gNextId(){ let i=1; while(GS.attackers.some(a=>a.id==="a"+i)) i++; return "a"+i; }
 function gNextChairId(){ let i=1; while(GS.chairmen.some(c=>c.id==="c"+i)) i++; return "c"+i; }
-function gUsesChairmen(){ return GS.topo==="chairman"||GS.topo==="parallel"||GS.topo==="moa"||GS.topo==="custom"; }
+function gUsesChairmen(){ return !!topoDef().usesChairmen; }
 function gCustomIds(){ return new Set([...GS.attackers,...(GS.chairmen||[])].map(a=>a.id).concat(["target","evaluator"])); }
 function gCustomEdgeKey(a,b){ return a+"\u0000"+b; }
 let gEdgeDraft=null, gSelectedEdge=-1, gEdgeDrag=null, gSuppressNodeClick=false;
@@ -2596,29 +2596,98 @@ function setRunMode(m){
 }
 document.querySelectorAll("#runModes .rmode").forEach(b=>b.addEventListener("click",()=>setRunMode(b.dataset.mode)));
 
+// --- topology registry (one self-contained object per attack) ----------
+// SOLID mirror of the backend graph_topologies package: every per-topology branch
+// (seeded edges, chairman layout, strike edges, overlay, labels, toolbar flags and
+// serialization) lives in ONE object here, so a topology is described in a single place
+// and new ones are added by extending this table — not by editing scattered if/else.
+// Behaviour fns are pure given their ctx; flags are declarative. `circular` = the council.
+function _chairBank(chs,cx,rx,rightX,cy,ry){
+  const mx=(cx+rx+rightX)/2, gap=Math.min(120,Math.max(84,ry*2/Math.max(1,chs.length)));
+  return chs.map((c,i)=>({id:c.id,x:mx,y:cy+(i-(chs.length-1)/2)*gap}));
+}
+function _chairRow(chs,cx,rx,rightX,cy){
+  const x0=cx+rx+130, x1=rightX-150, span=Math.max(0,x1-x0);
+  return chs.map((c,i)=>({id:c.id,x:chs.length>1?x0+span*(i/(chs.length-1)):(x0+x1)/2,y:cy}));
+}
+function _ringOverlay(ring,borda){ return ring.show?`<ellipse class="e-ring${borda?"":" off"}" cx="${ring.cx}" cy="${ring.cy}" rx="${ring.rx}" ry="${ring.ry}"/>`:""; }
+function _edgesToSink(atk,sink){ return atk.map(a=>({from:a,to:sink})); }
+function _strikeToSink(c){ let s=""; c.attackers.forEach(a=>{ s+=c.gLine(c.pos[a.id],"attacker",c.sink,c.sinkKind,"e-atk"); }); return s; }
+const TOPOLOGIES={
+  circular:{ mode:"council", usesChairmen:false, addChair:false, keepsChairmen:false,
+    serializesChairmen:false, useChairmanFlag:false, showRounds:false, hideBorda:false, centersSingleAttacker:true,
+    presetEdges:({atk,sink})=>_edgesToSink(atk,sink),
+    strikeEdges:_strikeToSink,
+    overlay:({ring,borda})=>_ringOverlay(ring,borda) },
+  chairman:{ mode:"council", usesChairmen:true, addChair:true, keepsChairmen:true,
+    serializesChairmen:true, useChairmanFlag:true, showRounds:false, hideBorda:false, centersSingleAttacker:false,
+    layoutChairmen:({cx,rx,rightX,cy,chs})=>_chairRow(chs,cx,rx,rightX,cy),
+    presetEdges:({atk,ch,sink})=>{ if(!ch.length) return _edgesToSink(atk,sink);
+      const E=atk.map(a=>({from:a,to:ch[0]})); for(let i=0;i<ch.length-1;i++) E.push({from:ch[i],to:ch[i+1]}); E.push({from:ch[ch.length-1],to:sink}); return E; },
+    strikeEdges:(c)=>{ if(!c.chP.length) return _strikeToSink(c); let s=""; c.attackers.forEach(a=>{ s+=c.gLine(c.pos[a.id],"attacker",c.chP[0],"chairman","e-atk"); });
+      for(let i=0;i<c.chP.length-1;i++) s+=c.gLine(c.chP[i],"chairman",c.chP[i+1],"chairman","e-chair"); s+=c.gLine(c.chP[c.chP.length-1],"chairman",c.sink,c.sinkKind,"e-chair"); return s; },
+    overlay:({ring,borda})=>_ringOverlay(ring,borda) },
+  parallel:{ mode:"parallel", usesChairmen:true, addChair:true, keepsChairmen:true,
+    serializesChairmen:true, useChairmanFlag:false, showRounds:false, hideBorda:false, centersSingleAttacker:true,
+    layoutChairmen:({cx,rx,rightX,cy,ry,chs})=>_chairBank(chs,cx,rx,rightX,cy,ry),
+    presetEdges:({atk,ch,sink})=>{ if(!ch.length) return _edgesToSink(atk,sink);
+      const E=[]; atk.forEach(a=>ch.forEach(c=>E.push({from:a,to:c}))); ch.forEach(c=>E.push({from:c,to:sink})); return E; },
+    strikeEdges:(c)=>{ if(!c.chP.length) return _strikeToSink(c); let s="";
+      c.attackers.forEach(a=>{ c.chP.forEach(cp=>{ s+=c.gLine(c.pos[a.id],"attacker",cp,"chairman","e-atk"); }); });
+      c.chP.forEach(cp=>{ s+=c.gLine(cp,"chairman",c.sink,c.sinkKind,"e-chair"); }); return s; },
+    overlay:({ring,borda})=>_ringOverlay(ring,borda) },
+  debate:{ mode:"debate", usesChairmen:false, addChair:true, keepsChairmen:true,
+    serializesChairmen:true, useChairmanFlag:false, showRounds:true, hideBorda:true, centersSingleAttacker:true,
+    layoutChairmen:({cx,rx,rightX,cy,chs})=>chs.length?[{id:chs[0].id,x:(cx+rx+rightX)/2,y:cy}]:[],
+    chairmanRole:()=>"Synthesiser", chairmanRemovable:()=>false,
+    presetEdges:({atk,ch,sink})=>{ if(!ch.length) return _edgesToSink(atk,sink);
+      return atk.map(a=>({from:a,to:ch[0]})).concat([{from:ch[0],to:sink}]); },
+    strikeEdges:(c)=>{ if(!c.chP.length) return _strikeToSink(c); let s="";
+      c.attackers.forEach(a=>{ s+=c.gLine(c.pos[a.id],"attacker",c.chP[0],"chairman","e-atk"); }); s+=c.gLine(c.chP[0],"chairman",c.sink,c.sinkKind,"e-chair"); return s; },
+    overlay:({pos,n})=>{ if(n<=1) return ""; let s=""; for(let i=0;i<n;i++){ const a=pos[GS.attackers[i].id], b=pos[GS.attackers[(i+1)%n].id]; s+=`<path class="e-debate" d="M${a.x},${a.y} L${b.x},${b.y}"/>`; } return s; } },
+  pipeline:{ mode:"pipeline", usesChairmen:false, addChair:false, keepsChairmen:false,
+    serializesChairmen:false, useChairmanFlag:false, showRounds:false, hideBorda:false, centersSingleAttacker:true,
+    presetEdges:({atk,sink,n})=>{ const E=[]; for(let i=0;i<n-1;i++) E.push({from:atk[i],to:atk[i+1]}); if(n) E.push({from:atk[n-1],to:sink}); return E; },
+    strikeEdges:(c)=>{ let s=""; for(let i=0;i<c.n-1;i++) s+=c.gLine(c.pos[GS.attackers[i].id],"attacker",c.pos[GS.attackers[i+1].id],"attacker","e-atk");
+      if(c.n) s+=c.gLine(c.pos[GS.attackers[c.n-1].id],"attacker",c.sink,c.sinkKind,"e-atk"); return s; },
+    overlay:()=>"" },
+  moa:{ mode:"moa", usesChairmen:true, addChair:true, keepsChairmen:true,
+    serializesChairmen:true, useChairmanFlag:false, showRounds:true, hideBorda:false, centersSingleAttacker:true,
+    layoutChairmen:({cx,rx,rightX,cy,ry,chs})=>_chairBank(chs,cx,rx,rightX,cy,ry),
+    presetEdges:({atk,ch,sink})=>{ if(!ch.length) return _edgesToSink(atk,sink);
+      return atk.map(a=>({from:a,to:ch[0]})).concat([{from:ch[0],to:sink}]); },
+    strikeEdges:(c)=>{ if(!c.chP.length) return _strikeToSink(c); let s="";
+      c.attackers.forEach(a=>{ s+=c.gLine(c.pos[a.id],"attacker",c.chP[0],"chairman","e-atk"); }); s+=c.gLine(c.chP[0],"chairman",c.sink,c.sinkKind,"e-chair"); return s; },
+    overlay:({ring,borda})=>_ringOverlay(ring,borda) },
+  custom:{ mode:"custom", usesChairmen:true, addChair:true, keepsChairmen:true,
+    serializesChairmen:true, useChairmanFlag:false, showRounds:false, hideBorda:false, centersSingleAttacker:true,
+    layoutChairmen:({cx,rx,rightX,cy,ry,chs})=>_chairBank(chs,cx,rx,rightX,cy,ry) },
+};
+function topoDef(){ return TOPOLOGIES[GS.topo]||TOPOLOGIES.circular; }
+
 // --- layout + drawing --------------------------------------------------
 function gLayout(W,H){
   const n=GS.attackers.length, pos={};
   const cx=Math.max(210, W*0.26), cy=H/2;
   const rx=Math.min(Math.max(140, W*0.15), Math.max(140, n*36)), ry=n>1?Math.max(90,n*30):90;
   const start=Math.PI + (n%2===0?Math.PI/n:0);
-  GS.attackers.forEach((a,i)=>{
-    if(n===1 && GS.topo!=="chairman"){ pos[a.id]={x:cx,y:cy}; return; }
-    const t=start+i*2*Math.PI/n; pos[a.id]={x:cx+rx*Math.cos(t), y:cy+ry*Math.sin(t)};
-  });
-  pos.ring={cx,cy,rx,ry,show:n>1};
+  const _tdL=topoDef();
+  if(_tdL.attackerLayout){
+    // A topology may lay its attackers out its own way (e.g. a linear relay row, MoA columns).
+    const r=_tdL.attackerLayout({W,H,cx,cy,rx,ry,n,start,attackers:GS.attackers})||{};
+    GS.attackers.forEach(a=>{ if(r.pos&&r.pos[a.id]) pos[a.id]=r.pos[a.id]; });
+    pos.ring=r.ring||{cx,cy,rx,ry,show:false};
+  } else {
+    GS.attackers.forEach((a,i)=>{
+      if(n===1 && _tdL.centersSingleAttacker){ pos[a.id]={x:cx,y:cy}; return; }
+      const t=start+i*2*Math.PI/n; pos[a.id]={x:cx+rx*Math.cos(t), y:cy+ry*Math.sin(t)};
+    });
+    pos.ring={cx,cy,rx,ry,show:n>1};
+  }
   const rightX=W-Math.max(120,W*0.11);
   pos.target={x:rightX, y:cy-58}; pos.evaluator={x:rightX, y:cy+72};
   pos.chairmen=[]; const chs=GS.chairmen||[];
-  if(GS.topo==="custom" && chs.length){
-    const mx=(cx+rx+rightX)/2, gap=Math.min(120,Math.max(84,ry*2/Math.max(1,chs.length)));
-    chs.forEach((c,i)=>pos.chairmen.push({id:c.id,x:mx,y:cy+(i-(chs.length-1)/2)*gap}));
-  } else if(gUsesChairmen() && chs.length){
-    const x0=cx+rx+130, x1=rightX-150, span=Math.max(0,x1-x0);
-    if(GS.topo==="chairman"){ chs.forEach((c,i)=>{ const x=chs.length>1? x0+span*(i/(chs.length-1)) : (x0+x1)/2; pos.chairmen.push({id:c.id,x,y:cy}); }); }
-    else { const mx=(cx+rx+rightX)/2, gap=Math.min(120,Math.max(84,ry*2/Math.max(1,chs.length))); chs.forEach((c,i)=>{ pos.chairmen.push({id:c.id,x:mx,y:cy+(i-(chs.length-1)/2)*gap}); }); }
-  } else if(GS.topo==="debate" && chs.length){ pos.chairmen.push({id:chs[0].id,x:(cx+rx+rightX)/2,y:cy});
-  }
+  { const _td=topoDef(); if(chs.length && _td.layoutChairmen) pos.chairmen=_td.layoutChairmen({cx,rx,rightX,cy,ry,chs})||[]; }
   pos.defenses=[]; const defs=GS.defenses||[];
   if(defs.length){ const step=64, x0=pos.target.x-140-(defs.length-1)*step; defs.forEach((d,i)=>pos.defenses.push({id:d.id,x:x0+i*step,y:pos.target.y})); }
   if(GS.topo==="custom" && GS.nodePos && typeof GS.nodePos==="object"){
@@ -2643,24 +2712,8 @@ function gLine(a,ka,b,kb,cls){
 function gPresetEdges(){
   const atk=GS.attackers.map(a=>a.id), ch=(GS.chairmen||[]).map(c=>c.id), n=atk.length;
   const sink=(GS.defenses&&GS.defenses.length)?GS.defenses[0].id:"target";
-  const E=[], t=GS.topo;
-  if(t==="chairman" && ch.length){
-    atk.forEach(a=>E.push({from:a,to:ch[0]}));
-    for(let i=0;i<ch.length-1;i++) E.push({from:ch[i],to:ch[i+1]});
-    E.push({from:ch[ch.length-1],to:sink});
-  } else if(t==="parallel" && ch.length){
-    atk.forEach(a=>ch.forEach(c=>E.push({from:a,to:c})));
-    ch.forEach(c=>E.push({from:c,to:sink}));
-  } else if((t==="debate"||t==="moa") && ch.length){
-    atk.forEach(a=>E.push({from:a,to:ch[0]}));
-    E.push({from:ch[0],to:sink});
-  } else if(t==="pipeline"){
-    for(let i=0;i<n-1;i++) E.push({from:atk[i],to:atk[i+1]});
-    if(n) E.push({from:atk[n-1],to:sink});
-  } else { // circular / default council
-    atk.forEach(a=>E.push({from:a,to:sink}));
-  }
-  return E;
+  const td=topoDef();
+  return td.presetEdges?td.presetEdges({atk,ch,sink,n}):_edgesToSink(atk,sink);
 }
 // Any structural edit on a preset "forks" it into a Custom graph seeded with the preset's
 // current nodes, positions and edges — so every topology is editable, not just Custom.
@@ -2669,7 +2722,7 @@ function gForkToCustom(){
   gCheckpoint();
   // Presets that don't use a chairman (circular council, pipeline) shouldn't leave an orphan
   // chairman node behind when forked to Custom.
-  if(!(GS.topo==="chairman"||GS.topo==="parallel"||GS.topo==="moa"||GS.topo==="debate")) GS.chairmen=[];
+  if(!topoDef().keepsChairmen) GS.chairmen=[];
   const cv=$("gcanvas"), W=cv?(cv.clientWidth||900):900, H=cv?(cv.clientHeight||400):400;
   const pos=gLayout(W,H);
   GS.nodePos=GS.nodePos||{};
@@ -2696,28 +2749,15 @@ function renderGraph(){
     e+='<path class="e-custom-hit" data-edge-index="'+i+'" d="'+match[1]+'"/>'+
       line.replace('class="e-custom"','class="e-custom'+(gSelectedEdge===i?' selected':'')+'" data-edge-index="'+i+'"');
   });
-  // attacker table: debate = a mesh (they talk to each other); else a critique ring
-  if(GS.topo!=="custom" && GS.topo==="debate" && n>1){ for(let i=0;i<n;i++){ const a=pos[GS.attackers[i].id], b=pos[GS.attackers[(i+1)%n].id]; e+=`<path class="e-debate" d="M${a.x},${a.y} L${b.x},${b.y}"/>`; } }
-  else if(GS.topo!=="custom" && pos.ring.show && GS.topo!=="pipeline") e+=`<ellipse class="e-ring${GS.borda?"":" off"}" cx="${pos.ring.cx}" cy="${pos.ring.cy}" rx="${pos.ring.rx}" ry="${pos.ring.ry}"/>`;
-  // strike path by topology — the strike flows into the shield pipeline (if any) then the target
+  // strike path by topology — the strike flows into the shield pipeline (if any) then the target.
+  // Overlay (debate mesh / council ring) and the strike edges both come from the topology registry.
   const dP=pos.defenses||[]; const sink=dP.length?dP[0]:pos.target, sinkKind=dP.length?"defense":"target";
-  if(GS.topo!=="custom" && GS.topo==="chairman" && chP.length){
-    GS.attackers.forEach(a=>{ e+=gLine(pos[a.id],"attacker",chP[0],"chairman","e-atk"); });
-    for(let i=0;i<chP.length-1;i++) e+=gLine(chP[i],"chairman",chP[i+1],"chairman","e-chair");
-    e+=gLine(chP[chP.length-1],"chairman",sink,sinkKind,"e-chair");
-  } else if(GS.topo!=="custom" && GS.topo==="parallel" && chP.length){
-    GS.attackers.forEach(a=>{ chP.forEach(cp=>{ e+=gLine(pos[a.id],"attacker",cp,"chairman","e-atk"); }); });
-    chP.forEach(cp=>{ e+=gLine(cp,"chairman",sink,sinkKind,"e-chair"); });
-  } else if(GS.topo!=="custom" && GS.topo==="debate" && chP.length){
-    GS.attackers.forEach(a=>{ e+=gLine(pos[a.id],"attacker",chP[0],"chairman","e-atk"); });
-    e+=gLine(chP[0],"chairman",sink,sinkKind,"e-chair");
-  } else if(GS.topo!=="custom" && GS.topo==="pipeline"){
-    for(let i=0;i<n-1;i++) e+=gLine(pos[GS.attackers[i].id],"attacker",pos[GS.attackers[i+1].id],"attacker","e-atk");
-    if(n) e+=gLine(pos[GS.attackers[n-1].id],"attacker",sink,sinkKind,"e-atk");
-  } else if(GS.topo!=="custom" && GS.topo==="moa" && chP.length){
-    GS.attackers.forEach(a=>{ e+=gLine(pos[a.id],"attacker",chP[0],"chairman","e-atk"); });
-    e+=gLine(chP[0],"chairman",sink,sinkKind,"e-chair");
-  } else if(GS.topo!=="custom") { GS.attackers.forEach(a=>{ e+=gLine(pos[a.id],"attacker",sink,sinkKind,"e-atk"); }); }
+  if(GS.topo!=="custom"){
+    const td=topoDef();
+    if(td.overlay) e+=td.overlay({pos,n,ring:pos.ring,borda:GS.borda});
+    const ctx={pos,chP,sink,sinkKind,n,attackers:GS.attackers,gLine};
+    e+=td.strikeEdges?td.strikeEdges(ctx):_strikeToSink(ctx);
+  }
   for(let i=0;i<dP.length-1;i++) e+=gLine(dP[i],"defense",dP[i+1],"defense","e-def");
   if(dP.length) e+=gLine(dP[dP.length-1],"defense",pos.target,"target","e-def");
   // target -> evaluator (judge) + multi-turn feedback to the table
@@ -2762,9 +2802,10 @@ function renderGraph(){
     nodes.appendChild(d); return d;
   };
   GS.attackers.forEach((a,i)=>{ const el=mk("attacker",a.id,pos[a.id].x,pos[a.id].y,`Attacker ${i+1}`,a.model,a.system?("✎ "+a.system):"paper red-team prompt (default)",GS.attackers.length>1); gAttachTools(el,a); });
-  chP.forEach(cp=>{ const c=GS.chairmen.find(x=>x.id===cp.id); if(!c) return; const idx=GS.chairmen.indexOf(c);
-    const role=GS.topo==="debate"?"Synthesiser":(GS.chairmen.length>1?("Chairman "+(idx+1)):"Chairman");
-    mk("chairman",c.id,cp.x,cp.y,role,c.model,c.system?("✎ "+c.system):"synthesises the strike",GS.chairmen.length>1 && GS.topo!=="debate"); });
+  chP.forEach(cp=>{ const c=GS.chairmen.find(x=>x.id===cp.id); if(!c) return; const idx=GS.chairmen.indexOf(c); const _td=topoDef();
+    const role=_td.chairmanRole?_td.chairmanRole(idx,GS.chairmen.length):(GS.chairmen.length>1?("Chairman "+(idx+1)):"Chairman");
+    const rem=_td.chairmanRemovable?_td.chairmanRemovable(GS.chairmen.length):(GS.chairmen.length>1);
+    mk("chairman",c.id,cp.x,cp.y,role,c.model,c.system?("✎ "+c.system):"synthesises the strike",rem); });
   mk("target","target",pos.target.x,pos.target.y,"Target",GS.target.model,GS.target.url.replace(/^https?:\/\//,""),false);
   mk("evaluator","evaluator",pos.evaluator.x,pos.evaluator.y,"Evaluator · 0-5",GS.evaluator.model,null,false);
   (pos.defenses||[]).forEach(dp=>{ const spec=(DEFENSES_LIST||[]).find(x=>x.id===dp.id); mk("defense",dp.id,dp.x,dp.y,"🛡",spec?spec.name:dp.id,null,true); });
@@ -2783,8 +2824,9 @@ function renderGraph(){
   if(forked){ const rp=$("gResetPreset"); if(rp) rp.onclick=(ev)=>{ ev.preventDefault(); gCheckpoint(); GS.topo=GS.forkedFrom; GS.forkedFrom=null; GS.edges=[]; GS.nodePos={}; gEdgeDraft=null; gSelectedEdge=-1; renderGraph(); }; }
   gToolbarVis(); gsSave();
 }
-function gToolbarVis(){ const ac=$("gAddChair"), rw=$("gRoundsWrap"); if(ac) ac.style.display=(gUsesChairmen()||GS.topo==="debate")?"":"none"; if(rw) rw.style.display=(GS.topo==="debate"||GS.topo==="moa")?"":"none";
-  const bh=$("gBorda")?$("gBorda").closest(".ginline"):null; if(bh) bh.style.display=GS.topo==="debate"?"none":""; }
+function gToolbarVis(){ const td=topoDef(), ac=$("gAddChair"), rw=$("gRoundsWrap");
+  if(ac) ac.style.display=td.addChair?"":"none"; if(rw) rw.style.display=td.showRounds?"":"none";
+  const bh=$("gBorda")?$("gBorda").closest(".ginline"):null; if(bh) bh.style.display=td.hideBorda?"none":""; }
 
 // --- defenses (literature shields chained in front of the target) ---
 let DEFENSES_LIST=[];
@@ -2925,7 +2967,13 @@ function gRemove(id){
 }
 $("gAddAtk").onclick=()=>{ if(GS.attackers.length>=8){ toast("Eight attackers is the canvas limit for now.","info"); return; } gCheckpoint(); const id=gNextId(); GS.attackers.push({id,model:GS.attackers[GS.attackers.length-1].model||"qwen2.5:3b",system:"",endpoint:""}); renderGraph(); const d=document.querySelector(`.gnode[data-id="${id}"]`); if(d) openGDialog("attacker",id,d); };
 $("gAddChair").onclick=()=>{ if(GS.chairmen.length>=4){ toast("Four chairmen is the limit.","info"); return; } gCheckpoint(); const id=gNextChairId(); GS.chairmen.push({id,model:GS.attackers[0].model||"qwen2.5:3b",system:"",endpoint:""}); renderGraph(); const d=document.querySelector(`.gnode[data-id="${id}"]`); if(d) openGDialog("chairman",id,d); };
-document.querySelectorAll("#gtopo button[data-topo]").forEach(b=>b.addEventListener("click",()=>{ if(b.disabled||GS.topo===b.dataset.topo) return; gCheckpoint(); GS.topo=b.dataset.topo; GS.forkedFrom=null; gEdgeDraft=null; gSelectedEdge=-1; if(gUsesChairmen() && (!GS.chairmen||!GS.chairmen.length)) GS.chairmen=[{id:"c1",model:(GS.attackers[0]&&GS.attackers[0].model)||"qwen2.5:3b",system:"",endpoint:""}]; closeGDialog(); renderGraph(); }));
+document.querySelectorAll("#gtopo button[data-topo]").forEach(b=>b.addEventListener("click",()=>{ if(b.disabled||GS.topo===b.dataset.topo) return; gCheckpoint(); GS.topo=b.dataset.topo; GS.forkedFrom=null; gEdgeDraft=null; gSelectedEdge=-1;
+  // Per-topology seeding: each registry entry may define seed(GS) to prepare its roster so the
+  // topology opens ready-to-run and visibly distinct. Falls back to the shared chairman seed.
+  const _td=topoDef();
+  if(_td.seed) _td.seed(GS);
+  else if(gUsesChairmen() && (!GS.chairmen||!GS.chairmen.length)) GS.chairmen=[{id:"c1",model:(GS.attackers[0]&&GS.attackers[0].model)||"qwen2.5:3b",system:"",endpoint:""}];
+  closeGDialog(); renderGraph(); }));
 $("gcanvas").addEventListener("click",ev=>{ if(GS.topo==="custom" && (ev.target===$("gcanvas")||ev.target===$("gedges")) && gEdgeDraft){ gEdgeDraft=null; renderGraph(); } });
 $("gTurns").addEventListener("input",()=>{ GS.turns=Math.max(1,Math.min(10,Number($("gTurns").value)||1)); renderGraph(); });
 if($("gRounds")) $("gRounds").addEventListener("input",()=>{ GS.rounds=Math.max(1,Math.min(6,Number($("gRounds").value)||1)); gsSave(); });
@@ -3050,14 +3098,15 @@ function graphBody(withDefenses){
     if((a.system||"").trim()) o.system_prompt=a.system.trim(); if((a.endpoint||"").trim()) o.endpoint=a.endpoint.trim();
     if(a.priming&&a.priming.mode==="contextual"&&(a.priming.context||"").trim()) o.priming={mode:"contextual",context:a.priming.context.trim()};
     if(a.tools&&a.tools.length){ o.tools=a.tools.slice(); if(a.tool_mode) o.tool_mode=a.tool_mode; if(a.tool_cfg&&Object.keys(a.tool_cfg).length) o.tool_cfg=a.tool_cfg; } return o; });
-  const useChair = GS.topo==="chairman"||GS.topo==="parallel"||GS.topo==="debate"||GS.topo==="moa"||GS.topo==="custom";
+  const td=topoDef();
+  const useChair = td.serializesChairmen;
   if(useChair){ GS.chairmen.forEach(c=>{ const o={role:"chairman",model:(c.model||"qwen2.5:3b").trim()};
     if((c.system||"").trim()) o.system_prompt=c.system.trim(); if((c.endpoint||"").trim()) o.endpoint=c.endpoint.trim(); agents.push(o); }); }
-  const mode = ({parallel:"parallel",debate:"debate",pipeline:"pipeline",moa:"moa",custom:"custom"})[GS.topo] || "council";
+  const mode = td.mode;
   const attack_config={ mode, agents, evaluator:{model:(GS.evaluator.model||"qwen2.5:3b").trim()},
-    max_turns:GS.turns, use_borda:GS.borda, use_chairman:(GS.topo==="chairman"), success_score:5,
+    max_turns:GS.turns, use_borda:GS.borda, use_chairman:td.useChairmanFlag, success_score:5,
     accumulate_target_context:!!GS.accumulate, contextual_mode:!!GS.contextualMode };
-  if(GS.topo==="debate"||GS.topo==="moa") attack_config.rounds=GS.rounds;
+  if(td.showRounds) attack_config.rounds=GS.rounds;
   if(GS.topo==="custom") attack_config.edges=gCustomEdges();
   if((GS.evaluator.endpoint||"").trim()) attack_config.evaluator.endpoint=GS.evaluator.endpoint.trim();
   const target={ kind:"openai_chat", base_url:GS.target.url.trim(), model:GS.target.model.trim() };
