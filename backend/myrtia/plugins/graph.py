@@ -63,14 +63,13 @@ from myrtia.plugins.graph_common import (
     _tool_prompt,
 )
 from myrtia.plugins.graph_topologies import get_topology
+from myrtia.plugins.live_base import LiveAttack
 
 
-class GraphAttack:
+class GraphAttack(LiveAttack):
     def __init__(self, config: dict[str, Any], target_connector: Any) -> None:
         self.config = dict(config)
         self.target_connector = target_connector
-        self._on_event: Any = None
-        self._cancelled: Any = None
         self.attack_goals: list[dict] | None = None
         self.attack_results: list[dict] | None = None
         self._conn_cache: dict[tuple, Any] = {}
@@ -98,27 +97,6 @@ class GraphAttack:
         self.critic_max_tokens = max(128, int(self.config.get("critic_max_tokens", 512) or 512))
 
         self._build_graph()
-
-    # --- seams (identical to tap.py / crescendo.py) --------------------
-    def set_event_emitter(self, emit: Any) -> None:
-        self._on_event = emit
-
-    def set_cancel_check(self, fn: Any) -> None:
-        self._cancelled = fn
-
-    def _is_cancelled(self) -> bool:
-        try:
-            return bool(self._cancelled and self._cancelled())
-        except Exception:  # noqa: BLE001
-            return False
-
-    def _emit(self, event_type: str, **payload: Any) -> None:
-        if self._on_event is None:
-            return
-        try:
-            self._on_event(event_type, payload)
-        except Exception:  # noqa: BLE001
-            pass
 
     def load_goals(self, goals: list[str]) -> None:
         rows = [{"goal": g, "label": 1} for g in goals]

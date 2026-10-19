@@ -12,30 +12,19 @@ from typing import Any
 from myrtia.connectors.base import Status
 from myrtia.judges.graded import JUDGE_SCHEMA, judge_and_emit, judge_from_config
 from myrtia.plugins.base import PluginSpec, register
+from myrtia.plugins.live_base import LiveAttack
 
 
-class DirectRequestsLive:
+class DirectRequestsLive(LiveAttack):
     def __init__(self, config: dict[str, Any], target_connector: Any) -> None:
         self.config = dict(config)
         self.target_connector = target_connector
         self.attack_goals: list[dict] | None = None
         self.attack_results: list[dict] | None = None
-        self._on_event: Any = None
         self._judge = judge_from_config(config)
 
     def generate(self, **kwargs: Any) -> list[dict]:
         return self.attack_results or []
-
-    def set_event_emitter(self, emit: Any) -> None:
-        self._on_event = emit
-
-    def _emit(self, event_type: str, **payload: Any) -> None:
-        if self._on_event is None:
-            return
-        try:
-            self._on_event(event_type, payload)
-        except Exception:  # noqa: BLE001 — streaming must not break the attack
-            pass
 
     def load_goals(self, goals: list[str]) -> None:
         # Build prompts inline (do NOT call generate(): ARES's base generate() loads

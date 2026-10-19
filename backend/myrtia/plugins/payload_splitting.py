@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import Any
 
 from myrtia.judges.graded import JUDGE_SCHEMA, judge_and_emit, judge_from_config
+from myrtia.plugins.live_base import LiveAttack
 from myrtia.plugins.base import PluginSpec, register
 
 
@@ -38,13 +39,12 @@ def _build_prompt(goal: str, n: int) -> tuple[str, list[str]]:
     return prompt, frags
 
 
-class PayloadSplittingLive:
+class PayloadSplittingLive(LiveAttack):
     """Self-contained payload-splitting strategy exposing the Myrtia seams."""
 
     def __init__(self, config: dict[str, Any], target_connector: Any) -> None:
         self.config = dict(config)
         self.target_connector = target_connector
-        self._on_event: Any = None
         self.attack_goals: list[dict] | None = None
         self.attack_results: list[dict] | None = None
         self._judge = judge_from_config(self.config)
@@ -53,18 +53,6 @@ class PayloadSplittingLive:
         except (TypeError, ValueError):
             self._n = 3
         self._n = max(2, self._n)
-
-    # --- Myrtia seams ---------------------------------------------------
-    def set_event_emitter(self, emit: Any) -> None:
-        self._on_event = emit
-
-    def _emit(self, event_type: str, **payload: Any) -> None:
-        if self._on_event is None:
-            return
-        try:
-            self._on_event(event_type, payload)
-        except Exception:  # noqa: BLE001 — streaming must never break the attack
-            pass
 
     def load_goals(self, goals: list[str]) -> None:
         rows: list[dict] = []

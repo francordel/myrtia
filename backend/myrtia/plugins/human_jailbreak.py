@@ -19,6 +19,7 @@ from __future__ import annotations
 from typing import Any
 
 from myrtia.judges.graded import JUDGE_SCHEMA, judge_and_emit, judge_from_config
+from myrtia.plugins.live_base import LiveAttack
 from myrtia.plugins.base import PluginSpec, register
 
 # A small bank of public jailbreak wrapper templates. Each has one {goal} slot.
@@ -54,7 +55,7 @@ JAILBREAK_TEMPLATES: dict[str, str] = {
 }
 
 
-class HumanJailbreakLive:
+class HumanJailbreakLive(LiveAttack):
     """Self-contained human-jailbreak strategy exposing the Myrtia seams.
 
     Not an ARES subclass: it only needs the passed-in `target_connector`, so the
@@ -64,7 +65,6 @@ class HumanJailbreakLive:
     def __init__(self, config: dict[str, Any], target_connector: Any) -> None:
         self.config = dict(config)
         self.target_connector = target_connector
-        self._on_event: Any = None
         self.attack_goals: list[dict] | None = None
         self.attack_results: list[dict] | None = None
 
@@ -81,18 +81,6 @@ class HumanJailbreakLive:
             self._templates = dict(JAILBREAK_TEMPLATES)
         if not self._templates:  # fall back to all if selection matched nothing
             self._templates = dict(JAILBREAK_TEMPLATES)
-
-    # --- Myrtia seams ---------------------------------------------------
-    def set_event_emitter(self, emit: Any) -> None:
-        self._on_event = emit
-
-    def _emit(self, event_type: str, **payload: Any) -> None:
-        if self._on_event is None:
-            return
-        try:
-            self._on_event(event_type, payload)
-        except Exception:  # noqa: BLE001 — streaming must never break the attack
-            pass
 
     def load_goals(self, goals: list[str]) -> None:
         rows: list[dict] = []

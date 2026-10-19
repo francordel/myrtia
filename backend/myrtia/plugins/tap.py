@@ -23,6 +23,7 @@ import re
 from typing import Any
 
 from myrtia.plugins.base import PluginSpec, register
+from myrtia.plugins.live_base import LiveAttack
 
 _ATTACKER_SYSTEM = (
     "You are a red-teaming assistant running the PAIR/TAP attack for authorized AI "
@@ -64,12 +65,10 @@ def _json_obj(text: str) -> dict:
     return {}
 
 
-class TapLive:
+class TapLive(LiveAttack):
     def __init__(self, config: dict[str, Any], target_connector: Any) -> None:
         self.config = dict(config)
         self.target_connector = target_connector
-        self._on_event: Any = None
-        self._cancelled: Any = None
         self.attack_goals: list[dict] | None = None
         self.attack_results: list[dict] | None = None
 
@@ -82,27 +81,6 @@ class TapLive:
         self.aux_api_key = self.config.get("aux_api_key")
         self._attacker = None
         self._judge = None
-
-    # --- seams ----------------------------------------------------------
-    def set_event_emitter(self, emit: Any) -> None:
-        self._on_event = emit
-
-    def set_cancel_check(self, fn: Any) -> None:
-        self._cancelled = fn
-
-    def _is_cancelled(self) -> bool:
-        try:
-            return bool(self._cancelled and self._cancelled())
-        except Exception:  # noqa: BLE001
-            return False
-
-    def _emit(self, event_type: str, **payload: Any) -> None:
-        if self._on_event is None:
-            return
-        try:
-            self._on_event(event_type, payload)
-        except Exception:  # noqa: BLE001
-            pass
 
     def load_goals(self, goals: list[str]) -> None:
         rows = [{"goal": g, "label": 1} for g in goals]

@@ -24,6 +24,7 @@ import re
 from typing import Any
 
 from myrtia.plugins.base import PluginSpec, register
+from myrtia.plugins.live_base import LiveAttack
 
 _HELPER_SYSTEM = (
     "You are a red-teaming assistant running the Crescendo strategy against a "
@@ -88,14 +89,12 @@ def _parse_score(text: str) -> int:
     return int(m.group(1)) if m else 0
 
 
-class CrescendoLive:
+class CrescendoLive(LiveAttack):
     """Single-attacker multi-turn escalation with a helper and a judge LLM."""
 
     def __init__(self, config: dict[str, Any], target_connector: Any) -> None:
         self.config = dict(config)
         self.target_connector = target_connector
-        self._on_event: Any = None
-        self._cancelled: Any = None
         self.attack_goals: list[dict] | None = None
         self.attack_results: list[dict] | None = None
 
@@ -109,27 +108,6 @@ class CrescendoLive:
         self.aux_api_key = self.config.get("aux_api_key")
         self._helper = None
         self._judge = None
-
-    # --- Myrtia seams ---------------------------------------------------
-    def set_event_emitter(self, emit: Any) -> None:
-        self._on_event = emit
-
-    def set_cancel_check(self, fn: Any) -> None:
-        self._cancelled = fn
-
-    def _is_cancelled(self) -> bool:
-        try:
-            return bool(self._cancelled and self._cancelled())
-        except Exception:  # noqa: BLE001
-            return False
-
-    def _emit(self, event_type: str, **payload: Any) -> None:
-        if self._on_event is None:
-            return
-        try:
-            self._on_event(event_type, payload)
-        except Exception:  # noqa: BLE001 — streaming must never break the attack
-            pass
 
     def load_goals(self, goals: list[str]) -> None:
         rows = [{"goal": g, "label": 1} for g in goals]

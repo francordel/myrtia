@@ -16,11 +16,12 @@ from typing import Any, Callable
 
 from myrtia.judges.graded import JUDGE_SCHEMA, judge_and_emit, judge_from_config
 from myrtia.plugins.base import PluginSpec, register
+from myrtia.plugins.live_base import LiveAttack
 
 Builder = Callable[[str, dict], list[dict]]
 
 
-class TemplateAttack:
+class TemplateAttack(LiveAttack):
     """Self-contained single-shot template attack exposing the Myrtia seams."""
 
     def __init__(self, config: dict[str, Any], target_connector: Any,
@@ -28,21 +29,9 @@ class TemplateAttack:
         self.config = dict(config)
         self.target_connector = target_connector
         self._build = build
-        self._on_event: Any = None
         self._judge = judge_from_config(self.config)
         self.attack_goals: list[dict] | None = None
         self.attack_results: list[dict] | None = None
-
-    def set_event_emitter(self, emit: Any) -> None:
-        self._on_event = emit
-
-    def _emit(self, event_type: str, **payload: Any) -> None:
-        if self._on_event is None:
-            return
-        try:
-            self._on_event(event_type, payload)
-        except Exception:  # noqa: BLE001 — streaming must never break the attack
-            pass
 
     def load_goals(self, goals: list[str]) -> None:
         rows: list[dict] = []
