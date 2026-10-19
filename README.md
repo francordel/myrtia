@@ -32,6 +32,7 @@
 - [Overview](#overview)
 - [Why Myrtia](#why-myrtia)
 - [Features](#features)
+- [Attacker topologies](#attacker-topologies)
 - [Current Capability Boundaries](#current-capability-boundaries)
 - [Architecture](#architecture)
 - [Quick Start](#quick-start)
@@ -135,7 +136,28 @@ Red teaming in Myrtia is organised around four components:
   ARES-compatible, so existing ARES strategies can be hosted with minimal adaptation.
 - **Security-conscious by default.** API keys are supplied at run time and are redacted from all
   API responses and from the live event stream.
+- **Composable attacker topologies.** Seven ways for the attacker agents to cooperate — council, chairman, parallel, debate, pipeline, mixture-of-agents and a free-form custom graph — each opening ready to run and distinct at a glance (see below).
 - **Self-hosted and permissive.** Apache-2.0, single-command backend, no vendor lock-in.
+
+## Attacker topologies
+
+The visual builder is not a fixed council — it is a canvas for *how* your attacker agents cooperate. Pick a topology and it opens already prepared, each one recognisable at a glance; every node carries its own model and persona, and any preset forks into a free-form graph you can rewire.
+
+<p align="center">
+  <img alt="The six built-in attacker topologies in Myrtia's agentic builder: circular council, chairman, parallel, debate, pipeline and mixture-of-agents" src="docs/topologies.png" width="100%" />
+</p>
+
+| Topology | How the attacker agents cooperate |
+|---|---|
+| **Circular · council** | N equal peers propose, cross-critique and vote (Borda Top-1); the winner strikes. No hub — the paper's deliberating council. |
+| **Chairman** | The council funnels through a chairman that synthesises the single strike; chain more chairmen for successive refinement. |
+| **Parallel** | Several chairmen synthesise independently from the same proposals; the strongest is struck (best-of-N arbitration). |
+| **Debate** | Attackers exchange arguments across *rounds* (an all-to-all peer mesh), then a synthesiser distils the strike. |
+| **Pipeline · relay** | A linear relay — each attacker refines the previous draft in sequence; the last one strikes. |
+| **Mixture-of-Agents** | Layers of proposers feed an aggregator each round (×R layers); the final aggregate strikes. |
+| **Custom** | Any free-form directed graph you draw on the canvas: wire attackers, chairmen and the target however you like. |
+
+Circular, chairman and debate follow the deliberation literature (council with Borda aggregation and chairman synthesis; multi-agent debate); parallel, pipeline and mixture-of-agents generalise it into the common multi-agent collaboration patterns.
 
 ## Current Capability Boundaries
 
