@@ -170,7 +170,10 @@ class GraphAttack:
         out: list[dict] = [{"role": "attacker", "model": model} for _ in range(n)]
         chair = str(cfg.get("chairman_model") or "").strip()
         if self.use_chairman and self.mode != "single":
-            out.append({"role": "chairman", "model": chair or model})
+            # Parallel is best-of-N synthesis: seed 2 chairmen so a non-canvas parallel run
+            # gets independent synthesisers to choose between, not best-of-1.
+            for _ in range(2 if self.mode == "parallel" else 1):
+                out.append({"role": "chairman", "model": chair or model})
         return out
 
     def _norm_agent(self, a: dict, i: int) -> dict:

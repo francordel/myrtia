@@ -2391,7 +2391,9 @@ const GS_DEFAULT=()=>({
   topo:"circular",
   edges:[],
   nodePos:{},
-  attackers:[{id:"a1",model:"qwen2.5:3b",system:"",endpoint:"",tools:[],tool_cfg:{}}],
+  attackers:[{id:"a1",model:"qwen2.5:3b",system:"",endpoint:"",tools:[],tool_cfg:{}},
+             {id:"a2",model:"qwen2.5:3b",system:"",endpoint:"",tools:[],tool_cfg:{}},
+             {id:"a3",model:"qwen2.5:3b",system:"",endpoint:"",tools:[],tool_cfg:{}}],
   chairmen:[{id:"c1",model:"qwen2.5:3b",system:"",endpoint:""}],
   evaluator:{model:"qwen2.5:3b",endpoint:""},
   turns:3, rounds:2, borda:true, accumulate:false, contextualMode:false, defenses:[],
@@ -2616,11 +2618,29 @@ function _strikeToSink(c){ let s=""; c.attackers.forEach(a=>{ s+=c.gLine(c.pos[a
 const TOPOLOGIES={
   circular:{ mode:"council", usesChairmen:false, addChair:false, keepsChairmen:false,
     serializesChairmen:false, useChairmanFlag:false, showRounds:false, hideBorda:false, centersSingleAttacker:true,
+    // A council is a flat set of EQUAL peers resolved by a Borda vote: open with >=3 members so the
+    // cross-critique/vote actually runs and the ring shows, and NO chairman hub (that is the sibling
+    // `chairman` topology). Never drop extra members the user added.
+    seed:(GS)=>{ while(GS.attackers.length<3){ const id=gNextId();
+        GS.attackers.push({id,model:(GS.attackers[GS.attackers.length-1]||{}).model||"qwen2.5:3b",system:"",endpoint:"",tools:[],tool_cfg:{}}); }
+      GS.chairmen=[]; },
     presetEdges:({atk,sink})=>_edgesToSink(atk,sink),
     strikeEdges:_strikeToSink,
-    overlay:({ring,borda})=>_ringOverlay(ring,borda) },
+    // The dashed ring IS the council's Borda vote; caption it so circular is distinct at a glance
+    // from the identical ring the chairman/parallel/moa topologies draw around their proposal pool.
+    overlay:({ring,borda})=>ring.show
+      ? _ringOverlay(ring,borda)+`<text class="e-ring-cap" x="${ring.cx}" y="${ring.cy-ring.ry-7}" text-anchor="middle" fill="var(--role-vote)" opacity="${borda?0.9:0.4}" style="font:600 11px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.4px;pointer-events:none">⬡ Borda vote</text>`
+      : _ringOverlay(ring,borda) },
   chairman:{ mode:"council", usesChairmen:true, addChair:true, keepsChairmen:true,
     serializesChairmen:true, useChairmanFlag:true, showRounds:false, hideBorda:false, centersSingleAttacker:false,
+    // Chairman routes a COUNCIL through ONE synthesiser: open with >=3 attackers so the strike
+    // funnel (attackers -> chairman -> target) reads as a convergence, and exactly ONE chairman so
+    // it is distinct at a glance from parallel's independent chairman bank. The chain stays opt-in
+    // via + Chairman. Never drop attackers the user already added.
+    seed:(GS)=>{ while(GS.attackers.length<3){ const id=gNextId();
+        GS.attackers.push({id,model:(GS.attackers[GS.attackers.length-1]||{}).model||"qwen2.5:3b",system:"",endpoint:"",tools:[],tool_cfg:{}}); }
+      if(!Array.isArray(GS.chairmen)||!GS.chairmen.length) GS.chairmen=[{id:"c1",model:(GS.attackers[0]&&GS.attackers[0].model)||"qwen2.5:3b",system:"",endpoint:""}];
+      else if(GS.chairmen.length>1) GS.chairmen=GS.chairmen.slice(0,1); },
     layoutChairmen:({cx,rx,rightX,cy,chs})=>_chairRow(chs,cx,rx,rightX,cy),
     presetEdges:({atk,ch,sink})=>{ if(!ch.length) return _edgesToSink(atk,sink);
       const E=atk.map(a=>({from:a,to:ch[0]})); for(let i=0;i<ch.length-1;i++) E.push({from:ch[i],to:ch[i+1]}); E.push({from:ch[ch.length-1],to:sink}); return E; },
@@ -2635,30 +2655,80 @@ const TOPOLOGIES={
     strikeEdges:(c)=>{ if(!c.chP.length) return _strikeToSink(c); let s="";
       c.attackers.forEach(a=>{ c.chP.forEach(cp=>{ s+=c.gLine(c.pos[a.id],"attacker",cp,"chairman","e-atk"); }); });
       c.chP.forEach(cp=>{ s+=c.gLine(cp,"chairman",c.sink,c.sinkKind,"e-chair"); }); return s; },
-    overlay:({ring,borda})=>_ringOverlay(ring,borda) },
+    overlay:({pos,ring,borda})=>{ let s=_ringOverlay(ring,borda); const cps=(pos&&pos.chairmen)||[];
+      if(cps.length>=2){ const xs=cps.map(c=>c.x), ys=cps.map(c=>c.y), padX=104, padY=54;
+        const x0=Math.min(...xs)-padX, y0=Math.min(...ys)-padY, w=(Math.max(...xs)-Math.min(...xs))+2*padX, h=(Math.max(...ys)-Math.min(...ys))+2*padY;
+        s+=`<rect class="e-parallel-bank" x="${x0}" y="${y0}" width="${w}" height="${h}" rx="14" fill="none" stroke-width="1.5" stroke-dasharray="5 4" style="stroke:var(--text-2);opacity:.45;pointer-events:none"/>`;
+        s+=`<text x="${x0+w/2}" y="${y0-7}" text-anchor="middle" style="fill:var(--text-2);font:600 11px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.3px;opacity:.85;pointer-events:none">⇶ best-of-N · strongest struck</text>`; }
+      return s; },
+    seed:(GS)=>{ // Parallel = best-of-N synthesis: a VISIBLE bank of >=2 INDEPENDENT chairmen (no chain
+      // edge between them) is what tells it apart from the single-chairman topology at a glance.
+      if(!Array.isArray(GS.attackers)||!GS.attackers.length) GS.attackers=[{id:"a1",model:"qwen2.5:3b",system:"",endpoint:""}];
+      while(GS.attackers.length<3) GS.attackers.push({id:gNextId(),model:GS.attackers[GS.attackers.length-1].model||"qwen2.5:3b",system:"",endpoint:""});
+      if(!Array.isArray(GS.chairmen)) GS.chairmen=[];
+      while(GS.chairmen.length<2) GS.chairmen.push({id:gNextChairId(),model:(GS.attackers[0]&&GS.attackers[0].model)||"qwen2.5:3b",system:"",endpoint:""}); } },
   debate:{ mode:"debate", usesChairmen:false, addChair:true, keepsChairmen:true,
     serializesChairmen:true, useChairmanFlag:false, showRounds:true, hideBorda:true, centersSingleAttacker:true,
     layoutChairmen:({cx,rx,rightX,cy,chs})=>chs.length?[{id:chs[0].id,x:(cx+rx+rightX)/2,y:cy}]:[],
     chairmanRole:()=>"Synthesiser", chairmanRemovable:()=>false,
-    presetEdges:({atk,ch,sink})=>{ if(!ch.length) return _edgesToSink(atk,sink);
-      return atk.map(a=>({from:a,to:ch[0]})).concat([{from:ch[0],to:sink}]); },
+    // Open ready-to-run and visibly distinct: always >=3 debaters and exactly ONE synthesiser,
+    // so the "mesh of peers -> synthesiser -> target" shape is present the moment debate is picked.
+    seed:(GS)=>{ const m=(GS.attackers[0]&&GS.attackers[0].model)||"qwen2.5:3b";
+      while(GS.attackers.length<3) GS.attackers.push({id:gNextId(),model:m,system:"",endpoint:""});
+      GS.chairmen=[(GS.chairmen&&GS.chairmen[0])||{id:"c1",model:m,system:"",endpoint:""}]; },
+    // Peer-debate structure is part of the serialized topology (every attacker pair is linked),
+    // so the mesh survives a fork to Custom; pairs run low->high index to stay acyclic (no council fallback).
+    presetEdges:({atk,ch,sink,n})=>{ const E=[];
+      for(let i=0;i<n;i++) for(let j=i+1;j<n;j++) E.push({from:atk[i],to:atk[j]});
+      if(!ch.length) return E.concat(_edgesToSink(atk,sink));
+      atk.forEach(a=>E.push({from:a,to:ch[0]})); E.push({from:ch[0],to:sink}); return E; },
     strikeEdges:(c)=>{ if(!c.chP.length) return _strikeToSink(c); let s="";
       c.attackers.forEach(a=>{ s+=c.gLine(c.pos[a.id],"attacker",c.chP[0],"chairman","e-atk"); }); s+=c.gLine(c.chP[0],"chairman",c.sink,c.sinkKind,"e-chair"); return s; },
-    overlay:({pos,n})=>{ if(n<=1) return ""; let s=""; for(let i=0;i<n;i++){ const a=pos[GS.attackers[i].id], b=pos[GS.attackers[(i+1)%n].id]; s+=`<path class="e-debate" d="M${a.x},${a.y} L${b.x},${b.y}"/>`; } return s; } },
+    // All-to-all mesh (every debater talks to every other) + a round-count badge: unmistakable at a
+    // glance and clearly different from MoA's single ellipse ring. Badge reflects GS.rounds at render.
+    overlay:({pos,n,ring})=>{ if(n<=1) return ""; let s="";
+      for(let i=0;i<n;i++) for(let j=i+1;j<n;j++){ const a=pos[GS.attackers[i].id], b=pos[GS.attackers[j].id]; s+=`<path class="e-debate" d="M${a.x},${a.y} L${b.x},${b.y}"/>`; }
+      const bx=ring?ring.cx:0, by=ring?ring.cy:0, label="×"+Math.max(1,GS.rounds||1)+" rounds", w=label.length*6.3+16;
+      s+=`<g aria-hidden="true"><rect x="${bx-w/2}" y="${by-11}" width="${w}" height="22" rx="11" fill="var(--surface-1)" stroke="var(--role-critique)" stroke-width="1.5" opacity="0.95"/><text x="${bx}" y="${by+4}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--role-critique)" style="font-family:inherit">${label}</text></g>`;
+      return s; } },
   pipeline:{ mode:"pipeline", usesChairmen:false, addChair:false, keepsChairmen:false,
     serializesChairmen:false, useChairmanFlag:false, showRounds:false, hideBorda:false, centersSingleAttacker:true,
+    seed:(GS)=>{ GS.chairmen=[]; const model=(GS.attackers[0]&&GS.attackers[0].model)||"qwen2.5:3b";
+      while(GS.attackers.length<3) GS.attackers.push({id:gNextId(),model,system:"",endpoint:""}); },
+    attackerLayout:({W,cx,cy,rx,ry,n,attackers})=>{
+      // Relay: lay attackers on ONE horizontal row at y=cy, evenly spaced left->right toward the
+      // target, so the chain reads as a straight a1 -> a2 -> a3 -> target line (not the ellipse zigzag).
+      const rightX=W-Math.max(120,W*0.11);          // matches gLayout's target x
+      const x0=Math.max(130,cx-rx);                  // leftmost attacker
+      const xEnd=rightX-150;                         // last attacker: leave room for the strike arrow
+      const span=Math.max(0,xEnd-x0), pos={};
+      attackers.forEach((a,i)=>{ pos[a.id]={x:(n<=1)?(x0+xEnd)/2:x0+span*(i/(n-1)), y:cy}; });
+      return {pos, ring:{cx,cy,rx,ry,show:false}};
+    },
     presetEdges:({atk,sink,n})=>{ const E=[]; for(let i=0;i<n-1;i++) E.push({from:atk[i],to:atk[i+1]}); if(n) E.push({from:atk[n-1],to:sink}); return E; },
     strikeEdges:(c)=>{ let s=""; for(let i=0;i<c.n-1;i++) s+=c.gLine(c.pos[GS.attackers[i].id],"attacker",c.pos[GS.attackers[i+1].id],"attacker","e-atk");
       if(c.n) s+=c.gLine(c.pos[GS.attackers[c.n-1].id],"attacker",c.sink,c.sinkKind,"e-atk"); return s; },
     overlay:()=>"" },
   moa:{ mode:"moa", usesChairmen:true, addChair:true, keepsChairmen:true,
     serializesChairmen:true, useChairmanFlag:false, showRounds:true, hideBorda:false, centersSingleAttacker:true,
+    chairmanRole:()=>"Aggregator",
+    // Mixture-of-Agents opens ready-to-run: a proposer layer of (>=3) attackers and exactly one aggregator.
+    seed:(GS)=>{ while(GS.attackers.length<3) GS.attackers.push({id:gNextId(),model:(GS.attackers[0]&&GS.attackers[0].model)||"qwen2.5:3b",system:"",endpoint:""});
+      GS.chairmen=[(GS.chairmen&&GS.chairmen[0])||{id:"c1",model:(GS.attackers[0]&&GS.attackers[0].model)||"qwen2.5:3b",system:"",endpoint:""}]; },
+    // Proposers stack as a vertical COLUMN on the left (not debate's ring / chairman's arc); the vote ring is hidden.
+    attackerLayout:({cx,cy,rx,ry,n,attackers})=>{ const gap=n>1?Math.min(96,Math.max(70,(ry*2)/(n-1))):0, pos={};
+      attackers.forEach((a,i)=>{ pos[a.id]={x:cx,y:cy+(i-(n-1)/2)*gap}; }); return {pos,ring:{cx,cy,rx,ry,show:false}}; },
     layoutChairmen:({cx,rx,rightX,cy,ry,chs})=>_chairBank(chs,cx,rx,rightX,cy,ry),
     presetEdges:({atk,ch,sink})=>{ if(!ch.length) return _edgesToSink(atk,sink);
       return atk.map(a=>({from:a,to:ch[0]})).concat([{from:ch[0],to:sink}]); },
     strikeEdges:(c)=>{ if(!c.chP.length) return _strikeToSink(c); let s="";
       c.attackers.forEach(a=>{ s+=c.gLine(c.pos[a.id],"attacker",c.chP[0],"chairman","e-atk"); }); s+=c.gLine(c.chP[0],"chairman",c.sink,c.sinkKind,"e-chair"); return s; },
-    overlay:({ring,borda})=>_ringOverlay(ring,borda) },
+    // Dashed recurrence loop aggregator -> proposer column, labelled "×R layers", so the iteration reads at a glance.
+    overlay:({pos})=>{ const chs=(pos&&pos.chairmen)||[]; if(!chs.length||!GS.attackers.length) return "";
+      const agg=chs[0], first=pos[GS.attackers[0].id]; if(!agg||!first) return "";
+      const topY=Math.min(first.y,agg.y)-74, sx=agg.x, sy=agg.y-40, ex=first.x, ey=first.y-40, R=Math.max(1,GS.rounds||1);
+      return `<path class="e-chair" style="fill:none;stroke-dasharray:7 5;opacity:.85" d="M${sx},${sy} C${sx},${topY} ${ex},${topY} ${ex},${ey}" marker-end="url(#garrow)"/>`
+        +`<text x="${(sx+ex)/2}" y="${topY-5}" text-anchor="middle" style="fill:var(--text-2,#8a94a6);font:600 11px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.3px;opacity:.9;pointer-events:none">×${R} layers</text>`; } },
   custom:{ mode:"custom", usesChairmen:true, addChair:true, keepsChairmen:true,
     serializesChairmen:true, useChairmanFlag:false, showRounds:false, hideBorda:false, centersSingleAttacker:true,
     layoutChairmen:({cx,rx,rightX,cy,ry,chs})=>_chairBank(chs,cx,rx,rightX,cy,ry) },
@@ -2976,7 +3046,7 @@ document.querySelectorAll("#gtopo button[data-topo]").forEach(b=>b.addEventListe
   closeGDialog(); renderGraph(); }));
 $("gcanvas").addEventListener("click",ev=>{ if(GS.topo==="custom" && (ev.target===$("gcanvas")||ev.target===$("gedges")) && gEdgeDraft){ gEdgeDraft=null; renderGraph(); } });
 $("gTurns").addEventListener("input",()=>{ GS.turns=Math.max(1,Math.min(10,Number($("gTurns").value)||1)); renderGraph(); });
-if($("gRounds")) $("gRounds").addEventListener("input",()=>{ GS.rounds=Math.max(1,Math.min(6,Number($("gRounds").value)||1)); gsSave(); });
+if($("gRounds")) $("gRounds").addEventListener("input",()=>{ GS.rounds=Math.max(1,Math.min(6,Number($("gRounds").value)||1)); gsSave(); renderGraph(); });
 $("gAddShield").onclick=()=>openDefensePicker($("gAddShield"));
 if($("stdShields")) $("stdShields").onclick=()=>openDefensePicker($("stdShields"),stdDefenses,updStdShieldN);
 $("gBorda").addEventListener("change",()=>{ GS.borda=$("gBorda").checked; renderGraph(); });
