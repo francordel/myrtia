@@ -573,7 +573,7 @@
   #gedges .e-custom-hit:hover + .e-custom { stroke:var(--warning); opacity:1; }
   #gedges .e-custom-preview { fill:none; stroke:var(--warning); stroke-width:2; stroke-dasharray:5 4; pointer-events:none; }
   #gnodes { position:absolute; inset:0; pointer-events:none; }
-  .gnode { position:absolute; width:180px; transform:translate(-50%,-50%); background:var(--surface-1); border:1.5px solid var(--border); border-radius:var(--r-lg); box-shadow:var(--shadow-1); padding:10px 12px; cursor:pointer; pointer-events:auto; user-select:none; transition:border-color .15s, box-shadow .15s, transform .12s; }
+  .gnode { position:absolute; width:170px; transform:translate(-50%,-50%); background:var(--surface-1); border:1.5px solid var(--border); border-radius:var(--r-lg); box-shadow:var(--shadow-1); padding:9px 11px; cursor:pointer; pointer-events:auto; user-select:none; transition:border-color .15s, box-shadow .15s, transform .12s; }
   .gedge-delete { position:absolute; z-index:3; transform:translate(-50%,-50%); width:30px; height:30px; min-height:0; padding:0; border:1px solid var(--danger); border-radius:50%; background:var(--surface-1); color:var(--danger); box-shadow:var(--shadow-2); cursor:pointer; }
   .gedge-delete[hidden] { display:none; }
   .gedge-delete:hover { background:var(--danger); color:var(--bg); }
@@ -2738,8 +2738,12 @@ function topoDef(){ return TOPOLOGIES[GS.topo]||TOPOLOGIES.circular; }
 // --- layout + drawing --------------------------------------------------
 function gLayout(W,H){
   const n=GS.attackers.length, pos={};
-  const cx=Math.max(210, W*0.26), cy=H/2;
-  const rx=Math.min(Math.max(140, W*0.15), Math.max(140, n*36)), ry=n>1?Math.max(90,n*30):90;
+  const cy=H/2;
+  const rx=Math.min(Math.max(140, W*0.15), Math.max(140, n*36)), ry=n>1?Math.max(104,n*36):90;
+  // Centre the ring far enough right that the leftmost attacker never clips the canvas edge
+  // (cx - rx must clear half a node), while leaving room for the chairman/target on the right.
+  const _nh=(G_HALF && G_HALF.attacker ? G_HALF.attacker[0] : 85);
+  const cx=Math.max(W*0.26, rx+_nh+14, 206);
   const start=Math.PI + (n%2===0?Math.PI/n:0);
   const _tdL=topoDef();
   if(_tdL.attackerLayout){
@@ -2769,7 +2773,7 @@ function gLayout(W,H){
   }
   return pos;
 }
-const G_HALF={attacker:[92,40],chairman:[92,40],target:[92,42],evaluator:[76,30],defense:[34,22]};
+const G_HALF={attacker:[85,38],chairman:[85,38],target:[88,40],evaluator:[76,30],defense:[34,22]};
 function gClip(pt,kind,dirx,diry){ const [hx,hy]=G_HALF[kind]||[90,38]; const ax=Math.abs(dirx)||1e-6, ay=Math.abs(diry)||1e-6; const t=Math.min(hx/ax, hy/ay); return {x:pt.x+dirx*t, y:pt.y+diry*t}; }
 function gLine(a,ka,b,kb,cls){
   const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1, ux=dx/len, uy=dy/len;
@@ -2808,7 +2812,7 @@ function gForkToCustom(){
 function renderGraph(){
   const cv=$("gcanvas"); if(!cv) return;
   const n=GS.attackers.length;
-  cv.style.height=Math.max(400, (n>1 ? Math.max(90, n*30) : 90)*2+170)+"px";
+  cv.style.height=Math.max(420, (n>1 ? Math.max(104, n*36) : 90)*2+180)+"px";
   const W=cv.clientWidth||900, H=cv.clientHeight||400;
   const pos=gLayout(W,H); const chP=pos.chairmen||[];
   let e=`<defs><marker id="garrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrow"/></marker></defs>`;
