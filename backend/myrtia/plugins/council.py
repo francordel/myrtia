@@ -96,7 +96,10 @@ def _build(config: dict[str, Any], target_connector: Any, *, crescendo: bool):
         return m if "/" in m else f"ollama/{m}"
 
     cfg = dict(config)
-    # Sensible defaults so a minimal attack_config just works.
+    # Sensible defaults so a minimal attack_config just works. These are demo-sized
+    # (laptop-friendly). The CouncilAttack paper used a heterogeneous roster on capable
+    # hardware: council_models = [qwen3:14b, gemma3:12b, deepseek-r1:32b], chairman_model
+    # = qwen2.5:32b, judge_model = gpt-oss:120b. See README "Recommended models per role".
     cfg.setdefault("type", "ares_council.CouncilAttack")
     council = [_prefix(m) for m in (cfg.get("council_models") or ["qwen2.5:1.5b"])]
     cfg["council_models"] = council

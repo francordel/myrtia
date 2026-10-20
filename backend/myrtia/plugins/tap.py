@@ -75,6 +75,9 @@ class TapLive(LiveAttack):
         self.width = max(1, int(self.config.get("width", 1) or 1))
         self.depth = max(1, int(self.config.get("depth", 4) or 4))
         self.success_score = int(self.config.get("success_score", 10) or 10)
+        # Demo-sized defaults. For real runs use a capable attacker (e.g. deepseek-r1:32b
+        # or qwen2.5:32b) and a strong judge (gpt-oss:120b / gpt-oss:20b). TAP was not
+        # part of the CouncilAttack paper, so there is no published roster for it.
         self.attacker_model = self.config.get("attacker_model") or "qwen2.5:3b"
         self.judge_model = self.config.get("judge_model") or "qwen2.5:3b"
         self.aux_endpoint = self.config.get("aux_endpoint") or "http://127.0.0.1:11434/v1"

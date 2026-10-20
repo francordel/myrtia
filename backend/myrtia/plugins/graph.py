@@ -140,6 +140,11 @@ class GraphAttack(LiveAttack):
         self.edges = self._norm_edges(cfg.get("edges"))
 
     def _synthesise_agents(self) -> list[dict]:
+        # `attacker_model` seeds a homogeneous roster (every attacker the same model).
+        # Demo default is laptop-sized; on capable hardware use a strong attacker. The
+        # CouncilAttack paper instead ran a HETEROGENEOUS council — members qwen3:14b +
+        # gemma3:12b + deepseek-r1:32b, chairman qwen2.5:32b, judge gpt-oss:120b — set
+        # per-node via `agents[]` (or council_models). See README "Recommended models".
         cfg = self.config
         n = max(1, int(cfg.get("n_attackers", 3) or 3))
         if self.mode == "single":
@@ -516,13 +521,15 @@ _SCHEMA = [
     {"key": "n_attackers", "label": "Attackers", "type": "number", "default": 3,
      "help": "How many equal attacker agents to create when no explicit agents[] is given."},
     {"key": "attacker_model", "label": "Attacker model", "type": "text", "default": "qwen2.5:3b",
-     "help": "Model each synthesised attacker uses."},
+     "help": "Model each synthesised attacker uses. Recommended on capable hardware: a strong "
+             "attacker such as deepseek-r1:32b; the paper's council was heterogeneous "
+             "(qwen3:14b + gemma3:12b + deepseek-r1:32b), set per-node."},
     {"key": "use_borda", "label": "Cross-critique + Borda Top-1", "type": "bool", "default": True,
      "help": "Agents rank each other's prompts; first-place votes choose the winner, with Borda breaking ties."},
     {"key": "use_chairman", "label": "Chairman synthesis", "type": "bool", "default": True,
      "help": "A chairman merges the winner into the final prompt."},
     {"key": "chairman_model", "label": "Chairman model", "type": "text", "default": "",
-     "help": "Blank = same as the attacker model."},
+     "help": "Blank = same as the attacker model. Recommended / paper: qwen2.5:32b."},
     {"key": "max_turns", "label": "Max turns", "type": "number", "default": 3,
      "help": "Attack turns per behaviour before giving up."},
     {"key": "accumulate_target_context", "label": "Accumulate target context (crescendo)",
@@ -543,7 +550,8 @@ _SCHEMA = [
     {"key": "aux_endpoint", "label": "Agent/chairman endpoint", "type": "text", "default": _DEFAULT_AUX,
      "help": "OpenAI-compatible endpoint for agents lacking their own."},
     {"key": "judge_model", "label": "Evaluator model", "type": "text", "default": DEFAULT_JUDGE_MODEL,
-     "help": "Grades each target response 0-5. Set to 'off' for raw response only."},
+     "help": "Grades each target response 0-5. Set to 'off' for raw response only. "
+             "Recommended / paper: gpt-oss:120b (fixed across every method)."},
     {"key": "judge_endpoint", "label": "Evaluator endpoint", "type": "text", "default": DEFAULT_JUDGE_ENDPOINT,
      "help": "OpenAI-compatible endpoint serving the evaluator."},
     {"key": "council_max_tokens", "label": "Council output tokens", "type": "number", "default": 4096,

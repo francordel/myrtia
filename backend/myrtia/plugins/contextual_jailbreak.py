@@ -58,6 +58,8 @@ class ContextualJailbreakLive(LiveAttack):
     def __init__(self, config: dict[str, Any], target_connector: Any) -> None:
         self.config = dict(config)
         self.target_connector = target_connector
+        # No attacker LLM: the priming shots are templated. Only the judge is a model —
+        # recommended / paper judge is gpt-oss:120b (demo default is qwen2.5:3b).
         self._judge = judge_from_config(self.config)
         self.attack_goals: list[dict] | None = None
         self.attack_results: list[dict] | None = None

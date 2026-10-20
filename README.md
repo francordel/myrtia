@@ -363,11 +363,60 @@ each attack's configuration schema and renders the advanced options automaticall
 
 ## Attacks
 
-| Attack | Description |
-| --- | --- |
-| `council` | N-proposer council, cross-critique, Borda Top-1 vote, chairman synthesis, in-loop graded 0-5 judge. Each turn is a fresh standalone prompt. |
-| `council-crescendo` | The same council pipeline, but the target conversation accumulates across turns, producing a gradual multi-turn escalation. |
-| `direct` | Baseline that sends each behaviour straight to the target, with no judge. |
+Myrtia ships two kinds of attack. Some drive an **attacker-side LLM** (a council, a
+single helper, or an iterative attacker) and so take a model per role; the rest are
+**static** transforms or template libraries that need no attacker model — only the
+shared judge scores the target's reply.
+
+| Attack (`id`) | What it does | Attacker-side LLM |
+| --- | --- | --- |
+| `council` | N-proposer council: propose → cross-critique → Borda Top-1 → chairman synthesis → in-loop graded 0–5 judge. Each turn is a fresh standalone prompt. | council roster + chairman + judge (see below) |
+| `council-crescendo` | The same council pipeline, but the target conversation accumulates across turns — a gradual multi-turn escalation. | council roster + chairman + judge |
+| `graph` | The visual builder's engine: council / chairman / parallel / debate / pipeline / mixture-of-agents / free-form graph. | attacker(s) + optional chairman + judge |
+| `crescendo` | Single **helper** LLM escalates the target conversation turn by turn; a judge scores each turn (multi-turn jailbreak). | helper + judge |
+| `tap` | PAIR / Tree-of-Attacks-with-Pruning: one attacker LLM iteratively proposes and refines standalone prompts; a judge scores 1–10. | attacker + judge *(not in the paper)* |
+| `contextual-jailbreak` | Single-generator contextual priming: a few scaffolded priming shots before the ask. | judge only |
+| `direct` | Baseline — sends each behaviour straight to the target. | none (judge optional) |
+| `human-jailbreak` | Library of known human-written jailbreak templates (DAN-style). | none |
+| `obfuscation` / `encoding` | Encoding / obfuscation transforms of the behaviour. | none |
+| `payload-splitting` | Splits the request into fragments the target reassembles. | none |
+| garak probes: `promptinject`, `grandma`, `smuggling`, `phrasing`, `latent-injection`, `dan`, `continuation`, `leakreplay` | Hosted [garak](https://github.com/NVIDIA/garak) probes. | none |
+
+### Recommended models per role
+
+The **defaults are demo-sized** so a laptop with a 2–3 B model works out of the box.
+When you have the hardware (a 24–80 GB GPU, multi-GPU, or Apple-silicon 64 GB+), use
+the **Recommended** column. **Our paper** is the exact roster from the CouncilAttack /
+ContextualJailbreak experiments — reproduce those numbers by setting these.
+
+| Role | Demo default | Recommended (capable hardware) | Our paper (CouncilAttack) |
+| --- | --- | --- | --- |
+| Council member 1 | `qwen2.5:1.5b` | `qwen3:14b` | `qwen3:14b` |
+| Council member 2 | " | `gemma3:12b` | `gemma3:12b` |
+| Council member 3 | " | `deepseek-r1:32b` | `deepseek-r1:32b` |
+| Chairman | first member | `qwen2.5:32b` | `qwen2.5:32b` |
+| Single attacker / helper (`crescendo`, `graph` single) | `qwen2.5:3b` | `deepseek-r1:32b` | `deepseek-r1:32b` (Crescendo helper) |
+| `tap` attacker | `qwen2.5:3b` | `deepseek-r1:32b` or `qwen2.5:32b` | — (not evaluated) |
+| Judge | `qwen2.5:3b` | `gpt-oss:120b` (lighter: `gpt-oss:20b`) | `gpt-oss:120b` (fixed across every method) |
+| Targets evaluated | — | your model under test | `gpt-oss:120b`, `gpt-oss:20b`, `qwen3:8b`, `llama3.1:70b` |
+
+> **About `deepseek-r1:32b`** — it is **DeepSeek-R1-Distill-Qwen-32B**: Qwen2.5-32B
+> fine-tuned (SFT, no RL) on reasoning traces distilled from the 671 B DeepSeek-R1
+> teacher. Default Ollama quant is Q4_K_M (~19.85 GB). Pull with
+> `ollama pull deepseek-r1:32b`
+> ([model card](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B)).
+> A heterogeneous council (different families: Qwen, Gemma, a reasoning distill) is
+> deliberate — diverse members surface complementary attack angles.
+
+Set these per role in the attack config, e.g. for `crescendo`:
+
+```jsonc
+{
+  "helper_model": "deepseek-r1:32b",
+  "judge_model": "gpt-oss:120b",
+  "aux_endpoint": "http://127.0.0.1:11434/v1"
+}
+```
 
 ## Extending Myrtia
 
