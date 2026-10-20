@@ -340,6 +340,15 @@
     <h2>Mix any models, in any role.</h2>
     <p class="lead">Council, chairman, judge and target each reach their model through an OpenAI-compatible endpoint.</p>
     <div class="logos"><span class="chip">OpenAI</span><span class="chip">Anthropic</span><span class="chip">Self-hosted vLLM</span><span class="chip">Local Ollama</span><span class="chip">Any OpenAI-compatible API</span></div>
+    <table class="tab">
+      <tr><th>Role</th><th>Recommended (capable hardware)</th><th>Used in our paper</th></tr>
+      <tr><td>Council members (heterogeneous)</td><td><span class="mono">qwen3:14b</span> · <span class="mono">gemma3:12b</span> · <span class="mono">deepseek-r1:32b</span></td><td class="c"><span class="mono">qwen3:14b</span> · <span class="mono">gemma3:12b</span> · <span class="mono">deepseek-r1:32b</span></td></tr>
+      <tr><td>Chairman</td><td><span class="mono">qwen2.5:32b</span></td><td class="c"><span class="mono">qwen2.5:32b</span></td></tr>
+      <tr><td>Single attacker / helper (Crescendo)</td><td><span class="mono">deepseek-r1:32b</span></td><td class="c"><span class="mono">deepseek-r1:32b</span></td></tr>
+      <tr><td>Judge</td><td><span class="mono">gpt-oss:120b</span> <span class="c">(lighter: <span class="mono">gpt-oss:20b</span>)</span></td><td class="c"><span class="mono">gpt-oss:120b</span></td></tr>
+      <tr><td>Targets we evaluated</td><td>your model under test</td><td class="c"><span class="mono">gpt-oss:120b</span> · <span class="mono">gpt-oss:20b</span> · <span class="mono">qwen3:8b</span> · <span class="mono">llama3.1:70b</span></td></tr>
+    </table>
+    <p class="lead" style="margin-top:18px;font-size:14.5px">Defaults ship demo-sized (2–3 B on local Ollama) so a laptop runs out of the box; scale up per role above when you have the hardware. <span class="mono">deepseek-r1:32b</span> is DeepSeek-R1-Distill-Qwen-32B — a Qwen2.5-32B distilled from the DeepSeek-R1 reasoner. The full per-attack table is in the <a href="https://github.com/francordel/myrtia#attacks">README</a>.</p>
   </div>
 </section>
 
