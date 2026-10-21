@@ -1,0 +1,20 @@
+# uv workspace root — lets `uv run myrtia` work straight from a fresh clone.
+#
+# There is no package here (a "virtual" root): it ties together the backend and the
+# vendored CouncilAttack plugin so a single `uv run` / `uv sync` creates the venv,
+# fetches a matching Python and installs both (editable). The backend itself keeps
+# no hard dependency on the plugin, so `pip install -e backend` still works alone.
+
+[tool.uv.workspace]
+members = ["backend", "backend/vendor/ares-council"]
+
+[tool.uv.sources]
+myrtia = { workspace = true }
+ares-council = { workspace = true }
+
+[dependency-groups]
+app = ["myrtia", "ares-council"]
+dev = ["myrtia[dev]"]
+
+[tool.uv]
+default-groups = ["app"]

@@ -6,26 +6,21 @@ AI agents (see the [README](README.md)). It is **dual-use** — please read
 
 ## Development setup
 
-```bash
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-```
-
-Run the backend:
+From the repo root, with [uv](https://docs.astral.sh/uv/):
 
 ```bash
-uvicorn myrtia.api.app:app --reload
+uv sync --group dev        # venv + Python 3.12 + Myrtia, the council plugin and dev tools
+uv run myrtia --reload     # API + UI at http://127.0.0.1:8000/, reloads on code changes
 ```
 
-Open `frontend/standalone.html` (zero-build) in a browser, or serve it statically.
+The backend serves the zero-build UI (`frontend/standalone.html`) at `/`.
 
 ## Tests
 
 The suite is split into two tiers (markers in `backend/pyproject.toml`):
 
 ```bash
-cd backend
+cd backend               # with uv: prefix each command with `uv run`
 pytest -m "not e2e"   # fast, offline — must stay green (CI runs this on every PR)
 pytest -m e2e         # needs a live OpenAI-compatible endpoint (local Ollama)
 ```

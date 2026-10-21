@@ -37,7 +37,24 @@ import requests
 
 from ares.connectors.connector import Connector
 from ares.strategies.attack_strategy import AttackStrategy
-from ares.utils import ConnectorResponse, Status, redact
+from ares.utils import ConnectorResponse, Status
+
+try:
+    from ares.utils import redact
+except ImportError:  # not in the released ares-redteamer (0.2.1 on PyPI)
+    _SECRET_PATTERNS = [
+        (re.compile(r"(?<=://)[^/@\s]+@"), "***@"),  # URL userinfo (user:pass@)
+        (re.compile(r"(?i)((?:api[_-]?key|token|key|secret|password)=)[^&\s]+"), r"\1***"),
+        (re.compile(r"(?i)(bearer\s+)\S+"), r"\1***"),
+        (re.compile(r"\bsk-[A-Za-z0-9_\-]{8,}"), "sk-***"),
+    ]
+
+    def redact(text: Any) -> str:
+        """Mask credentials in an endpoint URL or error message before logging it."""
+        out = str(text)
+        for pattern, repl in _SECRET_PATTERNS:
+            out = pattern.sub(repl, out)
+        return out
 
 logger = logging.getLogger(__name__)
 

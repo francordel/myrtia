@@ -17,12 +17,11 @@ drives a run, and streams the deliberation live over a WebSocket. See
 ## Run (dev)
 
 ```bash
-cd backend
-pip install -e .                     # fastapi + uvicorn
-pip install -e vendor/ares-council   # the vendored CouncilAttack plugin (Apache-2.0)
-# to actually launch attacks you also need the ARES framework importable, plus a
-# reachable OpenAI-compatible endpoint (Ollama/vLLM/hosted)
-uvicorn myrtia.api.app:app --reload
+# from the repo root: venv + Python + Myrtia + the vendored CouncilAttack plugin
+uv run myrtia --reload
+# without uv (Python 3.11+), from backend/:
+#   pip install -e . -e vendor/ares-council && uvicorn myrtia.api.app:app --reload
+# launching attacks also needs a reachable OpenAI-compatible endpoint (Ollama/vLLM/hosted)
 ```
 
 Then:

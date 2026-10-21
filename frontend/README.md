@@ -9,7 +9,7 @@ as the API and the WebSocket), so there is nothing to build or proxy.
 Start the backend and open the app it serves:
 
 ```bash
-cd backend && ../.venv/bin/uvicorn myrtia.api.app:app --port 8000 --reload
+uv run myrtia --reload   # from the repo root
 # then open http://127.0.0.1:8000/
 ```
 

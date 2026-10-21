@@ -16,6 +16,8 @@ dependencies = [
     # ares.utils, so the core package must be present. Without it, `import
     # ares_council` fails and Myrtia silently unregisters the council plugins.
     "ares-redteamer",
+    # ares.connectors imports tenacity, but ares-redteamer 0.2.1 doesn't declare it.
+    "tenacity",
     "requests",
     "tqdm",
 ]

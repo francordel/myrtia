@@ -18,6 +18,9 @@ dependencies = [
     #   "ares-council",   # add once packaged/available on the target machine
 ]
 
+[project.scripts]
+myrtia = "myrtia.cli:main"  # `uv run myrtia` from the repo root starts the console
+
 [project.optional-dependencies]
 dev = [
     "pytest",
