@@ -303,6 +303,7 @@
   .ev.proposal { border-left-color:var(--role-proposal); } .ev.proposal .role { color:var(--role-proposal); }
   .ev.critique { border-left-color:var(--role-critique); } .ev.critique .role { color:var(--role-critique); }
   .ev.vote { border-left-color:var(--role-vote); } .ev.vote .role { color:var(--role-vote); }
+  .phase-div { border:0; border-top:1px solid var(--border-strong); margin:14px 0; }
   .ev.chairman { border-left-color:var(--role-chairman); } .ev.chairman .role { color:var(--role-chairman); }
   .ev.target { border-left-color:var(--role-target); } .ev.target .role { color:var(--role-target); }
   .ev.judge { border-left-color:var(--role-judge); } .ev.judge .role { color:var(--role-judge); }
@@ -1701,13 +1702,12 @@ function votingPanel(evs){
   const props=evs.filter(e=>e.type==="proposal.created").map(e=>e.payload);
   const crit=evs.filter(e=>e.type==="critique.created").map(e=>e.payload);
   const vote=(evs.find(e=>e.type==="vote.aggregated")||{}).payload;
-  if(props.length<2 && !vote) return null;  // nothing to vote on
+  if(!vote||!vote.winner) return null;  // no Borda round (or no valid vote): show nothing
   const idx2model={}; props.forEach(p=>idx2model[p.original_index]=p.model||"?");
   const name=(i)=> idx2model[i]!==undefined ? esc(shortModel(idx2model[i])) : `<span class="caption">proposal #${esc(i)} (no response)</span>`;
   const wrap=document.createElement("div"); wrap.className="ev vote";
-  let html=`<div class="lab"><span class="role">Borda vote</span> `+
-    (vote&&vote.winner?`<span class="who">winner <b class="mono">${esc(vote.winner)}</b></span>`:`<span class="who">no valid vote (only ${props.length} proposal)</span>`)+`</div>`;
-  if(vote&&vote.borda_scores){
+  let html=`<div class="lab"><span class="role">Borda vote</span> <span class="who">winner <b class="mono">${esc(vote.winner)}</b></span></div>`;
+  if(vote.borda_scores){
     const keys=Object.keys(vote.borda_scores).sort((a,b)=>vote.borda_scores[b]-vote.borda_scores[a]);
     const max=Math.max(1,...keys.map(k=>Number(vote.borda_scores[k])||0));
     html+=`<div class="rank">`;
@@ -1741,7 +1741,10 @@ function turnCard(idx, evs, tkey){
   // proposals first, then the voting panel, then chairman/target/judge
   evs.filter(e=>e.type==="proposal.created").forEach(e=>body.appendChild(evNode(e)));
   evs.filter(e=>e.type==="agent.message").sort((a,b)=>(a.payload.round||0)-(b.payload.round||0)).forEach(e=>body.appendChild(evNode(e)));
-  const vp=votingPanel(evs); if(vp) body.appendChild(vp);
+  // Without a vote, a plain divider separates the proposals from the strike.
+  const vp=votingPanel(evs);
+  if(vp) body.appendChild(vp);
+  else if(np) { const hr=document.createElement("hr"); hr.className="phase-div"; body.appendChild(hr); }
   evs.filter(e=>e.type==="chairman.synthesized").forEach(e=>body.appendChild(evNode(e)));
   evs.filter(e=>e.type==="defense.applied"||e.type==="defense.blocked").filter(e=>(e.payload.stage||"input")!=="output").forEach(e=>body.appendChild(evNode(e)));
   evs.filter(e=>e.type==="target.responded").forEach(e=>body.appendChild(evNode(e)));
