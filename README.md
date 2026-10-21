@@ -31,20 +31,20 @@
 
 Myrtia installs with [uv](https://docs.astral.sh/uv/): clone, then `uv run myrtia`. uv creates
 the environment, downloads the right Python (3.12 — no need to upgrade your system Python) and
-installs everything — all [19 attacks](#what-you-get), not just the council. The default models run locally in
-[Ollama](https://ollama.com), no API key needed. Copy-paste the block for your OS:
+installs everything — all [19 attacks](#what-you-get), not just the council. The default models
+run locally in [Ollama](https://ollama.com), no API key needed.
+
+Copy-paste the block for your OS into a terminal. It installs uv and Ollama, waits for Ollama
+to start, pulls the demo model, then clones Myrtia and opens it at http://127.0.0.1:8000/.
 
 <details open>
-<summary><b>macOS</b></summary>
+<summary><b>macOS</b> (needs <a href="https://brew.sh">Homebrew</a>)</summary>
 
 ```bash
-# Tools: uv + Ollama (via Homebrew — https://brew.sh)
 curl -LsSf https://astral.sh/uv/install.sh | sh && source "$HOME/.local/bin/env"
 brew install ollama && brew services start ollama
-until curl -s http://127.0.0.1:11434 >/dev/null; do sleep 1; done   # wait for Ollama to start
+until curl -s http://127.0.0.1:11434 >/dev/null; do sleep 1; done
 ollama pull qwen2.5:3b
-
-# Myrtia — opens http://127.0.0.1:8000/
 git clone https://github.com/francordel/myrtia.git && cd myrtia
 uv run myrtia
 ```
@@ -54,13 +54,10 @@ uv run myrtia
 <summary><b>Linux</b></summary>
 
 ```bash
-# Tools: uv + Ollama (the Ollama installer starts it as a service)
 curl -LsSf https://astral.sh/uv/install.sh | sh && source "$HOME/.local/bin/env"
 curl -fsSL https://ollama.com/install.sh | sh
-until curl -s http://127.0.0.1:11434 >/dev/null; do sleep 1; done   # wait for Ollama to start
+until curl -s http://127.0.0.1:11434 >/dev/null; do sleep 1; done
 ollama pull qwen2.5:3b
-
-# Myrtia — opens http://127.0.0.1:8000/
 git clone https://github.com/francordel/myrtia.git && cd myrtia
 uv run myrtia
 ```
@@ -69,14 +66,17 @@ uv run myrtia
 <details>
 <summary><b>Windows · PowerShell</b></summary>
 
+Install uv and Ollama:
+
 ```powershell
-# Tools: uv + Ollama
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 winget install Ollama.Ollama
-# -> close and reopen PowerShell so uv and ollama are on PATH, then:
-ollama pull qwen2.5:3b
+```
 
-# Myrtia — opens http://127.0.0.1:8000/
+Close and reopen PowerShell so `uv` and `ollama` are on your PATH, then:
+
+```powershell
+ollama pull qwen2.5:3b
 git clone https://github.com/francordel/myrtia.git; cd myrtia
 uv run myrtia
 ```
@@ -166,10 +166,12 @@ dataset and category in Runs. See [goal dataset sources and scope](docs/goal-dat
 
 ```bash
 cd myrtia/backend
-python3 -m venv .venv && source .venv/bin/activate   # Windows: .\.venv\Scripts\Activate.ps1
+python3 -m venv .venv && source .venv/bin/activate
 pip install -e . -e vendor/ares-council
 uvicorn myrtia.api.app:app --port 8000
 ```
+
+On Windows, activate with `.\.venv\Scripts\Activate.ps1` instead.
 
 macOS ships Python 3.9, which is too old — that's why the steps above use uv.
 `vendor/ares-council` is the CouncilAttack plugin (`council` / `council-crescendo`). It is a
