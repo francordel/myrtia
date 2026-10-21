@@ -31,7 +31,7 @@
 
 Myrtia installs with [uv](https://docs.astral.sh/uv/): clone, then `uv run myrtia`. uv creates
 the environment, downloads the right Python (3.12 — no need to upgrade your system Python) and
-installs everything, including the CouncilAttack plugin. The default models run locally in
+installs everything — all [19 attacks](#what-you-get), not just the council. The default models run locally in
 [Ollama](https://ollama.com), no API key needed. Copy-paste the block for your OS:
 
 <details open>
@@ -81,6 +81,25 @@ uv run myrtia
 The first run takes a few minutes: the council plugin pulls in IBM **ARES core**
 (`ares-redteamer`), which brings PyTorch and Transformers. After that, `cd myrtia && uv run
 myrtia` starts in seconds. Options: `uv run myrtia --port 8010 --no-browser`.
+
+### What you get
+
+`uv run myrtia` gives you **19 attacks**, ready to launch. 17 are built into Myrtia; the
+council pair comes from the bundled ARES Council pack, installed by default.
+
+| Kind | Attacks |
+| --- | --- |
+| Multi-agent council (ARES Council pack) | `council`, `council-crescendo` |
+| Multi-agent / adaptive | `graph` (the visual canvas: council, debate, pipeline, mixture-of-agents…), `crescendo`, `tap` (TAP / PAIR) |
+| Templates and priming | `contextual-jailbreak`, `human-jailbreak` |
+| Transforms | `obfuscation`, `encoding`, `payload-splitting` |
+| garak-style probes | `promptinject`, `grandma`, `smuggling`, `phrasing`, `latent-injection`, `dan`, `continuation`, `leakreplay` |
+| Baseline | `direct` |
+
+The garak-style probes are Myrtia's own implementations — they don't need the garak library.
+The full **NVIDIA garak** and **Microsoft PyRIT** libraries are optional packs under
+**Plugins** in the console; their adapters are in progress, so they add no attacks yet. See
+[Attacks](#attacks) for what each one does.
 
 ### Where your models run
 
@@ -357,7 +376,7 @@ Event types: `run.started`, `goal.started`, `turn.started`, `proposal.created`,
 ```
 backend/   Python, FastAPI + WebSocket
   myrtia/orchestrator   drives a run, streams events
-  myrtia/plugins        attacks (ARES-compatible): council / council-crescendo / direct
+  myrtia/plugins        the 19 attacks (ARES-compatible): council, graph, crescendo, tap, probes…
   myrtia/connectors     OpenAI-compatible target connectors
   myrtia/events         typed event schema + thread-safe bus (the live-view contract)
   myrtia/judges         graded harm judge and scoring
