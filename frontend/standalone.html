@@ -2438,8 +2438,11 @@ async function loadSystemReco(){
   // Once per browser, upgrade roles still on the tiny default to the recommended model, so a
   // new council uses a capable model. Only touches values still at DEF_MODEL, so a model the
   // user deliberately chose is never overwritten; the one-time flag then respects saved state.
+  // Only when the recommended model is already pulled into Ollama — otherwise a first run
+  // fails with "model not found"; the hint below tells the user how to pull it instead.
+  const ready=!!SYS.recommended_installed;
   let applied=false; try{ applied=!!localStorage.getItem("myrtia-reco-applied"); }catch(e){}
-  if(!applied){
+  if(!applied && ready){
     (GS.attackers||[]).forEach(a=>{ if(a.model===DEF_MODEL) a.model=rec; });
     (GS.chairmen||[]).forEach(c=>{ if(c.model===DEF_MODEL) c.model=rec; });
     if(GS.evaluator&&GS.evaluator.model===DEF_MODEL) GS.evaluator.model=rec;
@@ -2447,10 +2450,12 @@ async function loadSystemReco(){
     gsSave(); try{ renderGraph(); }catch(e){}
     try{ localStorage.setItem("myrtia-reco-applied","1"); }catch(e){}
   }
-  ["gTmodel","tmodel"].forEach(id=>{ const f=$(id); if(f && f.value.trim()===DEF_MODEL) f.value=rec; });
+  if(ready) ["gTmodel","tmodel"].forEach(id=>{ const f=$(id); if(f && f.value.trim()===DEF_MODEL) f.value=rec; });
   if(el && rec!==DEF_MODEL){
     const spec=(SYS.gpu&&SYS.gpu.vram_gb)?`${SYS.gpu.vram_gb} GB VRAM`:(SYS.ram_gb?`${SYS.ram_gb} GB RAM`:"this machine");
-    el.innerHTML=`💡 This machine (${esc(spec)}) can run <b>${esc(rec)}</b> — <a href="#" id="gRecoApply">use it for every role</a>`;
+    el.innerHTML=ready
+      ? `💡 This machine (${esc(spec)}) can run <b>${esc(rec)}</b> — <a href="#" id="gRecoApply">use it for every role</a>`
+      : `💡 This machine (${esc(spec)}) can run <b>${esc(rec)}</b>, a stronger attacker. Pull it with <code>ollama pull ${esc(rec)}</code>, then <a href="#" id="gRecoApply">use it for every role</a>`;
     el.hidden=false;
     const a=$("gRecoApply"); if(a) a.onclick=(e)=>{ e.preventDefault(); try{gCheckpoint();}catch(_){}
       (GS.attackers||[]).forEach(x=>x.model=rec); (GS.chairmen||[]).forEach(x=>x.model=rec);

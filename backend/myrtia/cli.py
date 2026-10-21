@@ -5,7 +5,7 @@
 
 A thin wrapper over uvicorn: it checks that a local Ollama is reachable (the
 default council, chairman and judge run there) and opens the browser once the
-server is listening. Nothing here is required — `uvicorn myrtia.api.app:app` still
+server answers. Nothing here is required — `uvicorn myrtia.api.app:app` still
 works the same.
 """
 
@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import threading
+import time
 import urllib.request
 import webbrowser
 
@@ -25,6 +26,18 @@ def _ollama_running() -> bool:
             return resp.status == 200
     except OSError:
         return False
+
+
+def _open_when_ready(url: str, timeout: float = 300) -> None:
+    """Open the browser once the server answers — startup (ARES, PyTorch) can take a while."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(url + "health", timeout=2):
+                webbrowser.open(url)
+                return
+        except OSError:
+            time.sleep(0.5)
 
 
 def main() -> None:
@@ -45,7 +58,7 @@ def main() -> None:
     url = f"http://{args.host}:{args.port}/"
     print(f"\n  Myrtia console -> {url}\n")
     if not args.no_browser:
-        threading.Timer(1.5, webbrowser.open, args=(url,)).start()
+        threading.Thread(target=_open_when_ready, args=(url,), daemon=True).start()
 
     import uvicorn
 

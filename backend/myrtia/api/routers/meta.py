@@ -91,6 +91,17 @@ _MODEL_LADDER = [
 ]
 
 
+def _ollama_models() -> list[str] | None:
+    """Models pulled into the local Ollama, or None when it isn't reachable."""
+    import requests
+    try:
+        r = requests.get("http://127.0.0.1:11434/api/tags", timeout=2, allow_redirects=False)
+        r.raise_for_status()
+        return sorted(m["name"] for m in (r.json().get("models") or []) if m.get("name"))
+    except Exception:  # noqa: BLE001
+        return None
+
+
 @router.get("/system")
 async def system_info() -> dict[str, Any]:
     """Local machine capability + a sensible default model, so the UI doesn't suggest a
@@ -111,12 +122,17 @@ async def system_info() -> dict[str, Any]:
     else:
         budget = 0.0
     recommended = next((m for m, need in _MODEL_LADDER if budget >= need), "qwen2.5:3b")
+    # The UI only switches roles to the recommendation once it's pulled — otherwise a
+    # first run would fail with "model not found" (the quick start pulls qwen2.5:3b).
+    installed = _ollama_models()
     return {
         "os": osname, "arch": arch, "apple_silicon": apple_silicon,
         "cpu_count": os.cpu_count(), "ram_gb": ram,
         "gpu": ({"name": gpu_name, "vram_gb": vram} if vram else None),
         "model_budget_gb": round(budget, 1) if budget else None,
         "recommended_model": recommended,
+        "ollama_models": installed,
+        "recommended_installed": bool(installed) and recommended in installed,
         "note": (None if ram else "Could not read system memory; defaulting conservatively."),
     }
 
