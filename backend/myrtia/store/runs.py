@@ -162,18 +162,26 @@ class RunStore:
             except ValueError:
                 status = RunStatus.PENDING
             error = row.get("error")
-            # A run still marked RUNNING/PENDING at load time is an orphan (its
-            # process died on a previous restart) — mark it interrupted, not running.
-            if status in (RunStatus.RUNNING, RunStatus.PENDING):
-                status = RunStatus.FAILED
-                error = error or "interrupted (backend restarted)"
             run = Run(id=row["id"], spec=spec, status=status,
                       created_at=row.get("created_at") or time.time(),
                       error=error, results=row.get("results") or [],
                       token_usage=row.get("token_usage") or {})
             self._runs[run.id] = run
-            if status == RunStatus.FAILED and error and "interrupted" in error:
-                self.persist(run)  # write back the corrected status
+
+    def cleanup_orphaned_runs(self) -> int:
+        """Mark stale RUNNING or PENDING runs from a previous backend session as interrupted.
+
+        Called exclusively during FastAPI server startup lifespan, never at module import time,
+        preventing CLI tools or background workers from aborting active runs in flight.
+        """
+        count = 0
+        for run in list(self._runs.values()):
+            if run.status in (RunStatus.RUNNING, RunStatus.PENDING):
+                run.status = RunStatus.FAILED
+                run.error = run.error or "interrupted (backend restarted)"
+                self.persist(run)
+                count += 1
+        return count
 
     def create(self, spec: RunSpec) -> Run:
         run = Run(id=uuid.uuid4().hex, spec=spec)

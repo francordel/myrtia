@@ -20,6 +20,7 @@ Run with: ``uvicorn myrtia.api.app:app``.
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 import importlib as _importlib
 import os
 import pkgutil as _pkgutil
@@ -37,6 +38,7 @@ from myrtia.api.routers import (
     runs as _runs,
     stats as _stats,
 )
+from myrtia.store.runs import STORE
 import myrtia.plugins as _plugins_pkg
 
 _PLUGIN_SKIP = {"base", "council_prompts", "council_official"}
@@ -45,7 +47,14 @@ for _m in _pkgutil.iter_modules(_plugins_pkg.__path__):
         continue
     _importlib.import_module(f"myrtia.plugins.{_m.name}")  # noqa: F401 (registers on import)
 
-app = FastAPI(title="Myrtia", version=APP_VERSION)
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    STORE.cleanup_orphaned_runs()
+    yield
+
+
+app = FastAPI(title="Myrtia", version=APP_VERSION, lifespan=lifespan)
 
 # --- security middleware --------------------------------------------------------
 # The UI is served same-origin, so CORS only needs to cover the local origins the
@@ -111,5 +120,4 @@ app.include_router(_approvals.router)
 # use — patching ``appmod.STORE.list`` is seen by every router.
 from myrtia.events.bus import BUS  # noqa: E402,F401
 from myrtia.orchestrator.runner import ORCHESTRATOR  # noqa: E402,F401
-from myrtia.store.runs import STORE  # noqa: E402,F401
 from myrtia.api.routers.runs import _list_models, _repro_meta  # noqa: E402,F401
