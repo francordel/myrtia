@@ -52,7 +52,8 @@ def main() -> None:
         print(
             "\n  ! Ollama isn't reachable at http://127.0.0.1:11434/ — the default local\n"
             "    models won't answer. Start it (macOS: `brew services start ollama`) and\n"
-            "    pull the demo model: `ollama pull qwen2.5:3b`. Remote endpoints still work.\n"
+            "    pull the demo models: `ollama pull qwen2.5:3b && ollama pull gemma3:1b`.\n"
+            "    Remote endpoints still work.\n"
         )
 
     url = f"http://{args.host}:{args.port}/"

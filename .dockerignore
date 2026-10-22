@@ -1,0 +1,12 @@
+.git
+.github
+.venv
+**/.venv
+.data
+**/__pycache__
+**/*.egg-info
+paper
+steerability
+site
+docs
+backend/tests

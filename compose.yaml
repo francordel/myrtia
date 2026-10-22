@@ -1,0 +1,53 @@
+# Myrtia + Ollama in one command — no clone, no build:
+#
+#   curl -LO https://raw.githubusercontent.com/francordel/myrtia/main/compose.yaml
+#   docker compose up
+#
+# then open http://localhost:8000/. The first start downloads the images and the
+# demo models: qwen2.5:3b as attacker/judge (~2 GB) and gemma3:1b as target (~0.8 GB).
+# Override with MYRTIA_MODEL / MYRTIA_TARGET, and the host port with MYRTIA_PORT=8010.
+#
+# Myrtia shares Ollama's network namespace, so its default endpoint
+# (http://127.0.0.1:11434/v1) reaches the bundled Ollama unchanged.
+# On macOS, Docker can't use the Apple GPU: models run on the CPU. For speed on a
+# Mac, run Ollama natively and Myrtia with `uv run myrtia` (see the README).
+
+name: myrtia
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "127.0.0.1:${MYRTIA_PORT:-8000}:8000"   # Myrtia's console (published here: shared network)
+    volumes:
+      - ollama:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # One-shot: pulls the demo models (attacker/judge + target), then exits.
+  ollama-pull:
+    image: ollama/ollama:latest
+    network_mode: "service:ollama"
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["ollama pull ${MYRTIA_MODEL:-qwen2.5:3b} && ollama pull ${MYRTIA_TARGET:-gemma3:1b}"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+
+  myrtia:
+    image: ghcr.io/francordel/myrtia:latest
+    build: .
+    network_mode: "service:ollama"
+    volumes:
+      - myrtia-data:/data
+    depends_on:
+      ollama-pull:
+        condition: service_completed_successfully
+
+volumes:
+  ollama:
+  myrtia-data:

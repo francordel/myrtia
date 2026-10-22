@@ -35,7 +35,7 @@ installs everything — all [19 attacks](#what-you-get), not just the council. T
 run locally in [Ollama](https://ollama.com), no API key needed.
 
 Copy-paste the block for your OS into a terminal. It installs uv and Ollama, waits for Ollama
-to start, pulls the demo model, then clones Myrtia and opens it at http://127.0.0.1:8000/.
+to start, pulls the demo models (`qwen2.5:3b` attacks and judges, `gemma3:1b` is the target), then clones Myrtia and opens it at http://127.0.0.1:8000/.
 
 <details open>
 <summary><b>macOS</b> (needs <a href="https://brew.sh">Homebrew</a>)</summary>
@@ -44,7 +44,7 @@ to start, pulls the demo model, then clones Myrtia and opens it at http://127.0.
 curl -LsSf https://astral.sh/uv/install.sh | sh && source "$HOME/.local/bin/env"
 brew install ollama && brew services start ollama
 until curl -s http://127.0.0.1:11434 >/dev/null; do sleep 1; done
-ollama pull qwen2.5:3b
+ollama pull qwen2.5:3b && ollama pull gemma3:1b
 git clone https://github.com/francordel/myrtia.git && cd myrtia
 uv run myrtia
 ```
@@ -57,7 +57,7 @@ uv run myrtia
 curl -LsSf https://astral.sh/uv/install.sh | sh && source "$HOME/.local/bin/env"
 curl -fsSL https://ollama.com/install.sh | sh
 until curl -s http://127.0.0.1:11434 >/dev/null; do sleep 1; done
-ollama pull qwen2.5:3b
+ollama pull qwen2.5:3b && ollama pull gemma3:1b
 git clone https://github.com/francordel/myrtia.git && cd myrtia
 uv run myrtia
 ```
@@ -76,10 +76,25 @@ winget install Ollama.Ollama
 Close and reopen PowerShell so `uv` and `ollama` are on your PATH, then:
 
 ```powershell
-ollama pull qwen2.5:3b
+ollama pull qwen2.5:3b && ollama pull gemma3:1b
 git clone https://github.com/francordel/myrtia.git; cd myrtia
 uv run myrtia
 ```
+</details>
+
+<details>
+<summary><b>Docker</b> (nothing to install but Docker)</summary>
+
+A prebuilt image runs Myrtia next to Ollama and pulls the demo model for you:
+
+```bash
+curl -LO https://raw.githubusercontent.com/francordel/myrtia/main/compose.yaml
+docker compose up
+```
+
+Then open http://localhost:8000/. Choose another model with `MYRTIA_MODEL=qwen2.5:7b docker
+compose up`. On macOS, Docker can't use the Apple GPU, so models run on the CPU — for speed on
+a Mac, use the native steps above.
 </details>
 
 The first run takes a few minutes: the council plugin pulls in IBM **ARES core**
@@ -402,7 +417,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full design.
 | --- | --- | --- |
 | `requires a different Python: 3.9.6 not in '>=3.11'` | The venv was made with an old system Python (macOS ships 3.9) | Use `uv run myrtia` from the repo root — uv downloads Python 3.12 itself. With pip, create the venv with Python 3.11+. |
 | `Connection refused` / `WinError 10061` / `Max retries exceeded` on port **11434** | Ollama isn't running or isn't reachable | Start Ollama (`brew services start ollama` on macOS, the tray app on Windows, `ollama serve` otherwise) and confirm **http://127.0.0.1:11434/** says *"Ollama is running"*. If it runs elsewhere, set the base URL in the UI. |
-| `could not connect to ollama server` right after installing | The Ollama service is still starting | Wait a few seconds and re-run `ollama pull qwen2.5:3b`. |
+| `could not connect to ollama server` right after installing | The Ollama service is still starting | Wait a few seconds and re-run `ollama pull qwen2.5:3b && ollama pull gemma3:1b`. |
 | `model "…" not found` / `try pulling it first` | The model isn't downloaded | `ollama pull <model>` (e.g. `ollama pull qwen2.5:3b`), then check `ollama list`. |
 | PowerShell: *"running scripts is disabled on this system"* | Script execution policy blocks the venv activation | `Set-ExecutionPolicy -Scope Process RemoteSigned`, then re-run `.\.venv\Scripts\Activate.ps1`. |
 | `401 Unauthorized` / `invalid api key` | Missing or wrong API key for a frontier provider | Set the key for that provider in the UI (per-run), or use a local Ollama endpoint. |
