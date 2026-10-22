@@ -762,7 +762,7 @@
           <label class="ginline" id="gAccumWrap" title="Crescendo preserves real user/assistant turns in the target. Agents also receive the judge feedback."><input type="checkbox" id="gAccum"> Crescendo · real target history</label>
           <label class="ginline" id="gContextWrap" title="CouncilAttack: each target call contains a new fabricated dialogue; only the agents carry the previous attempt, target response and judge feedback forward."><input type="checkbox" id="gContext"> Contextual priming · simulated history</label>
         </div>
-        <div class="gmode-note" id="gModeNote" aria-live="polite">Agent memory is always on: prior response and judge feedback inform the next turn. The target starts fresh.</div>
+        <div class="gmode-note" id="gModeNote" aria-live="polite">Isolated · each target request starts fresh; agents use prior response and judge feedback to inform the next turn.</div>
       </details>
       <div class="gcanvas" id="gcanvas">
         <svg id="gedges" aria-hidden="true"></svg>
@@ -2912,7 +2912,7 @@ function renderGraph(){
   { const ab=document.querySelector('#gtopo button[data-topo="'+GS.topo+'"]'), td=$("gTopoDesc");
     if(td) td.innerHTML = ab ? ('<b>'+esc(ab.textContent.trim().replace(/\s+/g," "))+'</b> — '+esc(ab.getAttribute("title")||"")) : ""; }
   $("gTurns").value=GS.turns; $("gBorda").checked=GS.borda; $("gAccum").checked=!!GS.accumulate; $("gContext").checked=!!GS.contextualMode; if($("gRounds")) $("gRounds").value=GS.rounds;
-  $("gModeNote").textContent=GS.contextualMode?"Contextual priming · each target query starts fresh with a fabricated dialogue; agents use the previous response and judge feedback to refine the next attempt.":GS.accumulate?"Crescendo · the target sees its real conversation history across attack turns; agents also use the judge feedback.":"Isolated · each target request is fresh; agents still use the previous response and judge feedback.";
+  $("gModeNote").textContent=GS.contextualMode?"Contextual priming · each target query starts fresh with a fabricated dialogue; agents use the previous response and judge feedback to refine the next attempt.":GS.accumulate?"Crescendo · real conversation history is accumulated in the target context across attack turns (target does not start fresh); agents also use judge feedback.":"Isolated · each target request starts fresh; agents use the previous response and judge feedback to inform the next turn.";
   { const m=GS.contextualMode?"Contextual priming":GS.accumulate?"Crescendo":"Isolated"; const s=$("gCtxSummary"); if(s) s.innerHTML='Target context · <b>'+m+'</b> <span class="caption">(advanced)</span>'; }
   $("gTitle").value=GS.title||""; $("gGoal").value=GS.goal; $("gTmodel").value=GS.target.model; $("gTurl").value=GS.target.url;
   const forked = GS.topo==="custom" && GS.forkedFrom;
