@@ -118,7 +118,7 @@ def to_json(audit: dict) -> str:
 
 def to_markdown(audit: dict) -> str:
     s = audit["summary"]
-    L = [f"# Myrtia red-team audit", "",
+    L = ["# Myrtia red-team audit", "",
          f"_Generated {audit['generated_at']} · Myrtia {audit.get('myrtia_version') or '?'}_", ""]
     flt = {k: v for k, v in (audit.get("filters") or {}).items() if v}
     if flt:
@@ -180,7 +180,8 @@ def to_xlsx(audit: dict) -> bytes:
         ws = wb.create_sheet(title)
         ws.append(headers)
         for c in ws[1]:
-            c.font = hdr; c.fill = hfill
+            c.font = hdr
+            c.fill = hfill
         for r in rows:
             ws.append(r)
         for i, h in enumerate(headers, 1):
