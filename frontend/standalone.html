@@ -880,7 +880,7 @@
       <div class="desc" id="goalSourceNote">The example goal is a smoke test. Curated dataset goals default to security evaluation; uploads stay unreviewed until you classify them.</div>
     </div>
 
-    <div class="fsec" id="councilSec">
+    <div class="fsec" id="councilSec" style="display:none">
       <div class="fsec-h"><span class="n">4</span><h2>Council</h2><span class="caption" id="sum4"></span></div>
       <label for="cmodels">Council models <span class="hint">(comma-separated attacking agents)</span></label>
       <input id="cmodels" value="qwen2.5:3b" />
@@ -1879,13 +1879,16 @@ $("launch").onclick = async () => {
   const goals = SELECTED.size ? [...SELECTED.keys()] : [$("goal").value.trim()].filter(Boolean);
   if(!goals.length){ toast("Pick a goal or select behaviours from the library first.","err"); $("goal").focus(); return; }
   if(!SELECTED.size && ($("libq").value||$("libtheme").value||$("libdataset").value) && !confirm("No library goals are selected. Launch the manual goal instead?")) return;
-  const key=$("apikey").value.trim();
-  const attack_config=Object.assign(
-    { council_models:$("cmodels").value.split(",").map(s=>s.trim()).filter(Boolean) }, collectAdvanced());
+  const isC = isCouncil(currentPlugin());
+  const attack_config = collectAdvanced();
+  if(isC){
+    attack_config.council_models = $("cmodels").value.split(",").map(s=>s.trim()).filter(Boolean);
+    const csp = $("csysPrompt") ? $("csysPrompt").value.trim() : "";
+    if(csp) attack_config.council_system_prompt = csp;
+    if($("critMode")) attack_config.critique_prompt_mode = $("critMode").value;
+  }
   if($("reqApproval")&&$("reqApproval").checked) attack_config.require_approval=true;
   if(key) attack_config.api_key=key;
-  const csp=$("csysPrompt")?$("csysPrompt").value.trim():""; if(csp) attack_config.council_system_prompt=csp;
-  if($("critMode")) attack_config.critique_prompt_mode=$("critMode").value;
   const target={ kind:targetKind(), base_url:$("turl").value.trim(), model:$("tmodel").value.trim() };
   if(key) target.api_key=key;
   const body={ attack_id:$("attack").value, title:$("runTitle").value.trim(), attack_config, theme:$("themeTag").value.trim(), target, goals,
