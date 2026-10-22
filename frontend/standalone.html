@@ -2193,7 +2193,13 @@ async function installPackById(pid){
   }catch(e){ return "install request failed."; }
 }
 document.querySelectorAll(".railbtn[data-view]").forEach(b=>{
-  b.addEventListener("click",()=>showView(b.dataset.view));
+  b.addEventListener("click",()=>{
+    if(b.dataset.view==="view-run" && RUN && RUN.status!=="running" && RUN.status!=="pending"){
+      returnToBuilder();
+      return;
+    }
+    showView(b.dataset.view);
+  });
 });
 ["statAttack","statTarget"].forEach(id=>{ const el=$(id); if(el) el.addEventListener("change",loadStats); });
 
