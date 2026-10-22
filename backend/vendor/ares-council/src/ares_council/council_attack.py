@@ -1296,7 +1296,6 @@ class CouncilAttack(AttackStrategy):
         if not critiques or not proposals:
             return ""
 
-        n = len(proposals)
         lines: list[str] = ["TEAM VOTES AND REASONING (all proposals):"]
 
         for p in proposals:
@@ -1343,7 +1342,6 @@ class CouncilAttack(AttackStrategy):
         if len(critiques) < 2 or n_proposals < 2:
             return 0.0
 
-        n_critics = len(critiques)
         # rank_counts[proposal_idx][rank_value] = count
         rank_counts: list[dict[int, int]] = [{} for _ in range(n_proposals)]
         valid = 0

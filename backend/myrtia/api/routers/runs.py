@@ -177,7 +177,9 @@ def _repro_meta(run: Any) -> dict[str, Any]:
     import platform as _pf
     cfg = run.spec.attack_config or {}
     tgt = run.spec.target or {}
-    iso = lambda ts: _dt.datetime.fromtimestamp(ts, _dt.timezone.utc).isoformat() if ts else None
+    def iso(ts):
+        return _dt.datetime.fromtimestamp(ts, _dt.timezone.utc).isoformat() if ts else None
+
     return {
         "myrtia_version": APP_VERSION,
         "git_commit": _git_commit(),

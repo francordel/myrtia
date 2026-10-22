@@ -130,7 +130,8 @@ def compute_stats(all_runs: list, backlog: Callable[[str], list], *,
                 me["proposals"] += 1
                 b = _int(borda.get(idx, borda.get(str(idx))))
                 if b is not None:
-                    me["borda_sum"] += b; me["borda_n"] += 1
+                    me["borda_sum"] += b
+                    me["borda_n"] += 1
                 if d["winner"] is not None and str(d["winner"]) == str(idx):
                     me["wins"] += 1
 
@@ -159,7 +160,9 @@ def compute_stats(all_runs: list, backlog: Callable[[str], list], *,
     for row in by_attack_rows:
         cat = ATTACK_OWASP.get(row.get("key"), "LLM01")
         e = _owasp.setdefault(cat, {"id": cat, "name": OWASP_LLM.get(cat, cat), "attacks": [], "goals": 0, "jailbroken": 0})
-        e["attacks"].append(row.get("key")); e["goals"] += row.get("goals", 0); e["jailbroken"] += row.get("jailbroken", 0)
+        e["attacks"].append(row.get("key"))
+        e["goals"] += row.get("goals", 0)
+        e["jailbroken"] += row.get("jailbroken", 0)
     owasp_rows = sorted(({**e, "asr": round(100 * e["jailbroken"] / e["goals"]) if e["goals"] else 0}
                          for e in _owasp.values()), key=lambda x: (-x["asr"], -x["goals"]))
     return {

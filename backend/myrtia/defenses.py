@@ -19,7 +19,6 @@ First slice (mostly pure, zero extra models):
 
 from __future__ import annotations
 
-import base64 as _b64
 import re
 from typing import Any, Callable
 

@@ -1,7 +1,7 @@
 """CouncilAttack role prompts adapted from ares-private (Apache-2.0)."""
 
 from myrtia.plugins.council_official import (
-    CONTEXTUAL_PROPOSER,
+    CONTEXTUAL_PROPOSER as CONTEXTUAL_PROPOSER,
     CONTEXTUAL_PROPOSER_PRESETS,
     DEFAULT_CONTEXTUAL_PRESET,
 )
@@ -23,7 +23,7 @@ def _phase2_from_env() -> str | None:
         return None
     if raw.lstrip().startswith("system_prompt:"):  # accept the ares-private YAML directly
         lines = raw.splitlines()
-        raw = "\n".join(l[2:] if l.startswith("  ") else l for l in lines[1:])
+        raw = "\n".join(line[2:] if line.startswith("  ") else line for line in lines[1:])
     return raw.replace("{{", "{").replace("}}", "}").strip("\n") or None
 
 

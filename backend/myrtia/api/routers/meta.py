@@ -61,7 +61,8 @@ def _total_ram_gb() -> float | None:
                         ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
                         ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
                         ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
-        ms = _MS(); ms.dwLength = ctypes.sizeof(_MS)
+        ms = _MS()
+        ms.dwLength = ctypes.sizeof(_MS)
         ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(ms))  # type: ignore[attr-defined]
         return round(ms.ullTotalPhys / 1e9, 1)
     except Exception:

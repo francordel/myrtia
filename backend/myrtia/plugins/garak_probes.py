@@ -14,7 +14,6 @@ They register through the shared TemplateAttack base.
 
 from __future__ import annotations
 
-from typing import Any
 
 from myrtia.plugins._template_base import register_template_attack
 

@@ -15,20 +15,18 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading as _threading
 import traceback
 from copy import deepcopy
 from typing import Any
 
 from myrtia.events.bus import EventBus, BUS
 from myrtia.events.schema import Event, EventType
-from myrtia.plugins.base import REGISTRY, EventEmittingStrategy
+from myrtia.plugins.base import REGISTRY
 from myrtia.hitl.approvals import REGISTRY as APPROVALS
 from myrtia.store.runs import Run, RunStatus, RunStore, STORE, _redact_secrets
 
 logger = logging.getLogger(__name__)
-
-
-import threading as _threading
 
 
 class Orchestrator:

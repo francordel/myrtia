@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import json as _json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
 

@@ -20,20 +20,23 @@ Run with: ``uvicorn myrtia.api.app:app``.
 
 from __future__ import annotations
 
+import importlib as _importlib
 import os
+import pkgutil as _pkgutil
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from myrtia.api.deps import APP_VERSION
-
-# Register the bundled plugins by discovering every module in the plugins package.
-# Open/Closed: a new attack registers itself just by being a module here — no edit to
-# the core, and third parties can drop one in the package. Private (_-prefixed) and
-# support modules (the contract base, prompt/data helpers) don't define a plugin.
-import importlib as _importlib
-import pkgutil as _pkgutil
+from myrtia.api.routers import (
+    approvals as _approvals,
+    chat as _chat,
+    datasets as _datasets,
+    meta as _meta,
+    runs as _runs,
+    stats as _stats,
+)
 import myrtia.plugins as _plugins_pkg
 
 _PLUGIN_SKIP = {"base", "council_prompts", "council_official"}
@@ -93,13 +96,6 @@ async def limit_body_size(request, call_next):
 
 
 # --- routers --------------------------------------------------------------------
-from myrtia.api.routers import approvals as _approvals
-from myrtia.api.routers import chat as _chat
-from myrtia.api.routers import datasets as _datasets
-from myrtia.api.routers import meta as _meta
-from myrtia.api.routers import runs as _runs
-from myrtia.api.routers import stats as _stats
-
 app.include_router(_meta.router)
 app.include_router(_chat.router)
 app.include_router(_datasets.router)
