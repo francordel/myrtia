@@ -1,0 +1,404 @@
+{
+  "timestamp": 1792694848.5450153,
+  "target": "Qwen/Qwen2.5-1.5B-Instruct",
+  "target_url": "http://127.0.0.1:11435/v1",
+  "evaluator": "qwen2.5:3b",
+  "evaluator_url": "http://127.0.0.1:11434/v1",
+  "total": 39,
+  "passed": 34,
+  "failed": 5,
+  "duration": 415.42641019821167,
+  "tests": [
+    {
+      "category": "Template Attacks",
+      "name": "Direct Query",
+      "success": true,
+      "duration": 10.260475635528564,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "6d7675a4931a4563b1b8fc464ffdef92",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Template Attacks",
+      "name": "Base64 Obfuscation",
+      "success": false,
+      "duration": 30.29863166809082,
+      "details": "status=timeout, err=Exceeded 30.0s wait",
+      "extra": {
+        "run_id": "fc721b737f484ab38df8690f400cfa0c"
+      }
+    },
+    {
+      "category": "Template Attacks",
+      "name": "Payload Splitting",
+      "success": true,
+      "duration": 9.172123432159424,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "9080785db3ee4774b2da810ed4d1ef30",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Template Attacks",
+      "name": "Human Jailbreak (DAN/AIM)",
+      "success": false,
+      "duration": 30.536097049713135,
+      "details": "status=timeout, err=Exceeded 30.0s wait",
+      "extra": {
+        "run_id": "2e117b31db014628b8d03f3e12c2253b"
+      }
+    },
+    {
+      "category": "Template Attacks",
+      "name": "PromptInject (Garak)",
+      "success": true,
+      "duration": 11.226413011550903,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "3b91e58a5f5e40cdb773d133b86ef3d3",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Template Attacks",
+      "name": "Grandma Persona (Garak)",
+      "success": true,
+      "duration": 10.245074272155762,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "ea31c525eabc4e518ee8e5210d66cec9",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Template Attacks",
+      "name": "Hypothetical Smuggling (Garak)",
+      "success": true,
+      "duration": 13.306775331497192,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "79a406e29502480aacae49de73e8a1fd",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Template Attacks",
+      "name": "Phrasing Reframing (Garak)",
+      "success": true,
+      "duration": 9.174829721450806,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "963c2cffce8f4af88ffb51c5a8b10bb5",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Template Attacks",
+      "name": "Latent Injection (Garak)",
+      "success": true,
+      "duration": 9.239724159240723,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "98fb8cb3f5ae4e93bbe08210407491a2",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Template Attacks",
+      "name": "Dan Jailbreak (Garak)",
+      "success": true,
+      "duration": 12.265999555587769,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "96812ecfae7d44db918be93bb6304d03",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Template Attacks",
+      "name": "Encoding Probe (Garak)",
+      "success": true,
+      "duration": 21.62521767616272,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "a24f8417c24d45df81313d61a22700af",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Template Attacks",
+      "name": "Continuation Momentum (Garak)",
+      "success": true,
+      "duration": 12.292626857757568,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "3293dd03ac884b5fa450a11298186448",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Template Attacks",
+      "name": "Leak Replay Probe (Garak)",
+      "success": true,
+      "duration": 11.23904013633728,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "6dfaafcd26214fb19fa79c730e91d452",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Dynamic Attacks",
+      "name": "Contextual Jailbreak (Few-Shot Priming)",
+      "success": true,
+      "duration": 11.254951238632202,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "c1ecf98391fe47cb87a7812a9d70d18d",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Dynamic Attacks",
+      "name": "Crescendo (2 Turns Escalation)",
+      "success": true,
+      "duration": 11.182581186294556,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "4434597ab5e4469daf0fb967ca9d7199",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Dynamic Attacks",
+      "name": "TAP / PAIR (1 Round, Width 1)",
+      "success": true,
+      "duration": 14.304367542266846,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "0a626ff20bc34a28b0cea61b488105bc",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Dynamic Attacks",
+      "name": "Council Attack (ARES Deliberation)",
+      "success": true,
+      "duration": 1.057934045791626,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "9f309abe6a4d43589e2e8ac41faae2dd",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Graph Topologies",
+      "name": "Circular Council (Borda Count)",
+      "success": true,
+      "duration": 24.44682788848877,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "332565bb0b414f40b9590d255d8936f3",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Graph Topologies",
+      "name": "Chairman Synthesis",
+      "success": true,
+      "duration": 15.27474594116211,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "8b2dfae5f5984fe3abe5f3758c51c26c",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Graph Topologies",
+      "name": "Parallel Synthesis",
+      "success": true,
+      "duration": 23.57380485534668,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "35002c507ec742728fdfa0c7e4b544a6",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Graph Topologies",
+      "name": "Multi-Agent Debate (1 Round)",
+      "success": true,
+      "duration": 9.19361400604248,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "39dd69653eca4521938f38699988f33a",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Graph Topologies",
+      "name": "Custom DAG Edges",
+      "success": true,
+      "duration": 9.253337144851685,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "6ea3252ece2a4491b8cbcd2b8d5bf9f9",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Guardrail Shields",
+      "name": "Self-Reminder Shield",
+      "success": true,
+      "duration": 15.276536464691162,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "5199cd2349654e729b2051ba557cb297",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Guardrail Shields",
+      "name": "Goal-Prioritization Shield",
+      "success": true,
+      "duration": 4.138575553894043,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "6038e9f776e24baf95ce94a47f52c471",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Guardrail Shields",
+      "name": "Retokenization Shield",
+      "success": true,
+      "duration": 19.365322589874268,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "af5ac254d01640199e48b50bead0c1df",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Guardrail Shields",
+      "name": "Paraphrase Shield",
+      "success": true,
+      "duration": 21.3902645111084,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "0eaaff760ae94803b301c2eb1498219b",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Guardrail Shields",
+      "name": "Combined Multi-Shield Pipeline",
+      "success": true,
+      "duration": 13.277838945388794,
+      "details": "status=succeeded, best_score=None",
+      "extra": {
+        "run_id": "73b8b586df9845068e613d5ee20734ab",
+        "results_count": 1
+      }
+    },
+    {
+      "category": "Guardrail Shields",
+      "name": "Perplexity Filter (Base64 Blocking)",
+      "success": false,
+      "duration": 30.485641956329346,
+      "details": "Successfully intercepted/evaluated",
+      "extra": {}
+    },
+    {
+      "category": "Data APIs",
+      "name": "Behaviors CSV Parser (/behaviors/parse)",
+      "success": true,
+      "duration": 0.01813983917236328,
+      "details": "count=2",
+      "extra": {}
+    },
+    {
+      "category": "Data APIs",
+      "name": "Dataset Catalog (/datasets)",
+      "success": true,
+      "duration": 0.017893552780151367,
+      "details": "datasets_count=4",
+      "extra": {}
+    },
+    {
+      "category": "Exports",
+      "name": "Run Export CSV (/runs/{id}/export?format=csv)",
+      "success": true,
+      "duration": 0.45498085021972656,
+      "details": "bytes=87",
+      "extra": {}
+    },
+    {
+      "category": "Exports",
+      "name": "Run Export JSON (/runs/{id}/export?format=json)",
+      "success": true,
+      "duration": 0.06223750114440918,
+      "details": "bytes=8",
+      "extra": {}
+    },
+    {
+      "category": "Exports",
+      "name": "Printable HTML Report (/runs/{id}/report)",
+      "success": false,
+      "duration": 0.07779622077941895,
+      "details": "bytes=3169",
+      "extra": {}
+    },
+    {
+      "category": "Audit Reporting",
+      "name": "System Audit Export (HTML)",
+      "success": true,
+      "duration": 0.005698442459106445,
+      "details": "bytes=4569",
+      "extra": {}
+    },
+    {
+      "category": "Audit Reporting",
+      "name": "System Audit Export (JSON)",
+      "success": true,
+      "duration": 0.014176368713378906,
+      "details": "bytes=15",
+      "extra": {}
+    },
+    {
+      "category": "Audit Reporting",
+      "name": "System Audit Export (CSV)",
+      "success": true,
+      "duration": 0.012464523315429688,
+      "details": "bytes=103",
+      "extra": {}
+    },
+    {
+      "category": "Audit Reporting",
+      "name": "System Audit Export (MD)",
+      "success": true,
+      "duration": 0.0135345458984375,
+      "details": "bytes=1155",
+      "extra": {}
+    },
+    {
+      "category": "Audit Reporting",
+      "name": "System Audit Export (XLSX)",
+      "success": true,
+      "duration": 0.3495442867279053,
+      "details": "bytes=8301",
+      "extra": {}
+    },
+    {
+      "category": "Audit Reporting",
+      "name": "Statistics Summary API (/stats)",
+      "success": false,
+      "duration": 0.016443729400634766,
+      "details": "posture=None, total_runs=0",
+      "extra": {}
+    }
+  ]
+}
