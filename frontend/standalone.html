@@ -817,12 +817,18 @@
       <div class="desc" id="attackdesc"></div>
       <a href="#" id="attackInfo" class="infolink">ⓘ How this attack works</a>
       <div id="evalBlock" style="display:none">
-        <label for="adv_judge_model">Evaluator <span class="hint">(grades each response 0-5, so the run counts towards ASR)</span></label>
-        <div class="row2">
-          <input id="adv_judge_model" placeholder="qwen2.5:3b" />
-          <input id="adv_judge_endpoint" placeholder="http://127.0.0.1:11434/v1" />
+        <label class="chkrow" style="margin-bottom:8px">
+          <input type="checkbox" id="evalEnabled" checked />
+          <span><b>Enable Evaluator</b> <span class="hint">— grades responses 0–5 to compute ASR</span></span>
+        </label>
+        <div id="evalFields">
+          <label for="adv_judge_model">Evaluator model &amp; endpoint</label>
+          <div class="row2">
+            <input id="adv_judge_model" placeholder="qwen2.5:3b" />
+            <input id="adv_judge_endpoint" placeholder="http://127.0.0.1:11434/v1" />
+          </div>
+          <div class="desc" id="evalHint">A model judging itself is less reliable. Use an independent model when possible.</div>
         </div>
-        <div class="desc" id="evalHint">On by default. Type <b>off</b> for raw response only. A model judging itself is less reliable.</div>
       </div>
       <label class="chkrow"><input type="checkbox" id="reqApproval" /><span>Require my approval before launching <span class="hint">— pauses the run until you approve</span></span></label>
       <details class="adv" id="advwrap"><summary>Advanced configuration</summary><div id="adv"></div></details>
@@ -1215,6 +1221,8 @@ function onAttackChange(){
   const showEval = !!jm && !isCouncil(p);
   $("evalBlock").style.display = showEval ? "block" : "none";
   if(showEval){
+    if($("evalEnabled")) $("evalEnabled").checked = true;
+    if($("evalFields")) $("evalFields").style.display = "";
     $("adv_judge_model").value = (jm.default!==undefined?jm.default:"");
     $("adv_judge_endpoint").value = (je&&je.default!==undefined?je.default:"");
   }
@@ -1241,7 +1249,12 @@ function onAttackChange(){
 }
 function collectAdvanced(){
   const cfg={}; const p=currentPlugin(); if(!p) return cfg;
+  const evalOff = $("evalBlock") && $("evalBlock").style.display !== "none" && $("evalEnabled") && !$("evalEnabled").checked;
   for (const f of (p.config_schema||[])){
+    if(evalOff && (f.key==="judge_model" || f.key==="judge_endpoint")){
+      if(f.key==="judge_model") cfg[f.key]="off";
+      continue;
+    }
     const el=$("adv_"+f.key); if(!el) continue;
     if(f.type==="bool") cfg[f.key]=el.checked;
     else if(f.type==="number"){ if(el.value!=="") cfg[f.key]=Number(el.value); }
@@ -1249,6 +1262,9 @@ function collectAdvanced(){
   }
   return cfg;
 }
+if($("evalEnabled")) $("evalEnabled").addEventListener("change", ()=>{
+  if($("evalFields")) $("evalFields").style.display = $("evalEnabled").checked ? "" : "none";
+});
 $("attack").addEventListener("change", onAttackChange);
 $("attack").addEventListener("change", ()=>updEstimate());
 
