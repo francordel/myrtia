@@ -2844,8 +2844,13 @@ function renderGraph(){
   if(dP.length) e+=gLine(dP[dP.length-1],"defense",pos.target,"target","e-def");
   // target -> evaluator (judge) + multi-turn feedback to the table
   e+=`<path class="e-judge" d="M${pos.target.x},${pos.target.y+42} L${pos.evaluator.x},${pos.evaluator.y-30}" marker-end="url(#garrow)"/>`;
-  if(GS.turns>1){ const bot=H-14, endX=pos.ring.cx, endY=pos.ring.show? pos.ring.cy+pos.ring.ry+40 : pos.ring.cy+44;
-    e+=`<path class="e-judge" d="M${pos.evaluator.x-76},${pos.evaluator.y} C${pos.evaluator.x-200},${bot} ${endX+140},${bot} ${endX},${endY}" marker-end="url(#garrow)"/>`; }
+  if(GS.turns>1){
+    const tgt=(GS.attackers[0]&&pos[GS.attackers[0].id])||(pos.chairmen&&pos.chairmen[0]);
+    if(tgt){
+      const bot=Math.max(H-14, tgt.y+50), endX=tgt.x, endY=tgt.y+38;
+      e+=`<path class="e-judge" d="M${pos.evaluator.x-76},${pos.evaluator.y} C${pos.evaluator.x-160},${bot} ${endX},${bot} ${endX},${endY}" marker-end="url(#garrow)"/>`;
+    }
+  }
   $("gedges").innerHTML=e;
   if(GS.topo==="custom"){
     document.querySelectorAll("#gedges .e-custom-hit,#gedges .e-custom").forEach(path=>{
