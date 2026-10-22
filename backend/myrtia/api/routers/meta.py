@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import FileResponse, JSONResponse
 
 from myrtia.api.deps import EstimateRequest, require_token
+from myrtia.endpoints import OLLAMA_URL, OLLAMA_V1
 from myrtia.plugins.base import REGISTRY as PLUGINS
 
 router = APIRouter()
@@ -95,7 +96,7 @@ def _ollama_models() -> list[str] | None:
     """Models pulled into the local Ollama, or None when it isn't reachable."""
     import requests
     try:
-        r = requests.get("http://127.0.0.1:11434/api/tags", timeout=2, allow_redirects=False)
+        r = requests.get(OLLAMA_URL + "/api/tags", timeout=2, allow_redirects=False)
         r.raise_for_status()
         return sorted(m["name"] for m in (r.json().get("models") or []) if m.get("name"))
     except Exception:  # noqa: BLE001
@@ -130,6 +131,7 @@ async def system_info() -> dict[str, Any]:
         "cpu_count": os.cpu_count(), "ram_gb": ram,
         "gpu": ({"name": gpu_name, "vram_gb": vram} if vram else None),
         "model_budget_gb": round(budget, 1) if budget else None,
+        "ollama_url": OLLAMA_V1,
         "recommended_model": recommended,
         "ollama_models": installed,
         "recommended_installed": bool(installed) and recommended in installed,

@@ -24,6 +24,7 @@ import re
 from typing import Any, Callable
 
 from myrtia.connectors.base import Response, Status
+from myrtia.endpoints import OLLAMA_V1
 
 # ── individual shields ─────────────────────────────────────────────────────
 # Each fn: (text, cfg, aux) -> (new_text, blocked: bool, note: str).
@@ -152,7 +153,7 @@ class DefendedConnector:
         if self._aux_conn is None:
             from myrtia.connectors.factory import build_target_connector
             self._aux_conn = build_target_connector({
-                "kind": "openai_chat", "base_url": self._aux_endpoint or "http://127.0.0.1:11434/v1",
+                "kind": "openai_chat", "base_url": self._aux_endpoint or OLLAMA_V1,
                 "model": self._aux_model, "api_key": self._aux_key,
             })
 

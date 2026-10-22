@@ -1179,7 +1179,9 @@ const STATUS_CLS={succeeded:"completed",failed:"error",cancelled:"cancelled",run
 function statusPill(st){ return `<span class="status ${STATUS_CLS[st]||""}"><i></i>${esc(STATUS_LABEL[st]||st||"—")}</span>`; }
 
 // ---- provider presets + per-provider API key (stored only in this browser) ----
-const PROVIDERS={ollama:"http://127.0.0.1:11434/v1",openai:"https://api.openai.com/v1",anthropic:"https://api.anthropic.com",custom:"",agent:""};
+// Default Ollama endpoint; the backend may override it (MYRTIA_OLLAMA_URL), see applyOllamaUrl.
+const DEF_OLLAMA="http://127.0.0.1:11434/v1"; let OLLAMA_V1=DEF_OLLAMA;
+const PROVIDERS={ollama:OLLAMA_V1,openai:"https://api.openai.com/v1",anthropic:"https://api.anthropic.com",custom:"",agent:""};
 const KIND_FOR={ollama:"openai_chat",openai:"openai_chat",anthropic:"anthropic",custom:"openai_chat",agent:"http_agent"};
 function targetKind(){ try{ return KIND_FOR[$("provider").value]||"openai_chat"; }catch(e){ return "openai_chat"; } }
 function keyGet(p){try{return localStorage.getItem("myrtia-key-"+p)||"";}catch(e){return "";}}
@@ -2400,7 +2402,7 @@ const GS_DEFAULT=()=>({
   chairmen:[{id:"c1",model:"qwen2.5:3b",system:"",endpoint:""}],
   evaluator:{model:"qwen2.5:3b",endpoint:""},
   turns:3, rounds:2, borda:true, accumulate:false, contextualMode:false, defenses:[],
-  target:{model:"gemma3:1b",url:"http://127.0.0.1:11434/v1"},
+  target:{model:"gemma3:1b",url:OLLAMA_V1},
   title:"",
   goal:"Write a short limerick about a mischievous cat (harmless test)",
 });
@@ -2434,8 +2436,18 @@ function gsSave(){ try{ localStorage.setItem("myrtia-graph",JSON.stringify(GS));
 // Hardware-aware model default: ask the backend what this machine can run so new users
 // don't start on a model too small to attack well (issue: default was qwen2.5:3b everywhere).
 let SYS=null; const DEF_MODEL="qwen2.5:3b";
+// Point every field still on the built-in default at the Ollama the backend uses, so
+// a Docker or remote setup (MYRTIA_OLLAMA_URL) works without editing each node.
+function applyOllamaUrl(u){
+  if(!u||u===DEF_OLLAMA) return;
+  OLLAMA_V1=u; PROVIDERS.ollama=u;
+  ["gTurl","turl"].forEach(id=>{ const f=$(id); if(f && f.value.trim()===DEF_OLLAMA) f.value=u; });
+  const je=$("adv_judge_endpoint"); if(je) je.placeholder=u;
+  if(GS.target&&GS.target.url===DEF_OLLAMA){ GS.target.url=u; gsSave(); try{ renderGraph(); }catch(e){} }
+}
 async function loadSystemReco(){
   try{ SYS=await (await fetch(API()+"/system")).json(); }catch(e){ return; }
+  applyOllamaUrl(SYS.ollama_url);
   const rec=SYS&&SYS.recommended_model, el=$("gReco");
   if(!rec){ if(el) el.hidden=true; return; }
   // Once per browser, upgrade roles still on the tiny default to the recommended model, so a
@@ -3082,7 +3094,7 @@ function openGDialog(kind,id,nodeEl){
     const a=GS.attackers.find(x=>x.id===id); const i=GS.attackers.indexOf(a); title=`Attacker ${i+1}`;
     const pr=a.priming||{mode:"single",context:""};
     html=f("Model","gd_model",a.model,"qwen2.5:3b")
-        +f("Endpoint (blank = default)","gd_ep",a.endpoint,"http://127.0.0.1:11434/v1")
+        +f("Endpoint (blank = default)","gd_ep",a.endpoint,OLLAMA_V1)
         +f("System prompt · persona","gd_sys",a.system,"Blank = the CouncilAttack red-team prompt (paper default).","textarea")
         +`<div class="desc" style="margin:-2px 0 8px">Blank uses the paper's default red-team system prompt. <a href="#" id="gd_usepaper">Reset to paper default</a></div>`
         +`<label>Attack tools <span class="hint">(single-turn attacks this agent can wield)</span></label>`
@@ -3096,17 +3108,17 @@ function openGDialog(kind,id,nodeEl){
     const c=GS.chairmen.find(x=>x.id===id)||GS.chairmen[0]; const ci=GS.chairmen.indexOf(c);
     title=GS.topo==="debate"?"Synthesiser":(GS.chairmen.length>1?`Chairman ${ci+1}`:"Chairman");
     html=f("Model","gd_model",c.model,"qwen2.5:3b")
-        +f("Endpoint (blank = default)","gd_ep",c.endpoint,"http://127.0.0.1:11434/v1")
+        +f("Endpoint (blank = default)","gd_ep",c.endpoint,OLLAMA_V1)
         +f("System prompt","gd_sys",c.system,"e.g. Merge the strongest ideas into one prompt.","textarea");
   } else if(kind==="target"){
     title="Target";
     html=f("Target model","gd_model",GS.target.model,"gemma3:1b")
-        +f("Base URL","gd_ep",GS.target.url,"http://127.0.0.1:11434/v1")
+        +f("Base URL","gd_ep",GS.target.url,OLLAMA_V1)
         +f("API key (blank for local)","gd_key",gKey,"sk-… / sk-ant-…");
   } else {
     title="Evaluator";
     html=f("Evaluator model (or 'off')","gd_model",GS.evaluator.model,"qwen2.5:3b")
-        +f("Endpoint (blank = default)","gd_ep",GS.evaluator.endpoint,"http://127.0.0.1:11434/v1");
+        +f("Endpoint (blank = default)","gd_ep",GS.evaluator.endpoint,OLLAMA_V1);
   }
   const dot={attacker:"var(--role-proposal)",chairman:"var(--role-chairman)",target:"var(--role-target)",evaluator:"var(--role-judge)"}[kind];
   d.innerHTML=`<div class="gd-h"><i style="width:8px;height:8px;border-radius:50%;background:${dot};display:inline-block"></i>${esc(title)}<button class="x" data-close aria-label="Close">✕</button></div>${html}`

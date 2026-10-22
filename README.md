@@ -85,16 +85,53 @@ uv run myrtia
 <details>
 <summary><b>Docker</b> (nothing to install but Docker)</summary>
 
-A prebuilt image runs Myrtia next to Ollama and pulls the demo model for you:
+A prebuilt image (`ghcr.io/francordel/myrtia`) runs the console. Pick how it reaches the
+models:
+
+**A · All in one — Myrtia + its own Ollama.** Nothing else needed: the compose file starts an
+Ollama container and pulls the two demo models into it (`qwen2.5:3b` attacks and judges,
+`gemma3:1b` is the target). Myrtia talks to that bundled Ollama only, so models you pulled
+elsewhere aren't visible — pull more with `docker compose exec ollama ollama pull <model>`.
 
 ```bash
 curl -LO https://raw.githubusercontent.com/francordel/myrtia/main/compose.yaml
 docker compose up
 ```
 
-Then open http://localhost:8000/. Choose another model with `MYRTIA_MODEL=qwen2.5:7b docker
-compose up`. On macOS, Docker can't use the Apple GPU, so models run on the CPU — for speed on
-a Mac, use the native steps above.
+**B · Myrtia only — use the Ollama you already have.** No Ollama container and no model
+download: Myrtia uses your existing models.
+
+On this machine (Ollama running outside Docker):
+
+```bash
+curl -LO https://raw.githubusercontent.com/francordel/myrtia/main/compose.own-ollama.yaml
+docker compose -f compose.own-ollama.yaml up
+```
+
+On a server:
+
+```bash
+MYRTIA_OLLAMA_URL=http://gpu-server:11434 docker compose -f compose.own-ollama.yaml up
+```
+
+Then open http://localhost:8000/. Every role that doesn't set its own endpoint uses that Ollama,
+and the console fills it in for you — no need to know that "this machine" is
+`host.docker.internal` from inside a container. Any role can still point at another
+OpenAI-compatible endpoint (vLLM, OpenAI, Anthropic…) from the UI.
+
+| Setting | Default | Use it to |
+| --- | --- | --- |
+| `MYRTIA_OLLAMA_URL` | bundled Ollama (A) · this machine (B) | point Myrtia at another Ollama |
+| `MYRTIA_MODEL` / `MYRTIA_TARGET` | `qwen2.5:3b` / `gemma3:1b` | pull other demo models (A) |
+| `MYRTIA_PORT` | `8000` | publish the console on another port |
+
+Without compose: `docker run -p 127.0.0.1:8000:8000 --add-host host.docker.internal:host-gateway
+-e MYRTIA_OLLAMA_URL=http://host.docker.internal:11434 ghcr.io/francordel/myrtia`.
+`MYRTIA_OLLAMA_URL` also works without Docker: `MYRTIA_OLLAMA_URL=http://gpu-server:11434 uv run myrtia`.
+
+On macOS, Docker can't use the Apple GPU: in option A the models run on the CPU. For speed on
+a Mac, use option B (or the native steps above) so Ollama runs natively on the GPU. On Linux,
+option B needs Ollama to listen beyond localhost: start it with `OLLAMA_HOST=0.0.0.0`.
 </details>
 
 The first run takes a few minutes: the council plugin pulls in IBM **ARES core**
@@ -417,6 +454,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full design.
 | --- | --- | --- |
 | `requires a different Python: 3.9.6 not in '>=3.11'` | The venv was made with an old system Python (macOS ships 3.9) | Use `uv run myrtia` from the repo root — uv downloads Python 3.12 itself. With pip, create the venv with Python 3.11+. |
 | `Connection refused` / `WinError 10061` / `Max retries exceeded` on port **11434** | Ollama isn't running or isn't reachable | Start Ollama (`brew services start ollama` on macOS, the tray app on Windows, `ollama serve` otherwise) and confirm **http://127.0.0.1:11434/** says *"Ollama is running"*. If it runs elsewhere, set the base URL in the UI. |
+| Myrtia in Docker can't reach your Ollama (`Connection refused` on `host.docker.internal:11434` or `127.0.0.1:11434`) | Inside a container, `127.0.0.1` is the container itself | Use `compose.own-ollama.yaml` (Docker option B), which points Myrtia at this machine for you; for a server, set `MYRTIA_OLLAMA_URL=http://<server>:11434`. On Linux, start Ollama with `OLLAMA_HOST=0.0.0.0`. |
 | `could not connect to ollama server` right after installing | The Ollama service is still starting | Wait a few seconds and re-run `ollama pull qwen2.5:3b && ollama pull gemma3:1b`. |
 | `model "…" not found` / `try pulling it first` | The model isn't downloaded | `ollama pull <model>` (e.g. `ollama pull qwen2.5:3b`), then check `ollama list`. |
 | PowerShell: *"running scripts is disabled on this system"* | Script execution policy blocks the venv activation | `Set-ExecutionPolicy -Scope Process RemoteSigned`, then re-run `.\.venv\Scripts\Activate.ps1`. |

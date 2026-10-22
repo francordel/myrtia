@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from myrtia.plugins.base import PluginSpec, register
+from myrtia.endpoints import OLLAMA_URL
 
 
 def _build(config: dict[str, Any], target_connector: Any, *, crescendo: bool):
@@ -106,7 +107,7 @@ def _build(config: dict[str, Any], target_connector: Any, *, crescendo: bool):
     first = council[0]
     cfg["chairman_model"] = _prefix(cfg.get("chairman_model", first))
     cfg["judge_model"] = _prefix(cfg.get("judge_model", first))
-    cfg.setdefault("ollama_endpoint", "http://127.0.0.1:11434")
+    cfg.setdefault("ollama_endpoint", OLLAMA_URL)
     cfg.setdefault("max_turns", 3)
     cfg.setdefault("use_borda", True)
     cfg.setdefault("use_chairman", True)
@@ -136,7 +137,7 @@ _COUNCIL_SCHEMA = [
     {"key": "judge_model", "label": "Judge model", "type": "text", "default": "",
      "help": "Blank = first council model."},
     {"key": "ollama_endpoint", "label": "Council/judge endpoint", "type": "text",
-     "default": "http://127.0.0.1:11434",
+     "default": OLLAMA_URL,
      "help": "Ollama endpoint for council, chairman and judge models."},
     {"key": "council_max_tokens", "label": "Council max tokens", "type": "number",
      "default": 2048, "help": "Token cap per council/chairman/judge call."},

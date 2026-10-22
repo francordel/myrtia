@@ -17,12 +17,12 @@ import time
 import urllib.request
 import webbrowser
 
-OLLAMA_URL = "http://127.0.0.1:11434/"
+from myrtia.endpoints import OLLAMA_URL
 
 
 def _ollama_running() -> bool:
     try:
-        with urllib.request.urlopen(OLLAMA_URL, timeout=1.5) as resp:
+        with urllib.request.urlopen(OLLAMA_URL + "/", timeout=1.5) as resp:
             return resp.status == 200
     except OSError:
         return False
@@ -50,7 +50,7 @@ def main() -> None:
 
     if not _ollama_running():
         print(
-            "\n  ! Ollama isn't reachable at http://127.0.0.1:11434/ — the default local\n"
+            f"\n  ! Ollama isn't reachable at {OLLAMA_URL}/ — the default local\n"
             "    models won't answer. Start it (macOS: `brew services start ollama`) and\n"
             "    pull the demo models: `ollama pull qwen2.5:3b && ollama pull gemma3:1b`.\n"
             "    Remote endpoints still work.\n"

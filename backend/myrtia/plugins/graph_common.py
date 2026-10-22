@@ -18,8 +18,9 @@ import re
 from typing import Any
 
 from myrtia.plugins.council_prompts import CONTEXTUAL_CHAIRMAN, CONTEXTUAL_PROPOSER
+from myrtia.endpoints import OLLAMA_V1
 
-_DEFAULT_AUX = "http://127.0.0.1:11434/v1"
+_DEFAULT_AUX = OLLAMA_V1
 
 # Default attacker system prompt when an agent has no persona: the CouncilAttack
 # paper's red-team prompt (ares_council.CouncilAttack._COUNCIL_SYSTEM, Apache-2.0),

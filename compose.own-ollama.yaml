@@ -1,0 +1,33 @@
+# Myrtia in Docker, using an Ollama you already run — on this machine or on a server.
+# No Ollama container and no model download: Myrtia uses the models you already have.
+#
+#   docker compose -f compose.own-ollama.yaml up
+#       -> Ollama on this machine (outside Docker), at its usual port 11434
+#
+#   MYRTIA_OLLAMA_URL=http://gpu-server:11434 docker compose -f compose.own-ollama.yaml up
+#       -> Ollama (or any OpenAI-compatible server) somewhere else on the network
+#
+# then open http://localhost:8000/ (another host port: MYRTIA_PORT=8010).
+# For the all-in-one setup with a bundled Ollama, use compose.yaml instead.
+#
+# Inside a container, 127.0.0.1 is the container itself, so "this machine" is reached
+# as host.docker.internal (mapped below, so it also works on Linux). On Linux, Ollama
+# must listen beyond localhost for that: start it with OLLAMA_HOST=0.0.0.0.
+
+name: myrtia
+
+services:
+  myrtia:
+    image: ghcr.io/francordel/myrtia:latest
+    build: .
+    ports:
+      - "127.0.0.1:${MYRTIA_PORT:-8000}:8000"
+    environment:
+      MYRTIA_OLLAMA_URL: ${MYRTIA_OLLAMA_URL:-http://host.docker.internal:11434}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - myrtia-data:/data
+
+volumes:
+  myrtia-data:

@@ -24,6 +24,7 @@ import re
 from typing import Any
 
 from myrtia.plugins.base import PluginSpec, register
+from myrtia.endpoints import OLLAMA_V1
 from myrtia.plugins.live_base import LiveAttack
 
 _HELPER_SYSTEM = (
@@ -107,7 +108,7 @@ class CrescendoLive(LiveAttack):
         self.helper_model = self.config.get("helper_model") or "qwen2.5:3b"
         self.judge_model = self.config.get("judge_model") or "qwen2.5:3b"
         self.aux_endpoint = (
-            self.config.get("aux_endpoint") or "http://127.0.0.1:11434/v1"
+            self.config.get("aux_endpoint") or OLLAMA_V1
         )
         self.aux_api_key = self.config.get("aux_api_key")
         self._helper = None
@@ -240,7 +241,7 @@ _SCHEMA = [
      "default": "qwen2.5:3b",
      "help": "LLM that grades each target answer 0-5. Recommended: gpt-oss:120b (the paper's judge)."},
     {"key": "aux_endpoint", "label": "Helper/judge endpoint", "type": "text",
-     "default": "http://127.0.0.1:11434/v1",
+     "default": OLLAMA_V1,
      "help": "OpenAI-compatible endpoint for the helper and judge models."},
 ]
 
