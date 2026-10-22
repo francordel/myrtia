@@ -118,6 +118,8 @@ def _build(config: dict[str, Any], target_connector: Any, *, crescendo: bool):
     # council_attacks.json (reusing completed goals and skipping the whole
     # deliberation), which would suppress all live events on any re-run with the
     # same goal. A fresh path per run guarantees every run actually attacks.
+    if not cfg.get("input_path"):
+        cfg["input_path"] = "memory"
     if not cfg.get("output_path"):
         cfg["output_path"] = str(
             Path(tempfile.gettempdir()) / f"myrtia_council_{uuid.uuid4().hex}.json"
