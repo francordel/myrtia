@@ -290,10 +290,11 @@ public descriptions.)
 
 ### The name and the mark
 
-The name Myrtia comes from *Myrtea* / *Murtea*, "place of myrtles" — the most accepted
-explanation for the name of the city of Murcia, and the same myrtle that Varro saw behind the
-Roman *Venus Murcia*. When the city was founded as *Madinat Mursiya* in 825, Arabic adapted
-that older name into the one we use today. It is a tool from the *huerta*, aimed at the frontier.
+The name Myrtia comes from *Myrtea* / *Murtea*, "place of myrtles" — one of the leading
+hypotheses for the origin of the name of the city of Murcia ([Fernández Nieto & Molina Gómez,
+2006](https://revistas.um.es/ayc/article/view/49431)); the same myrtle that Varro, in Rome, linked
+to the goddess later known as *Venus Murcia*. The city was founded as *Madinat Mursiya* in 825,
+and its name may carry that older heritage. It is a tool from the *huerta*, aimed at the frontier.
 
 The logo carries the same idea in one image. It is a **myrtle leaf** — the plant that gives
 Myrtia and Murcia their name, our roots in the *huerta* — and, at the same time, a **shield
