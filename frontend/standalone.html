@@ -1879,6 +1879,7 @@ $("launch").onclick = async () => {
   const goals = SELECTED.size ? [...SELECTED.keys()] : [$("goal").value.trim()].filter(Boolean);
   if(!goals.length){ toast("Pick a goal or select behaviours from the library first.","err"); $("goal").focus(); return; }
   if(!SELECTED.size && ($("libq").value||$("libtheme").value||$("libdataset").value) && !confirm("No library goals are selected. Launch the manual goal instead?")) return;
+  const key=$("apikey").value.trim();
   const isC = isCouncil(currentPlugin());
   const attack_config = collectAdvanced();
   if(isC){
