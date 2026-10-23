@@ -2504,14 +2504,15 @@ function applyOllamaUrl(u){
 // --- Model picker: every model field suggests the models pulled into Ollama and stays
 // free text for anything else. Fields opt in with data-models ("multi" = the
 // comma-separated council roster, where a pick appends instead of replacing). ---
-let MODEL_OPTS=[], modelOptsAt=0, mmInput=null, mmIdx=-1, mmTyped=false;  // filter only once the user types
-function setModelOptions(list,merge){
-  const s=new Set(merge?MODEL_OPTS:[]); (list||[]).forEach(m=>{ if(m) s.add(String(m)); });
-  MODEL_OPTS=[...s].sort(); modelOptsAt=Date.now();
-}
-async function refreshModelOptions(){  // picks up models pulled since the page loaded
+// Ollama's list is replaced on every refresh (so deleted models disappear); models seen on
+// other endpoints (target preflight) are kept alongside it.
+let OLLAMA_MODELS=[], EXTRA_MODELS=new Set(), MODEL_OPTS=[], modelOptsAt=0, mmInput=null, mmIdx=-1, mmTyped=false;  // filter only once the user types
+function rebuildModelOptions(){ MODEL_OPTS=[...new Set([...OLLAMA_MODELS,...EXTRA_MODELS])].filter(Boolean).map(String).sort(); }
+function setOllamaModels(list){ if(!Array.isArray(list)) return; OLLAMA_MODELS=list; modelOptsAt=Date.now(); rebuildModelOptions(); }
+function addModelOptions(list){ (list||[]).forEach(m=>{ if(m) EXTRA_MODELS.add(String(m)); }); rebuildModelOptions(); }
+async function refreshModelOptions(){  // picks up models pulled or deleted since the last look
   if(Date.now()-modelOptsAt<10000) return; modelOptsAt=Date.now();
-  try{ const d=await (await fetch(API()+"/system")).json(); if(Array.isArray(d.ollama_models)) setModelOptions(d.ollama_models,true); }catch(e){}
+  try{ setOllamaModels((await (await fetch(API()+"/system")).json()).ollama_models); }catch(e){}
 }
 const mm=document.createElement("div"); mm.className="model-menu"; mm.hidden=true; mm.setAttribute("role","listbox"); document.body.appendChild(mm);
 function mmTerm(inp){ const v=inp.value; return (inp.dataset.models==="multi"?v.slice(v.lastIndexOf(",")+1):v).trim().toLowerCase(); }
@@ -2552,7 +2553,7 @@ addEventListener("resize",()=>{ if(mmInput) mmRender(); });
 async function loadSystemReco(){
   try{ SYS=await (await fetch(API()+"/system")).json(); }catch(e){ return; }
   applyOllamaUrl(SYS.ollama_url);
-  setModelOptions(SYS.ollama_models,true);
+  setOllamaModels(SYS.ollama_models);
   const rec=SYS&&SYS.recommended_model, el=$("gReco");
   if(!rec){ if(el) el.hidden=true; return; }
   // Once per browser, upgrade roles still on the tiny default to the recommended model, so a
@@ -3041,7 +3042,7 @@ async function preflightTarget(spec,btn){
   const label=btn?btn.textContent:""; if(btn){ btn.disabled=true; btn.textContent="Testing…"; }
   try{
     const d=await (await fetch(API()+"/preflight",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({target:spec})})).json();
-    if(Array.isArray(d.models)&&d.models.length) setModelOptions(d.models,true);
+    if(Array.isArray(d.models)&&d.models.length) addModelOptions(d.models);
     if(d.ok) toast(`Target reachable · ${d.latency_ms} ms${d.models&&d.models.length?` · ${d.models.length} models`:""}`,"ok"); else { const info=classifyError(d.error||""); toast(`${info.title}. ${info.hint}`,"err"); }
   }catch(e){ toast("Preflight request failed.","err"); }
   finally{ if(btn){ btn.disabled=false; btn.textContent=label; } }
@@ -3064,7 +3065,7 @@ async function pullModel(base_url, name, btn){
         if(o.status==="success"||/success/i.test(o.status||"")) done=true;
       } }
     if(err){ toast("Pull failed: "+err,"err"); }
-    else { toast(`Pulled ${esc(name)}.`,"ok"); setModelOptions([name],true); }
+    else { toast(`Pulled ${esc(name)}.`,"ok"); if(!OLLAMA_MODELS.includes(name)) setOllamaModels([...OLLAMA_MODELS,name]); }
   }catch(e){ toast("Pull failed: "+(e&&e.message||e),"err"); }
   finally{ if(btn){ btn.disabled=false; btn.textContent=label; } }
 }
