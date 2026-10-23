@@ -21,6 +21,12 @@
 
 <br />
 
+<a href="https://www.youtube.com/watch?v=YgaoXCUdI6g"><img alt="Watch the Myrtia demo video on YouTube" src="https://img.youtube.com/vi/YgaoXCUdI6g/maxresdefault.jpg" width="90%" /></a>
+
+**▶ [Watch the demo video](https://www.youtube.com/watch?v=YgaoXCUdI6g)**
+
+<br />
+
 <img alt="Myrtia demo — build a council, watch it deliberate live, and read the ASR analytics" src="docs/myrtia-demo.gif" width="90%" />
 
 </div>
