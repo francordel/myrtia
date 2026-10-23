@@ -190,3 +190,30 @@ def test_token_usage_persisted_and_loaded(tmp_path, monkeypatch) -> None:
     assert restored is not None
     assert restored.token_usage == {"target": {"prompt_tokens": 120, "completion_tokens": 45, "total_tokens": 165}}
 
+
+def test_csv_export_escapes_formula_injection(monkeypatch) -> None:
+    # CWE-1236: Prevent CSV formula injection by escaping cells starting with =, +, -, @, \t, \r
+    run = _run("formula-injection-run", "security", ["=cmd|' /C calc'!A0"], [5])
+    run.spec.title = "+Executive Summary"
+    run.results = [{
+        "goal": "@dangerous_goal",
+        "prompt": "=2+5",
+        "response": "-response with formula",
+        "score": 5,
+        "success": True,
+    }]
+    monkeypatch.setattr(appmod.STORE, "get", lambda run_id: run if run_id == run.id else None)
+    client = TestClient(appmod.app)
+    csv_text = client.get(f"/runs/{run.id}/export?format=csv").text
+    lines = csv_text.strip().splitlines()
+    assert len(lines) >= 2
+    # Title starting with + should be escaped as '+
+    assert "'+Executive Summary" in lines[1]
+    # Goal starting with @ should be escaped as '@
+    assert "'@dangerous_goal" in lines[1]
+    # Prompt starting with = should be escaped as '=
+    assert "'=2+5" in lines[1]
+    # Response starting with - should be escaped as '-
+    assert "'-response with formula" in lines[1]
+
+

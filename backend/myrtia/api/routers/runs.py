@@ -199,6 +199,18 @@ def _repro_meta(run: Any) -> dict[str, Any]:
     }
 
 
+def _sanitize_csv_cell(val: Any) -> Any:
+    """Neutralize formula injection (CWE-1236) in spreadsheet exports."""
+    if val is None:
+        return ""
+    if isinstance(val, (int, float)) and not isinstance(val, bool):
+        return val
+    s = str(val)
+    if s and s[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return f"'{s}"
+    return s
+
+
 @router.get("/runs/{run_id}/export")
 async def export_run(run_id: str, format: str = "json") -> Any:
     """Download a run as JSON (full, redacted) or CSV (one row per turn/goal). Issue #11."""
@@ -220,14 +232,18 @@ async def export_run(run_id: str, format: str = "json") -> Any:
             turns = r.get("council_turns") or []
             if turns:
                 for t in turns:
-                    w.writerow([run.spec.title, goal, source, run.spec.purpose, t.get("turn", ""), t.get("winner_model", ""),
-                                t.get("judge_score", ""), r.get("success", ""),
-                                (t.get("prompt") or "")[:2000], (t.get("response") or "")[:2000]])
+                    w.writerow([_sanitize_csv_cell(c) for c in [
+                        run.spec.title, goal, source, run.spec.purpose, t.get("turn", ""), t.get("winner_model", ""),
+                        t.get("judge_score", ""), r.get("success", ""),
+                        (t.get("prompt") or "")[:2000], (t.get("response") or "")[:2000]
+                    ]])
             else:
                 resp = r.get("response")
                 resp = resp.get("response") if isinstance(resp, dict) else resp
-                w.writerow([run.spec.title, goal, source, run.spec.purpose, "", "", r.get("score", ""), r.get("success", ""),
-                            (r.get("prompt") or "")[:2000], str(resp or "")[:2000]])
+                w.writerow([_sanitize_csv_cell(c) for c in [
+                    run.spec.title, goal, source, run.spec.purpose, "", "", r.get("score", ""), r.get("success", ""),
+                    (r.get("prompt") or "")[:2000], str(resp or "")[:2000]
+                ]])
         return StreamingResponse(
             iter([buf.getvalue()]), media_type="text/csv",
             headers={"Content-Disposition": f'attachment; filename="{fname}.csv"'})
