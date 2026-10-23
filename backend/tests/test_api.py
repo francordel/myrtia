@@ -154,6 +154,31 @@ def test_approval_sync_wait_path() -> None:
     assert ap.wait(timeout=1) is True
 
 
+def test_cancel_while_waiting_approval_releases_run() -> None:
+    from myrtia.orchestrator.runner import Orchestrator
+    from myrtia.store.runs import Run, RunSpec, RunStatus
+
+    async def scenario() -> None:
+        orch = Orchestrator()
+        run = Run(id="hitl-cancel-run", spec=RunSpec(attack_id="direct", attack_config={"require_approval": True}))
+        task = asyncio.create_task(orch.run(run))
+        for _ in range(50):
+            if run.status == RunStatus.WAITING_APPROVAL:
+                break
+            await asyncio.sleep(0.01)
+        assert run.status == RunStatus.WAITING_APPROVAL
+
+        cancelled = orch.cancel(run.id)
+        assert cancelled is True
+
+        await asyncio.wait_for(task, timeout=2.0)
+        assert run.status == RunStatus.CANCELLED
+        assert run.error == "cancelled while pending approval"
+
+    asyncio.run(scenario())
+
+
+
 # ── defense shields (pure) (#35) ─────────────────────────────────────────────
 def test_perplexity_filter_blocks_base64() -> None:
     from myrtia.defenses import _BY_ID
