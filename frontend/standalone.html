@@ -465,6 +465,11 @@
   #toasts { position:fixed; left:50%; transform:translateX(-50%); bottom:24px; z-index:70; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
   .toast { pointer-events:auto; background:var(--surface-3); color:var(--text-1); border:1px solid var(--border); border-left:3px solid var(--info); border-radius:var(--r-md); padding:10px 14px; font-size:13px; box-shadow:var(--shadow-2); max-width:420px; display:flex; gap:10px; align-items:center; }
   .toast.err { border-left-color:var(--danger); } .toast.ok { border-left-color:var(--success); }
+  .model-menu { position:fixed; z-index:80; max-height:240px; overflow:auto; background:var(--surface-1); border:1px solid var(--border-strong); border-radius:var(--r-md); box-shadow:var(--shadow-2); padding:4px; }
+  .model-menu[hidden] { display:none; }
+  .model-menu .mm-h { padding:4px 8px 2px; color:var(--text-3); font-size:11px; letter-spacing:.4px; text-transform:uppercase; }
+  .model-menu button { display:block; width:100%; min-height:0; text-align:left; border:0; border-radius:var(--r-sm); background:transparent; color:var(--text-1); padding:6px 8px; font:13px "Roboto Mono",monospace; cursor:pointer; }
+  .model-menu button.on, .model-menu button:hover { background:var(--accent-bg); }
   .toast button { border:0; background:transparent; color:var(--accent); cursor:pointer; padding:0; font-weight:500; }
 
   /* ---- chat ---- */
@@ -774,7 +779,7 @@
       <div class="gbottom">
         <div class="gb-field g-experiment-title"><label for="gTitle">Experiment title <span class="hint">(optional · shown in History and reports)</span></label><input id="gTitle" maxlength="120" placeholder="e.g. Baseline · Qwen 2.5 · selected goals"></div>
         <div class="gb-field grow"><label for="gGoal">Goal <span class="hint">(used when nothing is selected below)</span></label><input id="gGoal" placeholder="What the attackers try to make the target do…"></div>
-        <div class="gb-field"><label for="gTmodel">Target model</label><input id="gTmodel" value="gemma3:1b" list="modelsDL"></div>
+        <div class="gb-field"><label for="gTmodel">Target model</label><input id="gTmodel" value="gemma3:1b" data-models="1" autocomplete="off"></div>
         <div class="gb-field"><label for="gTurl">Target base URL</label><input id="gTurl" value="http://127.0.0.1:11434/v1"></div>
         <button type="button" class="btn-outline" id="gPreflight" title="Test the target connection">Test</button>
         <button class="btn-outline" id="gCompare" title="Run the same attack with and without the shields, then show the ASR drop">Compare shields</button>
@@ -824,7 +829,7 @@
         <div id="evalFields">
           <label for="adv_judge_model">Evaluator model &amp; endpoint</label>
           <div class="row2">
-            <input id="adv_judge_model" placeholder="qwen2.5:3b" />
+            <input id="adv_judge_model" placeholder="qwen2.5:3b" data-models="1" autocomplete="off" />
             <input id="adv_judge_endpoint" placeholder="http://127.0.0.1:11434/v1" />
           </div>
           <div class="desc" id="evalHint">A model judging itself is less reliable. Use an independent model when possible.</div>
@@ -845,7 +850,7 @@
         <option value="agent">HTTP agent (custom endpoint)</option>
       </select>
       <label for="tmodel">Target model</label>
-      <input id="tmodel" value="gemma3:1b" list="modelsDL" />
+      <input id="tmodel" value="gemma3:1b" data-models="1" autocomplete="off" />
       <label for="turl">Base URL <span class="hint">(OpenAI-compatible)</span></label>
       <input id="turl" value="http://127.0.0.1:11434/v1" />
       <label for="apikey">API key <span class="hint">(frontier targets · stored only in this browser)</span></label>
@@ -883,7 +888,7 @@
     <div class="fsec" id="councilSec" style="display:none">
       <div class="fsec-h"><span class="n">4</span><h2>Council</h2><span class="caption" id="sum4"></span></div>
       <label for="cmodels">Council models <span class="hint">(comma-separated attacking agents)</span></label>
-      <input id="cmodels" value="qwen2.5:3b" />
+      <input id="cmodels" value="qwen2.5:3b" data-models="multi" autocomplete="off" />
       <details class="adv" id="agentwrap"><summary>Build your own agentic attack · agents &amp; prompts</summary>
         <label for="csysPrompt">Council system prompt <span class="hint">(attacker persona shared by the agents; blank = built-in red-team prompt)</span></label>
         <textarea id="csysPrompt" rows="5" placeholder="e.g. You are a proficient red-teaming engineer probing a target LLM for safety failures. Craft prompts that…"></textarea>
@@ -1091,7 +1096,6 @@
     </div>
   </div>
   <div id="gtool" class="gdialog" hidden></div>
-  <datalist id="modelsDL"></datalist>
 </main>
 
 <dialog id="infoModal" aria-labelledby="infoTitle">
@@ -1129,7 +1133,7 @@
       <option value="ollama">Ollama</option><option value="openai">OpenAI</option>
       <option value="anthropic">Anthropic</option><option value="custom">Custom</option>
     </select></div>
-    <div><label for="chatModel">Model</label><input id="chatModel" placeholder="model" /></div>
+    <div><label for="chatModel">Model</label><input id="chatModel" placeholder="model" data-models="1" autocomplete="off" /></div>
     <div class="full"><label for="chatKey">API key <span class="hint">(saved in this browser)</span></label><input id="chatKey" type="password" placeholder="API key" autocomplete="off" /></div>
   </div>
   <div id="chatMsgs" class="chat-msgs"></div>
@@ -1239,6 +1243,7 @@ function onAttackChange(){
       const inp=document.createElement("input"); inp.id="adv_"+f.key;
       const lab=document.createElement("label"); lab.textContent=f.label; lab.htmlFor=inp.id; adv.appendChild(lab);
       if(f.type==="number") inp.type="number";
+      if(/_model$/.test(f.key)){ inp.dataset.models="1"; inp.autocomplete="off"; }
       if(f.default!==undefined&&f.default!=="") inp.value=f.default;
       inp.placeholder=f.help||""; adv.appendChild(inp);
       if(f.help){ const h=document.createElement("div"); h.className="desc"; h.textContent=f.help; adv.appendChild(h); }
@@ -2496,9 +2501,58 @@ function applyOllamaUrl(u){
   const je=$("adv_judge_endpoint"); if(je) je.placeholder=u;
   if(GS.target&&GS.target.url===DEF_OLLAMA){ GS.target.url=u; gsSave(); try{ renderGraph(); }catch(e){} }
 }
+// --- Model picker: every model field suggests the models pulled into Ollama and stays
+// free text for anything else. Fields opt in with data-models ("multi" = the
+// comma-separated council roster, where a pick appends instead of replacing). ---
+let MODEL_OPTS=[], modelOptsAt=0, mmInput=null, mmIdx=-1, mmTyped=false;  // filter only once the user types
+function setModelOptions(list,merge){
+  const s=new Set(merge?MODEL_OPTS:[]); (list||[]).forEach(m=>{ if(m) s.add(String(m)); });
+  MODEL_OPTS=[...s].sort(); modelOptsAt=Date.now();
+}
+async function refreshModelOptions(){  // picks up models pulled since the page loaded
+  if(Date.now()-modelOptsAt<10000) return; modelOptsAt=Date.now();
+  try{ const d=await (await fetch(API()+"/system")).json(); if(Array.isArray(d.ollama_models)) setModelOptions(d.ollama_models,true); }catch(e){}
+}
+const mm=document.createElement("div"); mm.className="model-menu"; mm.hidden=true; mm.setAttribute("role","listbox"); document.body.appendChild(mm);
+function mmTerm(inp){ const v=inp.value; return (inp.dataset.models==="multi"?v.slice(v.lastIndexOf(",")+1):v).trim().toLowerCase(); }
+function mmRender(){
+  if(!mmInput) return;
+  const t=mmTyped?mmTerm(mmInput):"", exact=MODEL_OPTS.some(m=>m.toLowerCase()===t);
+  const items=(!t||exact)?MODEL_OPTS:MODEL_OPTS.filter(m=>m.toLowerCase().includes(t));
+  if(!items.length){ mm.hidden=true; return; }
+  mmIdx=Math.min(mmIdx,items.length-1);
+  mm.innerHTML=`<div class="mm-h">Pulled in Ollama</div>`+items.map((m,i)=>`<button type="button" role="option" data-v="${esc(m)}"${i===mmIdx?' class="on"':""}>${esc(m)}</button>`).join("");
+  const r=mmInput.getBoundingClientRect(); mm.style.left=r.left+"px"; mm.style.width=Math.max(r.width,180)+"px"; mm.hidden=false;
+  const below=innerHeight-r.bottom; mm.style.top=(below<mm.offsetHeight+8&&r.top>below?Math.max(8,r.top-mm.offsetHeight-4):r.bottom+4)+"px";
+}
+function mmClose(){ mm.hidden=true; mmInput=null; mmIdx=-1; mmTyped=false; }
+function mmPick(v){
+  const inp=mmInput; if(!inp) return;
+  if(inp.dataset.models==="multi"){ const head=inp.value.slice(0,inp.value.lastIndexOf(",")+1); inp.value=head?head.trimEnd()+" "+v:v; }
+  else inp.value=v;
+  inp.dispatchEvent(new Event("input",{bubbles:true})); inp.dispatchEvent(new Event("change",{bubbles:true})); mmClose();
+}
+document.addEventListener("focusin",e=>{
+  const inp=e.target;
+  if(!(inp instanceof HTMLInputElement)||!inp.dataset.models||(inp.id==="chatModel"&&$("chatProvider").value!=="ollama")){ if(!mm.contains(inp)) mmClose(); return; }
+  mmInput=inp; mmIdx=-1; mmTyped=false; mmRender(); refreshModelOptions().then(()=>{ if(mmInput===inp) mmRender(); });
+});
+document.addEventListener("input",e=>{ if(e.target===mmInput&&e.isTrusted){ mmIdx=-1; mmTyped=true; mmRender(); } });
+document.addEventListener("keydown",e=>{
+  if(!mmInput||mm.hidden||e.target!==mmInput) return;
+  const btns=[...mm.querySelectorAll("button")];
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){ e.preventDefault(); mmIdx=(mmIdx+(e.key==="ArrowDown"?1:-1)+btns.length)%btns.length; mmRender(); const on=mm.querySelector("button.on"); if(on) on.scrollIntoView({block:"nearest"}); }
+  else if(e.key==="Enter"&&mmIdx>=0){ e.preventDefault(); mmPick(btns[mmIdx].dataset.v); }
+  else if(e.key==="Escape"){ e.stopPropagation(); mmClose(); }
+},true);
+mm.addEventListener("mousedown",e=>{ const b=e.target.closest("button"); if(b){ e.preventDefault(); mmPick(b.dataset.v); } });
+document.addEventListener("mousedown",e=>{ if(mmInput&&e.target!==mmInput&&!mm.contains(e.target)) mmClose(); });
+addEventListener("scroll",()=>{ if(mmInput) mmRender(); },true);
+addEventListener("resize",()=>{ if(mmInput) mmRender(); });
 async function loadSystemReco(){
   try{ SYS=await (await fetch(API()+"/system")).json(); }catch(e){ return; }
   applyOllamaUrl(SYS.ollama_url);
+  setModelOptions(SYS.ollama_models,true);
   const rec=SYS&&SYS.recommended_model, el=$("gReco");
   if(!rec){ if(el) el.hidden=true; return; }
   // Once per browser, upgrade roles still on the tiny default to the recommended model, so a
@@ -2987,7 +3041,7 @@ async function preflightTarget(spec,btn){
   const label=btn?btn.textContent:""; if(btn){ btn.disabled=true; btn.textContent="Testing…"; }
   try{
     const d=await (await fetch(API()+"/preflight",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({target:spec})})).json();
-    if(Array.isArray(d.models)&&d.models.length){ $("modelsDL").innerHTML=d.models.map(m=>`<option value="${esc(m)}"></option>`).join(""); }
+    if(Array.isArray(d.models)&&d.models.length) setModelOptions(d.models,true);
     if(d.ok) toast(`Target reachable · ${d.latency_ms} ms${d.models&&d.models.length?` · ${d.models.length} models`:""}`,"ok"); else { const info=classifyError(d.error||""); toast(`${info.title}. ${info.hint}`,"err"); }
   }catch(e){ toast("Preflight request failed.","err"); }
   finally{ if(btn){ btn.disabled=false; btn.textContent=label; } }
@@ -3010,7 +3064,7 @@ async function pullModel(base_url, name, btn){
         if(o.status==="success"||/success/i.test(o.status||"")) done=true;
       } }
     if(err){ toast("Pull failed: "+err,"err"); }
-    else { toast(`Pulled ${esc(name)}.`,"ok"); if($("modelsDL")&&![...$("modelsDL").options].some(o=>o.value===name)){ const opt=document.createElement("option"); opt.value=name; $("modelsDL").appendChild(opt); } }
+    else { toast(`Pulled ${esc(name)}.`,"ok"); setModelOptions([name],true); }
   }catch(e){ toast("Pull failed: "+(e&&e.message||e),"err"); }
   finally{ if(btn){ btn.disabled=false; btn.textContent=label; } }
 }
@@ -3145,7 +3199,7 @@ function openGDialog(kind,id,nodeEl){
   const d=$("gdialog"); let html="", title="";
   const f=(lab,idn,val,ph,type="input")=> type==="textarea"
     ? `<label for="${idn}">${lab}</label><textarea id="${idn}" placeholder="${esc(ph)}">${esc(val||"")}</textarea>`
-    : `<label for="${idn}">${lab}</label><input id="${idn}" value="${esc(val||"")}" placeholder="${esc(ph)}">`;
+    : `<label for="${idn}">${lab}</label><input id="${idn}"${idn==="gd_model"?' data-models="1" autocomplete="off"':""} value="${esc(val||"")}" placeholder="${esc(ph)}">`;
   if(kind==="attacker"){
     const a=GS.attackers.find(x=>x.id===id); const i=GS.attackers.indexOf(a); title=`Attacker ${i+1}`;
     const pr=a.priming||{mode:"single",context:""};
