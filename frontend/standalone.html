@@ -1686,7 +1686,7 @@ function evNode(ev){
   else if(ev.type==="agent.message"){ head=`<span class="role">Agent</span> <span class="who mono">${esc(p.model||"?")}</span>${p.round!==undefined?` <span class="who">· round ${esc(p.round+1)}</span>`:""}`; body=p.message||""; }
   else if(ev.type==="defense.applied"){ head=`<span class="role">🛡 Shield</span> <span class="who">${esc(p.name||p.id||"?")}</span> <span class="who">· ${esc(p.stage||"input")}</span>`; body=p.note||""; }
   else if(ev.type==="defense.blocked"){ d.classList.add("blocked"); head=`<span class="role">🛡 Blocked</span> <span class="who">${esc(p.name||p.id||"?")}</span> <span class="who">· ${esc(p.stage||"input")}</span>`; body=p.reason||"blocked"; }
-  else if(ev.type==="target.responded"){ head=`<span class="role">Target</span>${p.model?` <span class="who mono">${esc(p.model)}</span>`:""}${p.variant?` <span class="who">· ${esc(p.variant)}</span>`:""}`; body=(p.target_response||"").slice(0,1200); }
+  else if(ev.type==="target.responded"){ head=`<span class="role">Target</span>${p.model?` <span class="who mono">${esc(p.model)}</span>`:""}${p.variant?` <span class="who">· ${esc(p.variant)}</span>`:""}`; body=p.target_response||""; }
   else if(ev.type==="judge.scored"){ const sc=(p.score>=0&&p.score<=5)?p.score:null; head=`<span class="role">Judge</span>${p.model?` <span class="who mono">${esc(p.model)}</span>`:""} ${sc!==null?scorePill(sc):'<span class="who">no score</span>'}`; body=p.rationale||""; }
   else { body=typeof p==="string"?p:JSON.stringify(p); logish=true; }
   d.innerHTML=`<div class="lab">${head}</div>`+(body?`<div class="body${mono?" mono":""}${logish?" log":""}"></div>`:"");
