@@ -290,8 +290,10 @@ public descriptions.)
 
 ### The name and the mark
 
-The name Myrtia (Latin *Myrtea*, "place of myrtles"; the Roman goddess *Murcia*) is the ancient
-root of the name of the city of Murcia. It is a tool from the *huerta*, aimed at the frontier.
+The name Myrtia comes from *Myrtea* / *Murtea*, "place of myrtles" — the most accepted
+explanation for the name of the city of Murcia, and the same myrtle that Varro saw behind the
+Roman *Venus Murcia*. When the city was founded as *Madinat Mursiya* in 825, Arabic adapted
+that older name into the one we use today. It is a tool from the *huerta*, aimed at the frontier.
 
 The logo carries the same idea in one image. It is a **myrtle leaf** — the plant that gives
 Myrtia and Murcia their name, our roots in the *huerta* — and, at the same time, a **shield
@@ -306,7 +308,8 @@ Red teaming in Myrtia is organised around four components:
 
 - **Attacks** define how adversarial prompts are generated: a deliberating council, a crescendo
   escalation, or a direct baseline.
-- **Targets** are the model or agent under test, reached through any OpenAI-compatible endpoint.
+- **Targets** are the model or agent under test, reached over HTTP: OpenAI-compatible endpoints
+  (Ollama, vLLM, OpenAI, any proxy), Anthropic's native Messages API, or any JSON agent endpoint.
 - **Judge and scoring** grade each response on a graded 0–5 scale and aggregate it into ASR.
 - **Behaviours** are what you attack: a built-in HarmBench library selectable by theme, or your
   own goals.
