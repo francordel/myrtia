@@ -103,6 +103,7 @@
   .shot .frame .bar i { width:10px; height:10px; border-radius:50%; background:var(--border-strong); }
   .shot .frame .bar span { margin-left:10px; font-size:12px; color:var(--text-3); }
   .shot img, .shot video { display:block; width:100%; height:auto; }
+  .shot iframe { display:block; width:100%; aspect-ratio:16/9; border:0; }
   .shot figcaption { text-align:center; color:var(--text-3); font-size:13px; margin-top:12px; }
   .builder-showcase .shot { padding:0; margin-top:32px; }
 
@@ -225,6 +226,10 @@
       <a class="btn ghost" href="https://github.com/francordel/myrtia">GitHub</a>
     </div>
   </div>
+  <figure class="shot" id="video">
+    <div class="frame"><iframe src="https://www.youtube-nocookie.com/embed/YgaoXCUdI6g" title="Myrtia: open-source multi-agent red teaming for LLMs and AI agents (ICSE 2027 Demo)" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+    <figcaption>Demo video: a walkthrough of Myrtia, from composing an attack to the audit report.</figcaption>
+  </figure>
   <figure class="shot">
     <div class="frame"><div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8000 · Myrtia console</span></div><video src="assets/myrtia-demo.mp4" autoplay muted loop playsinline preload="metadata" poster="assets/shot-agentic-builder.png" aria-label="Myrtia demo: build a council, watch it deliberate live turn by turn, and read the ASR analytics"></video></div>
     <figcaption>From council to verdict: build the council, watch it deliberate live, and read the ASR analytics.</figcaption>
@@ -447,7 +452,7 @@ open http://127.0.0.1:8000/</pre>
     <div>
       <span class="chip">Apache-2.0</span>
       &nbsp; Built on <a href="https://github.com/IBM/ares">ARES</a>, inspired by <a href="https://github.com/NVIDIA/garak">garak</a>.
-      &nbsp; Myrtia, from <em>Myrtea</em>, the ancient root of Murcia.
+      &nbsp; Myrtia, from <em>Myrtea</em>, &ldquo;place of myrtles&rdquo; &mdash; one of the leading hypotheses for the name of Murcia.
     </div>
   </div>
 </footer>
