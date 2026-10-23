@@ -1900,6 +1900,7 @@ $("launch").onclick = async () => {
   const body={ attack_id:$("attack").value, title:$("runTitle").value.trim(), attack_config, theme:$("themeTag").value.trim(), target, goals,
     purpose:$("runPurpose").value, goal_datasets:SELECTED.size?[...SELECTED.values()].map(v=>v.dataset):["manual"] };
   if(stdDefenses.length) body.defenses=stdDefenses.map(d=>({id:d.id,config:d.config||{}}));
+  if(!confirmModelsPresent(body)) return;
   $("launch").disabled=true; $("launch").textContent="Launching…";
   try {
     const res=await fetch(API()+"/runs",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
@@ -3327,9 +3328,39 @@ $("glibwrap").addEventListener("toggle",()=>{ if($("glibwrap").open) loadGraphBe
 $("glibdataset").onchange=()=>{ $("glibtheme").value=""; loadGraphBehaviors(); };
 $("glibAll").onclick=()=>selectShown(GRAPH_SELECTED,$("gliblist")._shown,updGraphLibCount,loadGraphBehaviors);
 $("glibNone").onclick=()=>{ GRAPH_SELECTED.clear(); updGraphLibCount(); loadGraphBehaviors(); };
+// Preflight: which models a run needs on the LOCAL Ollama but that aren't pulled yet.
+// Only checks roles pointed at the default local endpoint (a custom endpoint can't be
+// listed from here), and only when we actually have a model list — so it never false-blocks.
+function _isDefaultOllama(ep){
+  const e=(ep||"").trim().replace(/\/+$/,"");
+  return ["","http://127.0.0.1:11434/v1","http://127.0.0.1:11434","http://localhost:11434/v1",
+          "http://localhost:11434","http://0.0.0.0:11434/v1","http://0.0.0.0:11434"].includes(e);
+}
+function missingLocalModels(body){
+  if(!OLLAMA_MODELS.length) return [];
+  const have=new Set(OLLAMA_MODELS.map(String)), need=[], ac=body.attack_config||{};
+  (ac.agents||[]).forEach(a=>need.push([a.model,a.endpoint]));
+  if(Array.isArray(ac.council_models)) ac.council_models.forEach(m=>need.push([m,ac.ollama_endpoint||ac.aux_endpoint]));
+  if(ac.evaluator&&ac.evaluator.model) need.push([ac.evaluator.model,ac.evaluator.endpoint]);
+  ["judge_model","chairman_model","helper_model","attacker_model"].forEach(k=>{ if(ac[k]) need.push([ac[k],ac.aux_endpoint||ac.judge_endpoint]); });
+  if(body.target&&body.target.model) need.push([body.target.model,body.target.base_url]);
+  const miss=new Set();
+  need.forEach(([m,ep])=>{ m=(m||"").trim(); if(m&&m!=="off"&&_isDefaultOllama(ep)&&!have.has(m)) miss.add(m); });
+  return [...miss].sort();
+}
+// Returns true if the launch should proceed (models present, or the user chose to go anyway).
+function confirmModelsPresent(body){
+  const miss=missingLocalModels(body);
+  if(!miss.length) return true;
+  const pulls=miss.map(m=>"  ollama pull "+m).join("\n");
+  return confirm(`These models aren't in your local Ollama yet:\n  ${miss.join(", ")}\n\n`+
+    `Download them first, then launch:\n${pulls}\n\nLaunch anyway?`);
+}
+
 async function launchGraph(){
   const body=graphBody(true);
   if(!body){ toast("Type a goal for the attack.","err"); $("gGoal").focus(); return; }
+  if(!confirmModelsPresent(body)) return;
   if(!GRAPH_SELECTED.size && ($("glibq").value||$("glibtheme").value||$("glibdataset").value) && !confirm("No library goals are selected. Launch the manual goal instead?")) return;
   $("gLaunch").disabled=true; $("gLaunch").textContent="Launching…";
   try{

@@ -7,6 +7,10 @@
 # demo models: qwen2.5:3b as attacker/judge (~2 GB) and gemma3:1b as target (~0.8 GB).
 # Override with MYRTIA_MODEL / MYRTIA_TARGET, and the host port with MYRTIA_PORT=8010.
 #
+# Give Docker at least 8 GB of RAM: the demo council loads three models at once, and
+# with less the model process is killed ("llama-server ... signal: killed"). Docker
+# Desktop defaults to 8 GB; with Colima run `colima start --cpu 4 --memory 8`.
+#
 # Myrtia shares Ollama's network namespace, so its default endpoint
 # (http://127.0.0.1:11434/v1) reaches the bundled Ollama unchanged.
 # On macOS, Docker can't use the Apple GPU: models run on the CPU. For speed on a

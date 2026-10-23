@@ -88,6 +88,12 @@ uv run myrtia
 A prebuilt image (`ghcr.io/francordel/myrtia`) runs the console. Pick how it reaches the
 models:
 
+> **Give Docker at least 8 GB of RAM.** In option A the models run inside the VM, and the
+> demo council loads three at once; with less memory the model process is killed
+> (`llama-server ... signal: killed`). Docker Desktop defaults to 8 GB. With
+> [Colima](https://github.com/abiosoft/colima): `colima start --cpu 4 --memory 8`. Option B
+> (your own Ollama) avoids this, since the models run outside the container.
+
 **A · All in one — Myrtia + its own Ollama.** Nothing else needed: the compose file starts an
 Ollama container and pulls the two demo models into it (`qwen2.5:3b` attacks and judges,
 `gemma3:1b` is the target). Myrtia talks to that bundled Ollama only, so models you pulled
@@ -461,6 +467,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full design.
 | `requires a different Python: 3.9.6 not in '>=3.11'` | The venv was made with an old system Python (macOS ships 3.9) | Use `uv run myrtia` from the repo root — uv downloads Python 3.12 itself. With pip, create the venv with Python 3.11+. |
 | `Connection refused` / `WinError 10061` / `Max retries exceeded` on port **11434** | Ollama isn't running or isn't reachable | Start Ollama (`brew services start ollama` on macOS, the tray app on Windows, `ollama serve` otherwise) and confirm **http://127.0.0.1:11434/** says *"Ollama is running"*. If it runs elsewhere, set the base URL in the UI. |
 | Myrtia in Docker can't reach your Ollama (`Connection refused` on `host.docker.internal:11434` or `127.0.0.1:11434`) | Inside a container, `127.0.0.1` is the container itself | Use `compose.own-ollama.yaml` (Docker option B), which points Myrtia at this machine for you; for a server, set `MYRTIA_OLLAMA_URL=http://<server>:11434`. On Linux, start Ollama with `OLLAMA_HOST=0.0.0.0`. |
+| In Docker, `llama-server process has terminated: signal: killed` (HTTP 500) | The Docker VM ran out of memory and the kernel killed the model | Give Docker ≥8 GB. Docker Desktop: Settings → Resources. Colima: `colima stop && colima start --cpu 4 --memory 8`. Or use Docker option B so models run outside the container. |
 | `could not connect to ollama server` right after installing | The Ollama service is still starting | Wait a few seconds and re-run `ollama pull qwen2.5:3b && ollama pull gemma3:1b`. |
 | `model "…" not found` / `try pulling it first` | The model isn't downloaded | `ollama pull <model>` (e.g. `ollama pull qwen2.5:3b`), then check `ollama list`. |
 | PowerShell: *"running scripts is disabled on this system"* | Script execution policy blocks the venv activation | `Set-ExecutionPolicy -Scope Process RemoteSigned`, then re-run `.\.venv\Scripts\Activate.ps1`. |
