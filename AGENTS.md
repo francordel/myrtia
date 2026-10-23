@@ -240,8 +240,9 @@ Al recibir una tarea de revisión o desarrollo en este repositorio:
 * **Ubicación**: [runs.py:214-228](file:///c:/Users/marie/Documents/GitHub/myrtia/backend/myrtia/api/routers/runs.py#L214-L228) (`/runs/{id}/export?format=csv`).
 * **Diagnóstico**: Las columnas `prompt`, `response`, `goal` y `title` se exportan directamente sin sanear a través de `csv.writer`. En campañas de red teaming, prompts adversariales o respuestas generadas por modelos atacados pueden comenzar por caracteres de control de fórmulas (`=`, `+`, `-`, `@`, `\t`, `\r`). Al abrir el archivo CSV exportado en Microsoft Excel o LibreOffice, la aplicación interpreta el contenido como fórmulas de hoja de cálculo o comandos Dynamic Data Exchange (DDE).
 * **Comportamiento Esperado**: Todo campo de texto que comience por caracteres disparadores de fórmulas debe sanearse o prefijarse con apóstrofe (`'`) para neutralizar la ejecución de fórmulas en hojas de cálculo.
-* **Estado**: Identificado y Documentado (Issue Creado).
+* **Estado**: Resuelto y Verificado.
 * **GitHub Issue**: [#73](https://github.com/francordel/myrtia/issues/73)
+* **Pull Request**: [#78](https://github.com/francordel/myrtia/pull/78)
 
 ### 🐞 `[BUG-BE-03]` Deadlock y congelación de ejecuciones canceladas en estado `WAITING_APPROVAL`
 * **Rol Asignado**: 🏛️ `[ARCHITECT]` / 🔍 `[STRICT CODE REVIEWER & QA]`
@@ -249,8 +250,9 @@ Al recibir una tarea de revisión o desarrollo en este repositorio:
 * **Ubicación**: [runner.py:40-46](file:///c:/Users/marie/Documents/GitHub/myrtia/backend/myrtia/orchestrator/runner.py#L40-L46) y [approvals.py:66-77](file:///c:/Users/marie/Documents/GitHub/myrtia/backend/myrtia/hitl/approvals.py#L66-L77).
 * **Diagnóstico**: Cuando una ejecución requiere aprobación humana (`require_approval: true`), el orchestrator queda esperando `await approval.future`. Si el operador envía `POST /runs/{id}/cancel`, el método `Orchestrator.cancel()` activa `cancel_ev.set()`, pero no cancela ni rechaza `approval.future`. La corrutina queda en espera infinita del futuro de aprobación, la ejecución permanece atrapada en `waiting_approval` y nunca transiciona a `cancelled`.
 * **Comportamiento Esperado**: Al cancelar un ataque, `cancel()` debe resolver con `False` o cancelar cualquier aprobación pendiente asociada al `run_id`, liberando la tarea inmediatamente.
-* **Estado**: Identificado y Documentado (Issue Creado).
+* **Estado**: Resuelto y Verificado.
 * **GitHub Issue**: [#74](https://github.com/francordel/myrtia/issues/74)
+* **Pull Request**: [#79](https://github.com/francordel/myrtia/pull/79)
 
 ### 🐞 `[BUG-BE-04]` Pérdida de persistencia de `token_usage` en SQLite entre reinicios del backend
 * **Rol Asignado**: 🏛️ `[ARCHITECT]` / 🔍 `[STRICT CODE REVIEWER & QA]`
@@ -258,8 +260,9 @@ Al recibir una tarea de revisión o desarrollo en este repositorio:
 * **Ubicación**: [runs.py:183-187](file:///c:/Users/marie/Documents/GitHub/myrtia/backend/myrtia/store/runs.py#L183-L187) y [db.py:64-92](file:///c:/Users/marie/Documents/GitHub/myrtia/backend/myrtia/store/db.py#L64-L92).
 * **Diagnóstico**: Al completarse un run, el runner calcula el consumo de tokens del target en `run.token_usage = {"target": dict(tk)}`. Sin embargo, `RunStore.persist()` invoca `db.save_run()` omitiendo este diccionario. La tabla de SQLite no posee columna para `token_usage` y `load_runs()` nunca lo recupera, por lo que las estadísticas de tokens desaparecen de History tras reiniciar el proceso backend.
 * **Comportamiento Esperado**: `token_usage` debe persistirse en SQLite y rehidratarse en `load_runs()` para conservar la métrica de consumo tras reinicios.
-* **Estado**: Identificado y Documentado (Issue Creado).
+* **Estado**: Resuelto y Verificado.
 * **GitHub Issue**: [#75](https://github.com/francordel/myrtia/issues/75)
+* **Pull Request**: [#80](https://github.com/francordel/myrtia/pull/80)
 
 ### 💡 `[UX-FE-05]` Supresión de mensajes de error de la API en el frontend (`toast genérico HTTP status`)
 * **Rol Asignado**: 🎨 `[FRONTEND & UX SPECIALIST]`
@@ -267,8 +270,9 @@ Al recibir una tarea de revisión o desarrollo en este repositorio:
 * **Ubicación**: [standalone.html:1881](file:///c:/Users/marie/Documents/GitHub/myrtia/frontend/standalone.html#L1881) y [standalone.html:3231](file:///c:/Users/marie/Documents/GitHub/myrtia/frontend/standalone.html#L3231).
 * **Diagnóstico**: Al rechazar el backend un lanzamiento (`POST /runs` con código 400 o 422), el frontend sólo lee `res.status` y muestra `toast("Launch failed (HTTP " + res.status + ").", "err")`, descartando el cuerpo JSON. Si el servidor rechazó la llamada por bloqueo SSRF de metadatos de nube, por modelo ausente o por error de validación, el operador no recibe información útil.
 * **Comportamiento Esperado**: Extraer y mostrar `data.error` o `data.detail` devuelto por FastAPI en el mensaje toast para guiar al usuario.
-* **Estado**: Identificado y Documentado (Issue Creado).
+* **Estado**: Resuelto y Verificado.
 * **GitHub Issue**: [#76](https://github.com/francordel/myrtia/issues/76)
+* **Pull Request**: [#81](https://github.com/francordel/myrtia/pull/81)
 
 ### 🛡️ `[SEC-FE-01]` Instalación desatendida de paquetes (`pip install`) sin confirmación en el asistente de chat
 * **Rol Asignado**: 🛡️ `[SECURITY & THREAT AUDITOR]` / 🎨 `[FRONTEND & UX SPECIALIST]`
@@ -276,8 +280,10 @@ Al recibir una tarea de revisión o desarrollo en este repositorio:
 * **Ubicación**: [standalone.html:2373-2375](file:///c:/Users/marie/Documents/GitHub/myrtia/frontend/standalone.html#L2373-L2375).
 * **Diagnóstico**: A diferencia de la pestaña Plugins donde la instalación de toolkits exige confirmación nativa mediante `confirm(...)`, si el modelo del asistente emite un bloque ` ```myrtia-install { "pack": "..." }``` `, el frontend dispara de forma invisible e inmediata `installPackById(pid)` realizando un `pip install` en el servidor backend sin confirmación alguna del usuario.
 * **Comportamiento Esperado**: Cualquier sugerencia de instalación procedente del LLM debe mostrar un botón interactivo para que el operador confirme expresamente antes de invocar la API de instalación.
-* **Estado**: Identificado y Documentado (Issue Creado).
+* **Estado**: Resuelto y Verificado.
 * **GitHub Issue**: [#77](https://github.com/francordel/myrtia/issues/77)
+* **Pull Request**: [#82](https://github.com/francordel/myrtia/pull/82)
+
 
 
 
