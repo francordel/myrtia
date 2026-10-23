@@ -2395,9 +2395,29 @@ async function chatSend(){
       if(applied){ shown=(shown?shown+"\n\n":"")+"✓ "+applied; if(applied.indexOf("Configured")===0||applied.indexOf("Set the")===0) toast(applied,"ok"); }
       pending.innerHTML=md(shown||"Done."); $("chatMsgs").scrollTop=$("chatMsgs").scrollHeight;
       curChat.messages.push({role:"assistant",content:shown}); chatsSave();
-      if(im){ let pid=null; try{ pid=JSON.parse(im[1].trim()).pack; }catch(e){}
-        if(pid){ const note=await installPackById(pid);
-          if(note){ const chip=chatAdd("bot","✓ "+note); curChat.messages.push({role:"assistant",content:"✓ "+note}); chatsSave(); } } }
+      if(im){
+        let pid=null; try{ pid=JSON.parse(im[1].trim()).pack; }catch(e){}
+        const known=["ares-council","garak","pyrit"];
+        if(pid && known.includes(pid)){
+          const act=document.createElement("div"); act.className="chat-act";
+          act.style.cssText="margin-top:10px;padding:10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2);display:flex;align-items:center;justify-content:space-between;gap:8px;";
+          const lbl=document.createElement("span"); lbl.textContent=`Assistant suggests installing pack “${pid}”.`; lbl.style.fontSize="13px";
+          const btn=document.createElement("button"); btn.className="btn-outline"; btn.style.cssText="width:auto;padding:4px 12px;font-size:12.5px;"; btn.textContent=`Install ${pid}`;
+          btn.onclick=async ()=>{
+            btn.disabled=true; btn.textContent="Installing…";
+            const note=await installPackById(pid);
+            if(note && note.indexOf("installed")===0){
+              act.innerHTML=`<span style="font-size:13px;color:var(--success)">✓ ${esc(note)}</span>`;
+              curChat.messages.push({role:"assistant",content:"✓ "+note}); chatsSave();
+            } else {
+              btn.disabled=false; btn.textContent=`Install ${pid}`;
+              if(note) toast(note,"info");
+            }
+          };
+          act.appendChild(lbl); act.appendChild(btn);
+          pending.appendChild(act);
+        }
+      }
     }
     else if(pending.className.indexOf("err")<0){ pending.textContent="(empty reply)"; }
   }catch(e){
