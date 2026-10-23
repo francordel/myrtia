@@ -73,6 +73,11 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 winget install Ollama.Ollama
 ```
 
+> **`winget` not recognised?** It ships with *App Installer*, which Windows 11 and recent
+> Windows 10 have but some machines don't. Either install **App Installer** from the Microsoft
+> Store (then reopen PowerShell), or skip `winget` altogether and run the Ollama installer from
+> [ollama.com/download](https://ollama.com/download) — the `uv` line above needs no winget.
+
 Close and reopen PowerShell so `uv` and `ollama` are on your PATH, then:
 
 ```powershell
@@ -470,6 +475,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full design.
 | In Docker, `llama-server process has terminated: signal: killed` (HTTP 500) | The Docker VM ran out of memory and the kernel killed the model | Give Docker ≥8 GB. Docker Desktop: Settings → Resources. Colima: `colima stop && colima start --cpu 4 --memory 8`. Or use Docker option B so models run outside the container. |
 | `could not connect to ollama server` right after installing | The Ollama service is still starting | Wait a few seconds and re-run `ollama pull qwen2.5:7b && ollama pull gemma3:1b`. |
 | `model "…" not found` / `try pulling it first` | The model isn't downloaded | `ollama pull <model>` (e.g. `ollama pull qwen2.5:3b`), then check `ollama list`. |
+| Windows: `winget` is not recognized as a command | *App Installer*, which provides `winget`, is missing | Install **App Installer** from the Microsoft Store and reopen PowerShell, or install Ollama from [ollama.com/download](https://ollama.com/download) instead — `winget` is only used to fetch Ollama. |
 | PowerShell: *"running scripts is disabled on this system"* | Script execution policy blocks the venv activation | `Set-ExecutionPolicy -Scope Process RemoteSigned`, then re-run `.\.venv\Scripts\Activate.ps1`. |
 | `401 Unauthorized` / `invalid api key` | Missing or wrong API key for a frontier provider | Set the key for that provider in the UI (per-run), or use a local Ollama endpoint. |
 | `[Errno 48] Address already in use` / port **8000** busy | Another process holds the port (e.g. a vLLM server) | Run on another port: `uv run myrtia --port 8010`. |
