@@ -41,6 +41,9 @@ class Orchestrator:
         if ev is None:
             return False
         ev.set()
+        # Release any pending approvals for this run (issue #74)
+        for ap in APPROVALS.pending(run_id):
+            APPROVALS.resolve(ap.id, False)
         return True
 
     async def run(self, run: Run) -> None:
@@ -91,7 +94,7 @@ class Orchestrator:
                                  "approval_id": approval.id, "approved": bool(approved)})
             if not approved:
                 run.status = RunStatus.CANCELLED
-                run.error = "denied at the approval gate"
+                run.error = "cancelled while pending approval" if cancel_ev.is_set() else "denied at the approval gate"
                 self._store.persist(run)
                 emit(EventType.RUN_FINISHED, {"status": run.status.value, "error": run.error})
                 self._cancels.pop(run.id, None)
