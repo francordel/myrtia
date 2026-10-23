@@ -66,17 +66,18 @@ uv run myrtia
 <details>
 <summary><b>Windows · PowerShell</b></summary>
 
+> **First check you have `winget`:** run `winget --version`. It comes with *App Installer*,
+> which Windows 11 and recent Windows 10 have, but some machines don't. If the command isn't
+> recognised, install **App Installer** from the Microsoft Store and reopen PowerShell — or
+> skip `winget` and run the Ollama installer from
+> [ollama.com/download](https://ollama.com/download) instead, since it's only used to fetch Ollama.
+
 Install uv and Ollama:
 
 ```powershell
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 winget install Ollama.Ollama
 ```
-
-> **`winget` not recognised?** It ships with *App Installer*, which Windows 11 and recent
-> Windows 10 have but some machines don't. Either install **App Installer** from the Microsoft
-> Store (then reopen PowerShell), or skip `winget` altogether and run the Ollama installer from
-> [ollama.com/download](https://ollama.com/download) — the `uv` line above needs no winget.
 
 Close and reopen PowerShell so `uv` and `ollama` are on your PATH, then:
 
