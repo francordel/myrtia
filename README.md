@@ -289,22 +289,25 @@ attack as it unfolds and reason about *why* a target held or failed, not just wh
 
 ### How Myrtia compares
 
-| Capability | garak / PyRIT / ARES | promptfoo | Mindgard / Splx / Repello | Myrtia |
-|---|:--:|:--:|:--:|:--:|
-| Open source | Yes | Yes | No (SaaS) | Yes (Apache-2.0) |
-| Self-hosted | Yes | Yes | No | Yes |
-| Attack-strategy library | Yes | Yes | Yes | Yes (ARES + garak probes) |
-| **Multi-agent attacker _council_** (propose → cross-critique → Borda vote → chairman synthesis) | — | — | — | **Yes** |
-| **Visual agentic-attack builder** (compose attacker nodes, topology and per-node model/persona on a canvas) | — | — | — | **Yes** |
-| Live deliberation UI (per-turn proposals, votes, judge rationale) | — | Dashboards | Dashboards | Yes |
-| Chainable defense pipelines (shields) | — | — | Partial | Planned |
+| Capability | garak / PyRIT / ARES | promptfoo | Agentic Radar (Splx) | Mindgard / Splx platform / Repello | Myrtia |
+|---|:--:|:--:|:--:|:--:|:--:|
+| Open source | Yes | Yes | Yes (Apache-2.0) | No (SaaS) | Yes (Apache-2.0) |
+| Self-hosted | Yes | Yes | Yes (runtime tests call OpenAI) | No | Yes |
+| Attack-strategy library | Yes | Yes | Partial (4 fixed single-turn probes) | Yes | Yes (ARES + garak probes) |
+| **Multi-agent attacker _council_** (propose → cross-critique → Borda vote → chairman synthesis) | — | — | — | — | **Yes** |
+| **Visual agentic-attack builder** (compose attacker nodes, topology and per-node model/persona on a canvas) | — | — | — | — | **Yes** |
+| Live deliberation UI (per-turn proposals, votes, judge rationale) | — | Dashboards | — (static HTML report) | Dashboards | Yes |
+| Chainable defense pipelines (shields) | — | — | — | Partial | Planned |
 
 The two bold rows are Myrtia's differentiators: no other tool pairs a deliberating **council with
 Borda voting and chairman synthesis** with an **open-source visual canvas for composing the
 agentic attack**. The closest neighbours sit in only one dimension — multi-agent attacker research
 (e.g. X-Teaming, a fixed Planner/Attacker/Verifier pipeline) or generic visual agent builders
-(LangGraph Studio, Langflow), which are not red-teaming tools. (SaaS platforms compared from their
-public descriptions.)
+(LangGraph Studio, Langflow), which are not red-teaming tools. Agentic Radar is complementary
+rather than a competitor: it statically scans agent source code (LangGraph, CrewAI, n8n, OpenAI
+Agents, AutoGen) to map workflows, tools and MCP servers to OWASP risks, which Myrtia does not do;
+its runtime test sends a fixed set of probes to OpenAI Agents only. (SaaS platforms compared from
+their public descriptions.)
 
 ### The name and the mark
 
