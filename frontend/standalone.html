@@ -1897,7 +1897,12 @@ $("launch").onclick = async () => {
   $("launch").disabled=true; $("launch").textContent="Launching…";
   try {
     const res=await fetch(API()+"/runs",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
-    if(!res.ok){ toast(`Launch failed (HTTP ${res.status}).`,"err"); return; }
+    if(!res.ok){
+      let errDetail="";
+      try{ const errJson=await res.json(); errDetail=errJson.error||errJson.detail||""; }catch(_){}
+      toast(errDetail?`Launch failed: ${errDetail}`:`Launch failed (HTTP ${res.status}).`,"err");
+      return;
+    }
     const data=await res.json();
     if(!data.run_id){ toast("Launch failed: the backend returned no run id.","err"); return; }
     const spec={attack_id:body.attack_id, title:body.title, attack_config:{council_models:attack_config.council_models}, target:{model:target.model}, goals, theme:body.theme,purpose:body.purpose,goal_datasets:body.goal_datasets};
@@ -3253,7 +3258,12 @@ async function launchGraph(){
   $("gLaunch").disabled=true; $("gLaunch").textContent="Launching…";
   try{
     const res=await fetch(API()+"/runs",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
-    if(!res.ok){ toast(`Launch failed (HTTP ${res.status}).`,"err"); return; }
+    if(!res.ok){
+      let errDetail="";
+      try{ const errJson=await res.json(); errDetail=errJson.error||errJson.detail||""; }catch(_){}
+      toast(errDetail?`Launch failed: ${errDetail}`:`Launch failed (HTTP ${res.status}).`,"err");
+      return;
+    }
     const data=await res.json();
     if(!data.run_id){ toast("Launch failed: the backend returned no run id.","err"); return; }
     const spec={attack_id:"graph", title:body.title, attack_config:{council_models:body.attack_config.agents.filter(a=>a.role==="attacker").map(a=>a.model),contextual_mode:body.attack_config.contextual_mode,accumulate_target_context:body.attack_config.accumulate_target_context}, target:{model:body.target.model}, goals:body.goals,purpose:body.purpose,goal_datasets:body.goal_datasets};
