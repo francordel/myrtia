@@ -63,7 +63,7 @@ def main() -> None:
         print(
             f"\n  ! Ollama isn't reachable at {OLLAMA_URL}/ — the default local\n"
             "    models won't answer. Start it (macOS: `brew services start ollama`) and\n"
-            "    pull the demo models: `ollama pull qwen2.5:3b && ollama pull gemma3:1b`.\n"
+            "    pull the demo models: `ollama pull qwen2.5:7b && ollama pull gemma3:1b`.\n"
             "    Remote endpoints still work.\n"
         )
 

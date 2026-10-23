@@ -46,6 +46,10 @@ services:
     image: ghcr.io/francordel/myrtia:latest
     build: .
     network_mode: "service:ollama"
+    # In Docker the models run on CPU in the VM, so default every role to the small
+    # qwen2.5:3b (native installs default to qwen2.5:7b instead).
+    environment:
+      MYRTIA_DEFAULT_MODEL: ${MYRTIA_MODEL:-qwen2.5:3b}
     volumes:
       - myrtia-data:/data
     depends_on:

@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import FileResponse, JSONResponse
 
 from myrtia.api.deps import EstimateRequest, require_token
-from myrtia.endpoints import OLLAMA_URL, OLLAMA_V1
+from myrtia.endpoints import DEFAULT_MODEL as _DEFAULT_MODEL, OLLAMA_URL, OLLAMA_V1
 from myrtia.plugins.base import REGISTRY as PLUGINS
 
 router = APIRouter()
@@ -123,10 +123,16 @@ async def system_info() -> dict[str, Any]:
         budget = ram * 0.6                  # CPU-only: works but slower
     else:
         budget = 0.0
-    recommended = next((m for m, need in _MODEL_LADDER if budget >= need), "qwen2.5:3b")
-    # The UI only switches roles to the recommendation once it's pulled — otherwise a
-    # first run would fail with "model not found" (the quick start pulls qwen2.5:3b).
     installed = _ollama_models()
+    budget_rec = next((m for m, need in _MODEL_LADDER if budget >= need), "qwen2.5:3b")
+    # Recommend the largest model that is BOTH within the memory budget AND already
+    # pulled, so a fresh console starts on a capable installed model (7b on most
+    # machines — the quick start pulls qwen2.5:7b) without a "model not found". If
+    # nothing within budget is installed, fall back to the budget pick for the hint.
+    recommended = budget_rec
+    if installed:
+        recommended = next(
+            (m for m, need in _MODEL_LADDER if budget >= need and m in installed), budget_rec)
     return {
         "os": osname, "arch": arch, "apple_silicon": apple_silicon,
         "cpu_count": os.cpu_count(), "ram_gb": ram,
@@ -134,6 +140,7 @@ async def system_info() -> dict[str, Any]:
         "model_budget_gb": round(budget, 1) if budget else None,
         "ollama_url": OLLAMA_V1,
         "recommended_model": recommended,
+        "default_model": _DEFAULT_MODEL,
         "ollama_models": installed,
         "recommended_installed": bool(installed) and recommended in installed,
         "note": (None if ram else "Could not read system memory; defaulting conservatively."),

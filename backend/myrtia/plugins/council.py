@@ -102,7 +102,8 @@ def _build(config: dict[str, Any], target_connector: Any, *, crescendo: bool):
     # hardware: council_models = [qwen3:14b, gemma3:12b, deepseek-r1:32b], chairman_model
     # = qwen2.5:32b, judge_model = gpt-oss:120b. See README "Recommended models per role".
     cfg.setdefault("type", "ares_council.CouncilAttack")
-    council = [_prefix(m) for m in (cfg.get("council_models") or ["qwen2.5:3b"])]
+    from myrtia.endpoints import DEFAULT_MODEL
+    council = [_prefix(m) for m in (cfg.get("council_models") or [DEFAULT_MODEL])]
     cfg["council_models"] = council
     first = council[0]
     cfg["chairman_model"] = _prefix(cfg.get("chairman_model", first))
