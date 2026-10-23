@@ -4,17 +4,17 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Myrtia · Adversarial security for AI</title>
-<meta name="description" content="Myrtia is an open-source, agent-native red-teaming console for LLMs and AI agents: thirteen attack strategies, a deliberating council of attacker models, a behaviour library, live deliberation, ASR analytics and a built-in assistant." />
+<meta name="description" content="Myrtia is an open-source, agent-native red-teaming console for LLMs and AI agents: nineteen attack strategies, a deliberating council of attacker models, a behaviour library, live deliberation, ASR analytics and a built-in assistant." />
 <link rel="canonical" href="https://myrtia.ai/" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Myrtia" />
 <meta property="og:url" content="https://myrtia.ai/" />
 <meta property="og:title" content="Myrtia · Adversarial security for AI" />
-<meta property="og:description" content="Open-source, agent-native red teaming for LLMs and AI agents: a deliberating council of attacker models, 13 attack strategies, live deliberation and ASR analytics." />
+<meta property="og:description" content="Open-source, agent-native red teaming for LLMs and AI agents: a deliberating council of attacker models, 19 attack strategies, live deliberation and ASR analytics." />
 <meta property="og:image" content="https://myrtia.ai/assets/shot-run.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Myrtia · Adversarial security for AI" />
-<meta name="twitter:description" content="Open-source, agent-native red teaming for LLMs and AI agents: a deliberating council, 13 attack strategies, live deliberation and ASR analytics." />
+<meta name="twitter:description" content="Open-source, agent-native red teaming for LLMs and AI agents: a deliberating council, 19 attack strategies, live deliberation and ASR analytics." />
 <meta name="twitter:image" content="https://myrtia.ai/assets/shot-run.png" />
 <link rel="icon" type="image/png" href="assets/mark-light.png" media="(prefers-color-scheme: light)" />
 <link rel="icon" type="image/png" href="assets/mark-dark.png" media="(prefers-color-scheme: dark)" />
@@ -219,7 +219,7 @@
       <div class="hero-tag">Adversarial security for AI</div>
     </div>
     <h1>Red team the frontier.<br>Watch every move.</h1>
-    <p class="sub">Open-source red teaming for LLMs and AI agents: thirteen attack strategies, a deliberating council of attacker models, and every turn streamed live.</p>
+    <p class="sub">Open-source red teaming for LLMs and AI agents: nineteen attack strategies, a deliberating council of attacker models, and every turn streamed live.</p>
     <div class="cta">
       <a class="btn primary" href="#start">Get started</a>
       <a class="btn ghost" href="https://github.com/francordel/myrtia">GitHub</a>
@@ -262,8 +262,10 @@
       <tr><th>Attack</th><th>What it does</th><th>Scoring</th></tr>
       <tr><td><span class="mono">council</span></td><td class="c">N attacker models propose, cross-critique and vote (Borda Top-1); a chairman synthesises the winner and strikes the target. Each turn is a fresh prompt.</td><td><span class="pill judge">in-loop judge 0-5</span></td></tr>
       <tr><td><span class="mono">council-crescendo</span></td><td class="c">The same pipeline, but the target conversation accumulates across turns: gradual escalation.</td><td><span class="pill judge">in-loop judge 0-5</span></td></tr>
+      <tr><td><span class="mono">graph</span></td><td class="c">The engine behind the visual builder: any attacker topology (council, chairman, parallel, debate, pipeline, mixture-of-agents or a free-form graph), each agent with its own model and persona.</td><td><span class="pill judge">in-loop judge 0-5</span></td></tr>
       <tr><td><span class="mono">direct</span></td><td class="c">Sends each behaviour verbatim. The baseline every other attack is compared against.</td><td><span class="pill raw">raw response</span></td></tr>
       <tr><td><span class="mono">crescendo</span></td><td class="c">A single helper model escalates a multi-turn conversation toward the goal, exploiting conversational consistency; a judge grades each answer (ARES/PyRIT). Fully black-box.</td><td><span class="pill judge">in-loop judge 0-5</span></td></tr>
+      <tr><td><span class="mono">contextual-jailbreak</span></td><td class="c">Primes the target with a short fabricated conversation of prior compliant answers, then asks the goal so the target continues the pattern.</td><td><span class="pill judge">in-loop judge 0-5</span></td></tr>
       <tr><td><span class="mono">human-jailbreak</span></td><td class="c">Wraps each behaviour in known persona templates (DAN, AIM, dev-mode and others).</td><td><span class="pill raw">raw response</span></td></tr>
       <tr><td><span class="mono">obfuscation</span></td><td class="c">Encodes the behaviour with the full ARES/garak encoding family (base64, base32, base16, hex, ascii85, uu, ROT13, Morse, NATO, Braille, binary, leetspeak, reversed) and asks the target to decode and comply.</td><td><span class="pill raw">raw response</span></td></tr>
       <tr><td><span class="mono">payload-splitting</span></td><td class="c">Splits the behaviour into innocuous fragments the target is asked to reassemble.</td><td><span class="pill raw">raw response</span></td></tr>
@@ -273,6 +275,10 @@
       <tr><td><span class="mono">smuggling</span></td><td class="c">Disguises the request as a hypothetical fiction or a function to evaluate, so intent detection misses it (garak).</td><td><span class="pill raw">raw response</span></td></tr>
       <tr><td><span class="mono">phrasing</span></td><td class="c">Temporal reframing of the request into past or future tense to distance it from a direct instruction (garak).</td><td><span class="pill raw">raw response</span></td></tr>
       <tr><td><span class="mono">latent-injection</span></td><td class="c">Hides the request inside a benign document (CV, report, translation) the model is asked to process: indirect prompt injection (garak).</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">dan</span></td><td class="c">Persona prompts (DAN 11, AIM, developer mode) that tell the model to drop its guidelines (garak).</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">encoding</span></td><td class="c">Sends the request Base64-, ROT13- or hex-encoded and asks the model to decode and comply (garak).</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">continuation</span></td><td class="c">Starts a compliant answer (&ldquo;Sure, here is&rdquo;, &ldquo;Step 1:&rdquo;) and asks the model to keep writing (garak).</td><td><span class="pill raw">raw response</span></td></tr>
+      <tr><td><span class="mono">leakreplay</span></td><td class="c">Cloze and verbatim-recall framings that ask the model to reproduce memorised content (garak).</td><td><span class="pill raw">raw response</span></td></tr>
     </table>
     <div class="split">
       <div class="panel">
