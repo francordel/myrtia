@@ -185,10 +185,12 @@ point at its own endpoint — a local Ollama, or a GPU server elsewhere on your 
   (not Myrtia's) and serve on a port other than Myrtia's 8000:
   ```bash
   uv tool install vllm
-  vllm serve Qwen/Qwen3-14B --host 0.0.0.0 --port 8001
+  vllm serve Qwen/Qwen2.5-14B-Instruct --host 0.0.0.0 --port 8001 --max-model-len 16384
   ```
   Then set the role's endpoint to `http://<gpu-host>:8001/v1` and the model to
-  `Qwen/Qwen3-14B` — vLLM uses Hugging Face model IDs, not Ollama tags.
+  `Qwen/Qwen2.5-14B-Instruct` — vLLM uses Hugging Face model IDs, not Ollama tags.
+  *Tip*: For multi-turn attacks (Crescendo or Council with multiple turns), accumulated conversation history
+  exceeds small context windows; always serve with `--max-model-len 16384` (or at least `8192`) to prevent HTTP 400 context length errors.
 - One Linux GPU box can serve the models for every Mac and Windows laptop on the network.
 </details>
 
