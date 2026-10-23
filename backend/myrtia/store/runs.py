@@ -169,7 +169,8 @@ class RunStore:
                 error = error or "interrupted (backend restarted)"
             run = Run(id=row["id"], spec=spec, status=status,
                       created_at=row.get("created_at") or time.time(),
-                      error=error, results=row.get("results") or [])
+                      error=error, results=row.get("results") or [],
+                      token_usage=row.get("token_usage") or {})
             self._runs[run.id] = run
             if status == RunStatus.FAILED and error and "interrupted" in error:
                 self.persist(run)  # write back the corrected status
@@ -184,7 +185,7 @@ class RunStore:
         """Write a run through to SQLite (spec redacted; results have no secrets)."""
         from myrtia.store import db
         spec = _redact_secrets(deepcopy(run.spec.__dict__))
-        db.save_run(run.id, run.created_at, run.status.value, run.error, spec, run.results)
+        db.save_run(run.id, run.created_at, run.status.value, run.error, spec, run.results, run.token_usage)
 
     def get(self, run_id: str) -> Run | None:
         return self._runs.get(run_id)

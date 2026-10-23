@@ -164,3 +164,29 @@ def test_experiment_title_created_and_restored(monkeypatch) -> None:
     store = RunStore()
     assert store.get("titled").spec.title == "My experiment"
     assert store.get("legacy").spec.title == ""
+
+
+def test_token_usage_persisted_and_loaded(tmp_path, monkeypatch) -> None:
+    from pathlib import Path
+    from myrtia.store import db
+    from myrtia.store.runs import Run, RunSpec, RunStore
+
+    db_file = tmp_path / "test_runs.sqlite"
+    monkeypatch.setattr(db, "_PATH", Path(db_file))
+    monkeypatch.setattr(db, "_conn", None)
+
+    run = Run(
+        id="tk-run",
+        spec=RunSpec(attack_id="direct", title="Tokens Test"),
+        token_usage={"target": {"prompt_tokens": 120, "completion_tokens": 45, "total_tokens": 165}},
+    )
+    store = RunStore()
+    store.persist(run)
+
+    # Reset conn and reload to simulate restart
+    monkeypatch.setattr(db, "_conn", None)
+    loaded_store = RunStore()
+    restored = loaded_store.get("tk-run")
+    assert restored is not None
+    assert restored.token_usage == {"target": {"prompt_tokens": 120, "completion_tokens": 45, "total_tokens": 165}}
+

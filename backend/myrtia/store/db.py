@@ -50,8 +50,11 @@ def _connect() -> sqlite3.Connection:
         _conn.execute(
             "CREATE TABLE IF NOT EXISTS runs("
             "id TEXT PRIMARY KEY, created_at REAL, status TEXT, error TEXT,"
-            "spec_json TEXT, results_json TEXT)"
+            "spec_json TEXT, results_json TEXT, token_usage_json TEXT)"
         )
+        cols = {r[1] for r in _conn.execute("PRAGMA table_info(runs)").fetchall()}
+        if "token_usage_json" not in cols:
+            _conn.execute("ALTER TABLE runs ADD COLUMN token_usage_json TEXT")
         _conn.execute(
             "CREATE TABLE IF NOT EXISTS events("
             "run_id TEXT, seq INTEGER, ts REAL, type TEXT, payload_json TEXT, id TEXT,"
@@ -62,32 +65,43 @@ def _connect() -> sqlite3.Connection:
 
 
 def save_run(run_id: str, created_at: float, status: str, error: str | None,
-             spec: dict[str, Any], results: list[dict]) -> None:
+             spec: dict[str, Any], results: list[dict],
+             token_usage: dict[str, Any] | None = None) -> None:
     with _lock:
         c = _connect()
         c.execute(
-            "INSERT INTO runs(id,created_at,status,error,spec_json,results_json) "
-            "VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET "
+            "INSERT INTO runs(id,created_at,status,error,spec_json,results_json,token_usage_json) "
+            "VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET "
             "status=excluded.status, error=excluded.error, "
-            "spec_json=excluded.spec_json, results_json=excluded.results_json",
+            "spec_json=excluded.spec_json, results_json=excluded.results_json, "
+            "token_usage_json=excluded.token_usage_json",
             (run_id, created_at, status, error,
-             _dumps(spec), _dumps(results)),
+             _dumps(spec), _dumps(results), _dumps(token_usage or {})),
         )
         c.commit()
 
 
 def load_runs() -> list[dict[str, Any]]:
     c = _connect()
-    rows = c.execute(
+    cols = {r[1] for r in c.execute("PRAGMA table_info(runs)").fetchall()}
+    has_tk = "token_usage_json" in cols
+    query = (
+        "SELECT id,created_at,status,error,spec_json,results_json,token_usage_json FROM runs "
+        "ORDER BY created_at"
+        if has_tk else
         "SELECT id,created_at,status,error,spec_json,results_json FROM runs "
         "ORDER BY created_at"
-    ).fetchall()
+    )
+    rows = c.execute(query).fetchall()
     out = []
-    for rid, created, status, error, spec_json, results_json in rows:
+    for r in rows:
+        rid, created, status, error, spec_json, results_json = r[:6]
+        tk_json = r[6] if has_tk and len(r) > 6 else None
         out.append({
             "id": rid, "created_at": created, "status": status, "error": error,
             "spec": json.loads(spec_json) if spec_json else {},
             "results": json.loads(results_json) if results_json else [],
+            "token_usage": json.loads(tk_json) if tk_json else {},
         })
     return out
 
