@@ -121,6 +121,53 @@ def test_repro_meta_shape() -> None:
     assert "myrtia_version" in meta and "exported_at_utc" in meta
 
 
+# ── per-run export, CSV shape (#11) ──────────────────────────────────────────
+RUN_CSV_COLUMNS = ["experiment_title", "goal", "dataset", "purpose", "turn",
+                   "winner_model", "score", "success", "prompt", "response"]
+
+
+def test_run_export_csv_columns(monkeypatch) -> None:
+    """Locks the documented per-run CSV columns: one row per council turn, and one row
+    for a single-turn result. Reordering or renaming a column must fail this test."""
+    import csv
+    import io
+
+    from myrtia.store.runs import Run, RunSpec, RunStatus
+    run = Run(id="csvexport0001", status=RunStatus.SUCCEEDED,
+              spec=RunSpec(attack_id="council", title="CSV export", purpose="security",
+                           goals=["g1", "g2"], goal_datasets=["toy", ""]),
+              results=[
+                  {"goal": "g1", "success": True, "council_turns": [
+                      {"turn": 1, "winner_model": "m1", "judge_score": 2, "prompt": "p1", "response": "r1"},
+                      {"turn": 2, "winner_model": "m2", "judge_score": 5, "prompt": "p2", "response": "r2"},
+                  ]},
+                  {"goal": "g2", "success": False, "score": 1, "prompt": "p3", "response": {"response": "r3"}},
+              ])
+    monkeypatch.setattr(appmod.STORE, "get", lambda run_id: run if run_id == run.id else None)
+
+    r = client.get(f"/runs/{run.id}/export?format=csv")
+
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/csv")
+    disposition = r.headers["content-disposition"]
+    assert disposition.startswith("attachment;") and disposition.rstrip('"').endswith(".csv")
+    rows = list(csv.reader(io.StringIO(r.text)))
+    assert rows[0] == RUN_CSV_COLUMNS
+    assert len(rows) == 4  # header + two council turns + one single-turn result
+    assert all(len(row) == len(RUN_CSV_COLUMNS) for row in rows[1:])
+    by_col = [dict(zip(RUN_CSV_COLUMNS, row)) for row in rows[1:]]
+    assert by_col[1] == {"experiment_title": "CSV export", "goal": "g1", "dataset": "toy",
+                         "purpose": "security", "turn": "2", "winner_model": "m2", "score": "5",
+                         "success": "True", "prompt": "p2", "response": "r2"}
+    assert by_col[2]["goal"] == "g2" and by_col[2]["turn"] == "" and by_col[2]["score"] == "1"
+    assert by_col[2]["response"] == "r3"  # a {"response": ...} dict is unwrapped
+
+
+def test_run_export_unknown_run_is_404() -> None:
+    r = client.get("/runs/does-not-exist/export?format=csv")
+    assert r.status_code == 404
+
+
 # ── HITL approval registry, correct-loop resolution (#12/#17) ────────────────
 def test_approval_resolve_on_awaiting_loop() -> None:
     from myrtia.hitl.approvals import ApprovalRegistry
