@@ -292,7 +292,7 @@ Al recibir una tarea de revisión o desarrollo en este repositorio:
 * **Comportamiento Esperado**: Actualizar el paso de verificación en el workflow a `test "$n" -ge 21` y actualizar la documentación del README y los tests de API en consonancia.
 * **Estado**: Resuelto y Verificado.
 * **GitHub Issue**: [#83](https://github.com/francordel/myrtia/issues/83)
-* **Pull Request**: TBD
+* **Pull Request**: [#84](https://github.com/francordel/myrtia/pull/84)
 
 
 
