@@ -39,6 +39,7 @@ def test_plugins_include_graph() -> None:
     items = body.get("plugins", body) if isinstance(body, dict) else body
     ids = {p["id"] for p in items}
     assert "graph" in ids and "direct" in ids
+    assert "garak" in ids and "pyrit" in ids
 
 
 # ── run creation validation / DoS caps (#27) ────────────────────────────────
