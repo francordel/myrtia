@@ -172,8 +172,16 @@ council pair comes from the bundled ARES Council pack, installed by default.
 
 The garak-style probes are Myrtia's own implementations — they don't need the garak library.
 The full **NVIDIA garak** and **Microsoft PyRIT** libraries are optional packs under
-**Plugins** in the console; their adapters are in progress, so they add no attacks yet. See
-[Attacks](#attacks) for what each one does.
+**Plugins** in the console. Installing a pack adds a real attack driven by that library,
+graded 0-5 by the same evaluator as everything else, so it feeds the ASR dashboard and audit
+reports:
+
+- **garak** — run any garak probe's real prompt corpus (`encoding.InjectBase64`,
+  `dan.DanInTheWildFull`, `latentinjection.LatentInjectionResume`, …) against the target.
+- **pyrit** — transform each behaviour with a real PyRIT prompt converter (Base64, ROT13,
+  leetspeak, Morse, Atbash, Caesar, binary, NATO, emoji) and ask the target to decode and comply.
+
+See [Attacks](#attacks) for what each one does.
 
 ### Where your models run
 
