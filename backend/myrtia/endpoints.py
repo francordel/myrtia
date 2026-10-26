@@ -18,3 +18,9 @@ if _url.endswith("/v1"):
 
 OLLAMA_URL = _url                 # native Ollama API root (/api/tags, /api/pull)
 OLLAMA_V1 = _url + "/v1"          # OpenAI-compatible endpoint used by every role
+
+# Default local model for every role (attacker, chairman, judge) when the user
+# doesn't choose one. Native installs pull qwen2.5:7b (a capable attacker most
+# machines can run); the Docker compose sets this to qwen2.5:3b, since models run
+# on CPU in the VM there. Targets default to gemma3:1b separately.
+DEFAULT_MODEL = (os.getenv("MYRTIA_DEFAULT_MODEL") or "qwen2.5:7b").strip()

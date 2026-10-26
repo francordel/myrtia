@@ -21,10 +21,10 @@ import json
 import re
 from typing import Any
 
-from myrtia.endpoints import OLLAMA_V1
+from myrtia.endpoints import DEFAULT_MODEL, OLLAMA_V1
 
 DEFAULT_JUDGE_ENDPOINT = OLLAMA_V1
-DEFAULT_JUDGE_MODEL = "qwen2.5:3b"
+DEFAULT_JUDGE_MODEL = DEFAULT_MODEL
 # Sentinels that turn the evaluator OFF (raw response only, no scoring).
 _JUDGE_OFF = {"off", "none", "no", "-"}
 

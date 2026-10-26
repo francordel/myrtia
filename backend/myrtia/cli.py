@@ -28,6 +28,17 @@ def _ollama_running() -> bool:
         return False
 
 
+def _total_ram_gb() -> float | None:
+    """Total RAM visible to this process (the Docker VM's, inside a container)."""
+    try:
+        import os
+        if hasattr(os, "sysconf") and "SC_PHYS_PAGES" in os.sysconf_names:
+            return round(os.sysconf("SC_PHYS_PAGES") * os.sysconf("SC_PAGE_SIZE") / 1e9, 1)
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
 def _open_when_ready(url: str, timeout: float = 300) -> None:
     """Open the browser once the server answers — startup (ARES, PyTorch) can take a while."""
     deadline = time.monotonic() + timeout
@@ -52,8 +63,17 @@ def main() -> None:
         print(
             f"\n  ! Ollama isn't reachable at {OLLAMA_URL}/ — the default local\n"
             "    models won't answer. Start it (macOS: `brew services start ollama`) and\n"
-            "    pull the demo models: `ollama pull qwen2.5:3b && ollama pull gemma3:1b`.\n"
+            "    pull the demo models: `ollama pull qwen2.5:7b && ollama pull gemma3:1b`.\n"
             "    Remote endpoints still work.\n"
+        )
+
+    ram = _total_ram_gb()
+    if ram is not None and ram < 6:
+        print(
+            f"\n  ! Only {ram:g} GB of RAM is available. The demo council loads three models\n"
+            "    at once, and with this little memory a model may be killed mid-run\n"
+            "    (\"llama-server ... signal: killed\"). In Docker, give the VM >=8 GB\n"
+            "    (Docker Desktop: Settings -> Resources; Colima: `colima start --memory 8`).\n"
         )
 
     url = f"http://{args.host}:{args.port}/"

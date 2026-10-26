@@ -488,3 +488,43 @@ def test_build_audit_severity_mapping() -> None:
     assert a["severity"]["critical"] == 3 and a["severity"]["medium"] == 1 and a["severity"]["passed"] == 2
     assert a["summary"]["posture"] == "Critical" and a["summary"]["findings"] == 4
     assert len(a["findings_table"]) == 1
+
+
+# ── garak / PyRIT pack adapters ───────────────────────────────────────────────
+def test_pack_adapters_registered() -> None:
+    import myrtia.plugins.garak_adapter  # noqa: F401
+    import myrtia.plugins.pyrit_adapter  # noqa: F401
+    from myrtia.plugins.base import REGISTRY
+    assert {"garak", "pyrit"} <= set(REGISTRY)
+
+
+def test_packs_advertise_their_attacks() -> None:
+    from myrtia import packs
+    by_id = {p["id"]: p for p in packs.list_packs()}
+    assert by_id["garak"]["adds"] == ["garak"]
+    assert by_id["pyrit"]["adds"] == ["pyrit"]
+    assert by_id["garak"]["adapter"] and by_id["pyrit"]["adapter"]
+
+
+def test_pyrit_builder_transforms_offline() -> None:
+    # The PyRIT converter transform must run without a target or network.
+    pyrit = pytest.importorskip("pyrit")  # noqa: F841
+    from myrtia.plugins.pyrit_adapter import _build
+    rows = _build("DECODE ME", {"converters": "base64,leetspeak"})
+    assert [r["variant"] for r in rows] == ["base64", "leetspeak"]
+    import base64 as _b64
+    enc = rows[0]["prompt"].split("\n")[-1]
+    assert _b64.b64decode(enc).decode() == "DECODE ME"
+    assert all(r["prompt"] for r in rows)
+
+
+def test_pyrit_builder_ignores_unknown_converter() -> None:
+    pytest.importorskip("pyrit")
+    from myrtia.plugins.pyrit_adapter import _build
+    rows = _build("x", {"converters": "not-a-converter"})
+    assert [r["variant"] for r in rows] == ["base64"]  # falls back to the first default
+
+
+def test_garak_prompt_text_handles_str() -> None:
+    from myrtia.plugins.garak_adapter import _prompt_text
+    assert _prompt_text("hello") == "hello"

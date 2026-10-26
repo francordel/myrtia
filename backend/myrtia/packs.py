@@ -40,29 +40,29 @@ PACKS: list[dict[str, Any]] = [
     {
         "id": "garak",
         "name": "NVIDIA garak",
-        "description": "garak — the LLM vulnerability scanner (100+ probes). Installs the "
-                       "library; Myrtia already ships a black-box subset natively, deeper "
-                       "adapters are in progress.",
+        "description": "garak — the LLM vulnerability scanner (100+ probes). Adds the "
+                       "\"garak\" attack: run any garak probe's real corpus against the "
+                       "target, graded 0-5 by the evaluator.",
         "check": "garak",
         "pip": ["garak"],
-        "modules": [],
-        "adds": [],
+        "modules": ["myrtia.plugins.garak_adapter"],
+        "adds": ["garak"],
         "homepage": "https://github.com/NVIDIA/garak",
-        "adapter": False,
+        "adapter": True,
         "note": "Large download.",
     },
     {
         "id": "pyrit",
         "name": "Microsoft PyRIT",
-        "description": "PyRIT — the Python Risk Identification Toolkit (multi-turn "
-                       "orchestrators, converters, scorers). Installs the library; Myrtia "
-                       "attack adapters are in progress.",
+        "description": "PyRIT — the Python Risk Identification Toolkit (Microsoft). Adds "
+                       "the \"pyrit\" attack: transform each behaviour with a real PyRIT "
+                       "converter (Base64, ROT13, leetspeak, ...), graded 0-5.",
         "check": "pyrit",
         "pip": ["pyrit"],
-        "modules": [],
-        "adds": [],
+        "modules": ["myrtia.plugins.pyrit_adapter"],
+        "adds": ["pyrit"],
         "homepage": "https://github.com/Azure/PyRIT",
-        "adapter": False,
+        "adapter": True,
         "note": "Large download.",
     },
 ]
