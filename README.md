@@ -37,7 +37,7 @@
 
 Myrtia installs with [uv](https://docs.astral.sh/uv/): clone, then `uv run myrtia`. uv creates
 the environment, downloads the right Python (3.12 — no need to upgrade your system Python) and
-installs everything — all [19 attacks](#what-you-get), not just the council. The default models
+installs everything — all [21 attacks](#what-you-get), not just the council. The default models
 run locally in [Ollama](https://ollama.com), no API key needed.
 
 Copy-paste the block for your OS into a terminal. It installs uv and Ollama, waits for Ollama
@@ -158,13 +158,14 @@ myrtia` starts in seconds. Options: `uv run myrtia --port 8010 --no-browser`.
 
 ### What you get
 
-`uv run myrtia` gives you **19 attacks**, ready to launch. 17 are built into Myrtia; the
-council pair comes from the bundled ARES Council pack, installed by default.
+`uv run myrtia` gives you **21 attacks**, ready to launch. 17 are built into Myrtia; the
+council pair comes from the bundled ARES Council pack, installed by default, plus NVIDIA Garak and Microsoft PyRIT pack adapters.
 
 | Kind | Attacks |
 | --- | --- |
 | Multi-agent council (ARES Council pack) | `council`, `council-crescendo` |
 | Multi-agent / adaptive | `graph` (the visual canvas: council, debate, pipeline, mixture-of-agents…), `crescendo`, `tap` (TAP / PAIR) |
+| External frameworks (pack adapters) | `garak` (NVIDIA garak), `pyrit` (Microsoft PyRIT) |
 | Templates and priming | `contextual-jailbreak`, `human-jailbreak` |
 | Transforms | `obfuscation`, `encoding`, `payload-splitting` |
 | garak-style probes | `promptinject`, `grandma`, `smuggling`, `phrasing`, `latent-injection`, `dan`, `continuation`, `leakreplay` |

@@ -284,6 +284,16 @@ Al recibir una tarea de revisión o desarrollo en este repositorio:
 * **GitHub Issue**: [#77](https://github.com/francordel/myrtia/issues/77)
 * **Pull Request**: [#82](https://github.com/francordel/myrtia/pull/82)
 
+### 🐳 `[OPS-CI-01]` Fallo en CI de Docker tras integración de plugins Garak y PyRIT (19 vs 21 ataques)
+* **Rol Asignado**: 🐳 `[DEVOPS & RUNTIME SPECIALIST]` / 🔍 `[STRICT CODE REVIEWER & QA]`
+* **Severidad**: Alta / CI (Rompe la suite de integración continua en GitHub Actions en el paso de smoke test de Docker).
+* **Ubicación**: [.github/workflows/docker.yml:48-52](file:///c:/Users/marie/Documents/GitHub/myrtia/.github/workflows/docker.yml#L48-L52).
+* **Diagnóstico**: Con la inclusión de `garak_adapter.py` y `pyrit_adapter.py` en `backend/myrtia/plugins/`, el catálogo de ataques descubiertos automáticamente en el arranque aumentó de 19 a 21. El test de humo en el contenedor Docker comprobaba estrictamente `test "$n" -eq 19`. Al registrar 21 ataques, el paso fallaba con código de salida 1.
+* **Comportamiento Esperado**: Actualizar el paso de verificación en el workflow a `test "$n" -ge 21` y actualizar la documentación del README y los tests de API en consonancia.
+* **Estado**: Resuelto y Verificado.
+* **GitHub Issue**: [#83](https://github.com/francordel/myrtia/issues/83)
+* **Pull Request**: TBD
+
 
 
 

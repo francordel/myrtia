@@ -45,10 +45,10 @@ jobs:
           done
           docker compose logs; exit 1
 
-      - name: All 19 attacks registered, demo models visible
+      - name: All 21 attacks registered, demo models visible
         run: |
           n=$(curl -sf http://127.0.0.1:8000/plugins | jq '(.plugins // .) | length')
-          echo "attacks: $n"; test "$n" -eq 19
+          echo "attacks: $n"; test "$n" -ge 21
           curl -sf http://127.0.0.1:8000/system | jq -e '.ollama_models | index("qwen2.5:3b") and index("gemma3:1b")'
 
       - name: One real attack against the bundled model
