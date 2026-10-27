@@ -832,6 +832,10 @@
             <input id="adv_judge_model" placeholder="qwen2.5:3b" data-models="1" autocomplete="off" />
             <input id="adv_judge_endpoint" placeholder="http://127.0.0.1:11434/v1" />
           </div>
+          <div class="row2">
+            <input id="evalKey" type="password" placeholder="Evaluator API key (blank = target's, if same endpoint)" autocomplete="off" />
+            <input id="evalHdr" list="authHdrList" placeholder="Auth header (blank = Bearer)" autocomplete="off" spellcheck="false" />
+          </div>
           <div class="desc" id="evalHint">A model judging itself is less reliable. Use an independent model when possible.</div>
         </div>
       </div>
@@ -847,6 +851,7 @@
         <option value="openai">OpenAI</option>
         <option value="anthropic">Anthropic (native)</option>
         <option value="custom">Custom (OpenAI-compatible)</option>
+        <option value="rits">IBM RITS (RITS_API_KEY header)</option>
         <option value="agent">HTTP agent (custom endpoint)</option>
       </select>
       <label for="tmodel">Target model</label>
@@ -855,6 +860,9 @@
       <input id="turl" value="http://127.0.0.1:11434/v1" />
       <label for="apikey">API key <span class="hint">(frontier targets · stored only in this browser)</span></label>
       <input id="apikey" type="password" placeholder="sk-… / sk-ant-…" autocomplete="off" />
+      <datalist id="authHdrList"><option value="RITS_API_KEY"><option value="X-API-Key"><option value="api-key"></datalist>
+      <label for="authheader">Auth header name <span class="hint">(optional · blank = Authorization: Bearer · e.g. RITS_API_KEY, X-API-Key)</span></label>
+      <input id="authheader" list="authHdrList" placeholder="Authorization: Bearer (default)" autocomplete="off" spellcheck="false" />
       <label>Defenses <span class="hint">(optional shields in front of the target)</span></label>
       <button type="button" class="mini" id="stdShields">🛡 Add shields · <span id="stdShieldN">0</span></button>
       <button type="button" class="mini" id="stdPreflight" title="Test the target connection">Test connection</button>
@@ -1191,15 +1199,32 @@ function statusPill(st){ return `<span class="status ${STATUS_CLS[st]||""}"><i><
 // ---- provider presets + per-provider API key (stored only in this browser) ----
 // Default Ollama endpoint; the backend may override it (MYRTIA_OLLAMA_URL), see applyOllamaUrl.
 const DEF_OLLAMA="http://127.0.0.1:11434/v1"; let OLLAMA_V1=DEF_OLLAMA;
-const PROVIDERS={ollama:OLLAMA_V1,openai:"https://api.openai.com/v1",anthropic:"https://api.anthropic.com",custom:"",agent:""};
-const KIND_FOR={ollama:"openai_chat",openai:"openai_chat",anthropic:"anthropic",custom:"openai_chat",agent:"http_agent"};
+const PROVIDERS={ollama:OLLAMA_V1,openai:"https://api.openai.com/v1",anthropic:"https://api.anthropic.com",custom:"",rits:"",agent:""};
+const KIND_FOR={ollama:"openai_chat",openai:"openai_chat",anthropic:"anthropic",custom:"openai_chat",rits:"openai_chat",agent:"http_agent"};
+// Providers that send the key in a custom header instead of `Authorization: Bearer`.
+const AUTH_HEADER_FOR={rits:"RITS_API_KEY"};
+function authHeader(){ try{ return $("authheader").value.trim()||undefined; }catch(e){ return undefined; } }
+// The header *name* is not a secret; remembered per provider (preset wins when nothing is saved).
+function ahGet(p){try{const v=localStorage.getItem("myrtia-authhdr-"+p); return v===null?(AUTH_HEADER_FOR[p]||""):v;}catch(e){return AUTH_HEADER_FOR[p]||"";}}
 function targetKind(){ try{ return KIND_FOR[$("provider").value]||"openai_chat"; }catch(e){ return "openai_chat"; } }
 function keyGet(p){try{return localStorage.getItem("myrtia-key-"+p)||"";}catch(e){return "";}}
 function keySet(p,v){try{localStorage.setItem("myrtia-key-"+p,v);}catch(e){}}
-function onProvider(){const p=$("provider").value; if(PROVIDERS[p]) $("turl").value=PROVIDERS[p]; $("apikey").value=keyGet(p); updSummary();}
+function onProvider(){const p=$("provider").value; if(PROVIDERS[p]) $("turl").value=PROVIDERS[p]; $("apikey").value=keyGet(p); $("authheader").value=ahGet(p); updSummary();}
 $("provider").addEventListener("change",onProvider);
 $("apikey").addEventListener("input",()=>keySet($("provider").value,$("apikey").value));
+$("authheader").addEventListener("input",()=>{try{localStorage.setItem("myrtia-authhdr-"+$("provider").value,$("authheader").value.trim());}catch(e){}});
+// Non-secret form fields (models, endpoints, provider, attack) are remembered in this
+// browser too, so a reload does not wipe the setup. Secrets stay in the key stores above.
+const FORM_KEY="myrtia-form";
+const FORM_IDS=new Set(["provider","tmodel","turl","attack","adv_judge_model","adv_judge_endpoint","adv_helper_model","adv_attacker_model","adv_aux_endpoint"]);
+function formLoad(){ try{ return JSON.parse(localStorage.getItem(FORM_KEY)||"{}")||{}; }catch(e){ return {}; } }
+function formSet(id,v){ try{ const s=formLoad(); s[id]=v; localStorage.setItem(FORM_KEY,JSON.stringify(s)); }catch(e){} }
+function formRestore(ids){ const s=formLoad(); ids.forEach(id=>{ const el=$(id); if(el && typeof s[id]==="string" && s[id]!=="") el.value=s[id]; }); }
+["input","change"].forEach(ev=>document.addEventListener(ev,e=>{ const id=e.target&&e.target.id; if(FORM_IDS.has(id)) formSet(id,String(e.target.value).trim()); }));
 onProvider();
+(function(){ const s=formLoad();
+  if(s.provider && [...$("provider").options].some(o=>o.value===s.provider)){ $("provider").value=s.provider; onProvider(); }
+  formRestore(["tmodel","turl"]); updSummary(); })();
 
 // ---- plugins / attack section ----
 async function loadPlugins() {
@@ -1207,6 +1232,7 @@ async function loadPlugins() {
   catch (e) { PLUGINS = []; toast("Could not load attack plugins from the backend.","err",{label:"Retry",fn:loadPlugins}); }
   const sel = $("attack"); sel.innerHTML = "";
   for (const p of PLUGINS) { const o=document.createElement("option"); o.value=p.id; o.textContent=p.id; sel.appendChild(o); }
+  const savedAtk=formLoad().attack; if(savedAtk && PLUGINS.some(p=>p.id===savedAtk)) sel.value=savedAtk;
   onAttackChange();
 }
 function currentPlugin(){ return PLUGINS.find(p => p.id === $("attack").value); }
@@ -1229,8 +1255,14 @@ function onAttackChange(){
     if($("evalFields")) $("evalFields").style.display = "";
     $("adv_judge_model").value = (jm.default!==undefined?jm.default:"");
     $("adv_judge_endpoint").value = (je&&je.default!==undefined?je.default:"");
+    formRestore(["adv_judge_model","adv_judge_endpoint"]);
   }
-  const rest=schema.filter(f=>!(showEval && JUDGE_KEYS.has(f.key)));
+  // Attacker / helper: model + endpoint + credentials, visible like the evaluator and target.
+  const atkModelKey=["helper_model","attacker_model"].find(k=>schema.some(f=>f.key===k));
+  const showAtk=!!atkModelKey && schema.some(f=>f.key==="aux_endpoint");
+  buildAtkBlock(showAtk?schema:null, atkModelKey);
+  const ATK_KEYS=new Set(showAtk?[atkModelKey,"aux_endpoint"]:[]);
+  const rest=schema.filter(f=>!(showEval && JUDGE_KEYS.has(f.key)) && !ATK_KEYS.has(f.key));
   $("advwrap").style.display = rest.length ? "block" : "none";
   $("councilSec").style.display = isCouncil(p) ? "block" : "none";
   for (const f of rest) {
@@ -1249,8 +1281,36 @@ function onAttackChange(){
       if(f.help){ const h=document.createElement("div"); h.className="desc"; h.textContent=f.help; adv.appendChild(h); }
     }
   }
+  roleCredsBind("eval");
   updSummary();
   if(!RUN && $("runBody") && $("runBody").className==="standard") renderEmpty();
+}
+// Per-role (evaluator / helper) credentials: key + header name, remembered in this browser only.
+function buildAtkBlock(schema, modelKey){
+  let box=$("atkBlock");
+  if(!box){ box=document.createElement("div"); box.id="atkBlock"; $("evalBlock").after(box); }
+  box.innerHTML=""; if(!schema){ box.style.display="none"; return; }
+  box.style.display="block";
+  const m=schema.find(f=>f.key===modelKey), e=schema.find(f=>f.key==="aux_endpoint");
+  box.innerHTML=`<label for="adv_${modelKey}">Attacker (helper) model &amp; endpoint</label>
+    <div class="row2"><input id="adv_${modelKey}" data-models="1" autocomplete="off" />
+    <input id="adv_aux_endpoint" /></div>
+    <div class="row2"><input id="auxKey" type="password" placeholder="Attacker API key (blank = target's, if same endpoint)" autocomplete="off" />
+    <input id="auxHdr" list="authHdrList" placeholder="Auth header (blank = Bearer)" autocomplete="off" spellcheck="false" /></div>
+    <div class="desc">${esc((m&&m.help)||"")}</div>`;
+  $("adv_"+modelKey).value=(m&&m.default!==undefined?m.default:""); $("adv_aux_endpoint").value=(e&&e.default!==undefined?e.default:"");
+  formRestore(["adv_"+modelKey,"adv_aux_endpoint"]);
+  roleCredsBind("aux");
+}
+function roleCredsBind(r){
+  const k=$(r+"Key"), h=$(r+"Hdr"); if(!k||!h||k.dataset.bound) return; k.dataset.bound="1";
+  try{ k.value=localStorage.getItem("myrtia-key-role-"+r)||""; h.value=localStorage.getItem("myrtia-authhdr-role-"+r)||""; }catch(e){}
+  k.addEventListener("input",()=>{ try{localStorage.setItem("myrtia-key-role-"+r,k.value);}catch(e){} });
+  h.addEventListener("input",()=>{ try{localStorage.setItem("myrtia-authhdr-role-"+r,h.value.trim());}catch(e){} });
+}
+function roleCredsInto(cfg,r,prefix){
+  const k=$(r+"Key"), h=$(r+"Hdr"); if(!k||!k.value.trim()) return;
+  cfg[prefix+"_api_key"]=k.value.trim(); if(h&&h.value.trim()) cfg[prefix+"_auth_header"]=h.value.trim();
 }
 function collectAdvanced(){
   const cfg={}; const p=currentPlugin(); if(!p) return cfg;
@@ -1265,6 +1325,10 @@ function collectAdvanced(){
     else if(f.type==="number"){ if(el.value!=="") cfg[f.key]=Number(el.value); }
     else if(el.value.trim()!=="") cfg[f.key]=el.value.trim();
   }
+  // The visible evaluator endpoint must never be dropped, even when this page's cached
+  // plugin schema predates the field (e.g. the backend was upgraded under an open tab).
+  const jep=$("adv_judge_endpoint");
+  if(!evalOff && jep && $("evalBlock").style.display!=="none" && jep.value.trim()!=="" && cfg.judge_endpoint===undefined) cfg.judge_endpoint=jep.value.trim();
   return cfg;
 }
 if($("evalEnabled")) $("evalEnabled").addEventListener("change", ()=>{
@@ -1506,7 +1570,7 @@ function renderRunHead(){
   $("rhPurpose").value=spec.purpose||"unreviewed";
   const safeSpec=JSON.parse(JSON.stringify(spec));
   if(safeSpec.target) delete safeSpec.target.api_key;
-  if(safeSpec.attack_config) delete safeSpec.attack_config.api_key;
+  if(safeSpec.attack_config) ["api_key","judge_api_key","aux_api_key"].forEach(k=>delete safeSpec.attack_config[k]);
   $("rhConfig").textContent=JSON.stringify(safeSpec,null,2);
   const live = RUN.status==="running" && ws && ws.readyState===1;
   $("rhStatus").className="status "+(STATUS_CLS[RUN.status]||"");
@@ -1894,9 +1958,11 @@ $("launch").onclick = async () => {
     if($("critMode")) attack_config.critique_prompt_mode = $("critMode").value;
   }
   if($("reqApproval")&&$("reqApproval").checked) attack_config.require_approval=true;
+  roleCredsInto(attack_config,"eval","judge"); roleCredsInto(attack_config,"aux","aux");
   if(key) attack_config.api_key=key;
   const target={ kind:targetKind(), base_url:$("turl").value.trim(), model:$("tmodel").value.trim() };
   if(key) target.api_key=key;
+  if(key && authHeader()){ target.auth_header=authHeader(); attack_config.auth_header=authHeader(); }
   const body={ attack_id:$("attack").value, title:$("runTitle").value.trim(), attack_config, theme:$("themeTag").value.trim(), target, goals,
     purpose:$("runPurpose").value, goal_datasets:SELECTED.size?[...SELECTED.values()].map(v=>v.dataset):["manual"] };
   if(stdDefenses.length) body.defenses=stdDefenses.map(d=>({id:d.id,config:d.config||{}}));
@@ -3048,7 +3114,7 @@ async function preflightTarget(spec,btn){
   }catch(e){ toast("Preflight request failed.","err"); }
   finally{ if(btn){ btn.disabled=false; btn.textContent=label; } }
 }
-if($("stdPreflight")) $("stdPreflight").onclick=()=>preflightTarget({kind:targetKind(),base_url:$("turl").value.trim(),model:$("tmodel").value.trim(),api_key:$("apikey").value.trim()||undefined},$("stdPreflight"));
+if($("stdPreflight")) $("stdPreflight").onclick=()=>preflightTarget({kind:targetKind(),base_url:$("turl").value.trim(),model:$("tmodel").value.trim(),api_key:$("apikey").value.trim()||undefined,auth_header:authHeader()},$("stdPreflight"));
 if($("gPreflight")) $("gPreflight").onclick=()=>preflightTarget({kind:"openai_chat",base_url:$("gTurl").value.trim(),model:$("gTmodel").value.trim(),api_key:(gKey||"").trim()||undefined},$("gPreflight"));
 // Pull a local model via Ollama, streaming progress (issue #4).
 async function pullModel(base_url, name, btn){
