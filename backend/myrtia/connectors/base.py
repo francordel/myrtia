@@ -59,11 +59,17 @@ class OpenAIChatConnector:
     `Response`. Never raises: transport/HTTP errors come back as `Status.ERROR`."""
 
     def __init__(self, base_url: str, model: str, api_key: str | None = None,
-                 timeout: int = 120, name: str | None = None) -> None:
+                 timeout: int = 120, name: str | None = None,
+                 headers: dict | None = None, auth_header: str | None = None) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.api_key = api_key
         self.timeout = timeout
+        # `headers` are extra request headers; `auth_header` names the header that
+        # carries the key instead of `Authorization: Bearer` (e.g. IBM RITS wants
+        # `RITS_API_KEY`). Neither is ever copied into `config` (it is surfaced).
+        self.extra_headers = dict(headers or {})
+        self.auth_header = auth_header or None
         # ares-council reads target_connector.config["name"]; keep a compatible dict.
         self.config: dict[str, Any] = {"name": name or f"myrtia-target-{model}",
                                         "model": model, "base_url": self.base_url}
@@ -75,9 +81,12 @@ class OpenAIChatConnector:
         return [{"role": "user", "content": str(prompt)}]
 
     def generate(self, prompt: Any, **_kwargs: Any) -> Response:
-        headers = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json", **self.extra_headers}
         if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
+            if self.auth_header:
+                headers[self.auth_header] = self.api_key
+            else:
+                headers.setdefault("Authorization", f"Bearer {self.api_key}")
         payload = {"model": self.model, "messages": self._messages(prompt)}
         # Auxiliary council calls need explicit budgets; target calls remain
         # unchanged unless their caller requests these standard OpenAI fields.

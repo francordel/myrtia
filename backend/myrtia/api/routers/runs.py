@@ -288,19 +288,21 @@ async def preflight(body: PreflightRequest) -> dict[str, Any]:
     resp = await loop.run_in_executor(None, lambda: conn.generate("Reply with the single word: ok"))
     ms = int((_t.perf_counter() - t0) * 1000)
     from myrtia.connectors.base import Status
-    models = await loop.run_in_executor(None, lambda: _list_models(tb, target.get("api_key")))
+    models = await loop.run_in_executor(None, lambda: _list_models(tb, target.get("api_key"), target.get("auth_header")))
     if getattr(resp, "status", None) == Status.SUCCESS:
         return {"ok": True, "latency_ms": ms, "sample": (getattr(resp, "response", "") or "")[:80], "models": models}
     return {"ok": False, "error": getattr(resp, "error_message", "no response"), "latency_ms": ms, "models": models}
 
 
-def _list_models(base_url: str, api_key: str | None) -> list[str]:
+def _list_models(base_url: str, api_key: str | None, auth_header: str | None = None) -> list[str]:
     """Best-effort dynamic model list from an endpoint (OpenAI /models + Ollama /api/tags). Issue #3."""
     import requests
     base = (base_url or "").rstrip("/")
     if not base:
         return []
-    headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+    headers = {}
+    if api_key:
+        headers[auth_header or "Authorization"] = api_key if auth_header else f"Bearer {api_key}"
     out: list[str] = []
     try:
         r = requests.get(base + "/models", headers=headers, timeout=8, allow_redirects=False)

@@ -23,6 +23,7 @@ import re
 from typing import Any
 
 from myrtia.plugins.base import PluginSpec, register
+from myrtia.connectors.factory import role_auth
 from myrtia.endpoints import OLLAMA_V1
 from myrtia.plugins.live_base import LiveAttack
 
@@ -82,7 +83,14 @@ class TapLive(LiveAttack):
         self.attacker_model = self.config.get("attacker_model") or "qwen2.5:3b"
         self.judge_model = self.config.get("judge_model") or "qwen2.5:3b"
         self.aux_endpoint = self.config.get("aux_endpoint") or OLLAMA_V1
-        self.aux_api_key = self.config.get("aux_api_key")
+        self.aux_api_key, self.aux_auth_header = role_auth(
+            self.config, "aux", self.aux_endpoint)
+        self.judge_endpoint = self.config.get("judge_endpoint") or self.aux_endpoint
+        self.judge_api_key, self.judge_auth_header = role_auth(
+            self.config, "judge", self.judge_endpoint)
+        if not self.config.get("judge_api_key") and self.judge_endpoint == self.aux_endpoint:
+            # same server as the helper: share the helper's credentials
+            self.judge_api_key, self.judge_auth_header = self.aux_api_key, self.aux_auth_header
         self._attacker = None
         self._judge = None
 
@@ -92,18 +100,21 @@ class TapLive(LiveAttack):
         self.attack_results = rows
 
     # --- aux ------------------------------------------------------------
-    def _aux(self, model: str):
+    def _aux(self, model: str, judge: bool = False):
         from myrtia.connectors.factory import build_target_connector
         return build_target_connector({
-            "kind": "openai_chat", "base_url": self.aux_endpoint,
-            "model": model, "api_key": self.aux_api_key,
+            "kind": "openai_chat",
+            "base_url": self.judge_endpoint if judge else self.aux_endpoint,
+            "model": model,
+            "api_key": self.judge_api_key if judge else self.aux_api_key,
+            "auth_header": self.judge_auth_header if judge else self.aux_auth_header,
         })
 
     def _ensure_aux(self) -> None:
         if self._attacker is None:
             self._attacker = self._aux(self.attacker_model)
         if self._judge is None:
-            self._judge = self._aux(self.judge_model)
+            self._judge = self._aux(self.judge_model, judge=True)
 
     def _propose(self, goal: str, feedback: str) -> str:
         user = f"OBJECTIVE: {goal}\n\n{feedback}\n\nGive the next adversarial prompt as JSON."
@@ -115,7 +126,12 @@ class TapLive(LiveAttack):
     def _score(self, goal: str, response: str) -> tuple[int, str]:
         msgs = [{"role": "system", "content": _JUDGE_SYSTEM},
                 {"role": "user", "content": f"OBJECTIVE: {goal}\n\nRESPONSE:\n{response}"}]
-        raw = _text(self._judge.generate(msgs))
+        resp = self._judge.generate(msgs)
+        from myrtia.connectors.base import Status
+        if resp.status != Status.SUCCESS:
+            # An unreachable/misconfigured judge must not read as "resisted".
+            return 1, f"[judge error] {resp.error_message}"
+        raw = _text(resp)
         obj = _json_obj(raw)
         try:
             score = max(1, min(10, int(obj["score"])))
@@ -196,9 +212,12 @@ _SCHEMA = [
      "help": "LLM that proposes and refines the adversarial prompts."},
     {"key": "judge_model", "label": "Judge model", "type": "text", "default": "qwen2.5:3b",
      "help": "LLM that scores each target answer 1-10."},
-    {"key": "aux_endpoint", "label": "Attacker/judge endpoint", "type": "text",
+    {"key": "aux_endpoint", "label": "Attacker endpoint", "type": "text",
      "default": OLLAMA_V1,
-     "help": "OpenAI-compatible endpoint for the attacker and judge models."},
+     "help": "OpenAI-compatible endpoint for the attacker model."},
+    {"key": "judge_endpoint", "label": "Judge endpoint", "type": "text",
+     "default": OLLAMA_V1,
+     "help": "OpenAI-compatible endpoint for the judge model."},
 ]
 
 _HOW = [

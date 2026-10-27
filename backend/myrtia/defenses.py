@@ -130,7 +130,7 @@ class DefendedConnector:
 
     def __init__(self, inner: Any, defenses: list, emit: Callable | None = None,
                  aux_model: str | None = None, aux_endpoint: str | None = None,
-                 aux_key: str | None = None) -> None:
+                 aux_key: str | None = None, aux_auth_header: str | None = None) -> None:
         self.inner = inner
         # normalise: list of {id, config}
         self.pipeline: list[dict] = []
@@ -142,6 +142,7 @@ class DefendedConnector:
         self._aux_model = aux_model
         self._aux_endpoint = aux_endpoint
         self._aux_key = aux_key
+        self._aux_auth_header = aux_auth_header
         self._aux_conn: Any = None
         # ares-council reads .config["name"]; pass it through.
         self.config = getattr(inner, "config", {"name": "defended-target"})
@@ -154,6 +155,7 @@ class DefendedConnector:
             self._aux_conn = build_target_connector({
                 "kind": "openai_chat", "base_url": self._aux_endpoint or OLLAMA_V1,
                 "model": self._aux_model, "api_key": self._aux_key,
+                "auth_header": self._aux_auth_header,
             })
 
         def call(prompt: str) -> str:

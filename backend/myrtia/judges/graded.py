@@ -99,8 +99,9 @@ class GradedJudge:
     """A 0-5 judge on any OpenAI-compatible chat endpoint."""
 
     def __init__(self, model: str, endpoint: str = DEFAULT_JUDGE_ENDPOINT,
-                 api_key: str | None = None) -> None:
+                 api_key: str | None = None, auth_header: str | None = None) -> None:
         self.model = model
+        self.auth_header = auth_header
         self.endpoint = (endpoint or DEFAULT_JUDGE_ENDPOINT).rstrip("/")
         self.api_key = api_key
         self._conn: Any = None
@@ -111,6 +112,7 @@ class GradedJudge:
             self._conn = build_target_connector({
                 "kind": "openai_chat", "base_url": self.endpoint,
                 "model": self.model, "api_key": self.api_key,
+                "auth_header": self.auth_header,
             })
         return self._conn
 
@@ -139,8 +141,10 @@ def judge_from_config(config: dict[str, Any]) -> GradedJudge | None:
         return None
     if not model:
         model = DEFAULT_JUDGE_MODEL
-    return GradedJudge(model, str(config.get("judge_endpoint") or DEFAULT_JUDGE_ENDPOINT),
-                       config.get("judge_api_key") or config.get("api_key"))
+    from myrtia.connectors.factory import role_auth
+    endpoint = str(config.get("judge_endpoint") or DEFAULT_JUDGE_ENDPOINT)
+    key, header = role_auth(config, "judge", endpoint)
+    return GradedJudge(model, endpoint, key, header)
 
 
 def judge_and_emit(judge: GradedJudge | None, emit: Any, goal: str, response: str,

@@ -108,12 +108,15 @@ class Orchestrator:
                 raise ValueError(f"Unknown attack plugin: {run.spec.attack_id!r}")
 
             # Lazy: connector import pulls in ARES only when a run actually launches.
-            from myrtia.connectors.factory import build_target_connector
+            from myrtia.connectors.factory import build_target_connector, role_auth
 
             # Surface the target model to the plugin so it can label events.
             if isinstance(run.spec.attack_config, dict):
                 run.spec.attack_config.setdefault(
                     "target_model", (run.spec.target or {}).get("model"))
+                # Lets aux roles inherit the target's key only for the same endpoint.
+                run.spec.attack_config.setdefault(
+                    "target_base_url", (run.spec.target or {}).get("base_url"))
 
             target = build_target_connector(run.spec.target)
             # Optional shield pipeline in front of the target (defense evaluation).
@@ -121,11 +124,12 @@ class Orchestrator:
             if defenses:
                 from myrtia.defenses import DefendedConnector
                 ac = run.spec.attack_config if isinstance(run.spec.attack_config, dict) else {}
+                aux_ep = ac.get("judge_endpoint") or ac.get("defense_endpoint")
+                aux_key, aux_hdr = role_auth(ac, "judge", aux_ep)
                 target = DefendedConnector(
                     target, defenses, emit_sync,
                     aux_model=ac.get("judge_model") or ac.get("defense_model"),
-                    aux_endpoint=ac.get("judge_endpoint") or ac.get("defense_endpoint"),
-                    aux_key=ac.get("api_key"),
+                    aux_endpoint=aux_ep, aux_key=aux_key, aux_auth_header=aux_hdr,
                 )
             strategy = spec.factory(run.spec.attack_config, target)
 

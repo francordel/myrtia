@@ -36,6 +36,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from myrtia.connectors.factory import role_auth
 from myrtia.judges.graded import DEFAULT_JUDGE_ENDPOINT, DEFAULT_JUDGE_MODEL, GradedJudge
 from myrtia.plugins.base import PluginSpec, register
 from myrtia.plugins.council_prompts import (
@@ -132,11 +133,10 @@ class GraphAttack(LiveAttack):
         ev = cfg.get("evaluator") if isinstance(cfg.get("evaluator"), dict) else {}
         jm = str(ev.get("model") or cfg.get("judge_model") or "").strip()
         self._judge_off = jm.lower() in {"off", "none", "no", "-"}
-        self.evaluator = GradedJudge(
-            jm or DEFAULT_JUDGE_MODEL,
-            ev.get("endpoint") or cfg.get("judge_endpoint") or DEFAULT_JUDGE_ENDPOINT,
-            ev.get("api_key") or cfg.get("judge_api_key") or cfg.get("api_key"),
-        )
+        ev_endpoint = ev.get("endpoint") or cfg.get("judge_endpoint") or DEFAULT_JUDGE_ENDPOINT
+        ev_key, ev_hdr = (ev.get("api_key"), ev.get("auth_header")) if ev.get("api_key") \
+            else role_auth(cfg, "judge", ev_endpoint)
+        self.evaluator = GradedJudge(jm or DEFAULT_JUDGE_MODEL, ev_endpoint, ev_key, ev_hdr)
         self.edges = self._norm_edges(cfg.get("edges"))
 
     def _synthesise_agents(self) -> list[dict]:
@@ -163,12 +163,15 @@ class GraphAttack(LiveAttack):
         role = str(a.get("role") or "attacker").lower()
         if role not in ("attacker", "chairman", "synthesizer"):
             role = "attacker"
+        endpoint = a.get("endpoint") or self.aux_endpoint
+        own_key, own_hdr = role_auth(self.config, "aux", endpoint)
         return {
             "id": str(a.get("id") or f"{role[:4]}{i+1}"),
             "role": role,
             "model": str(a.get("model") or self.config.get("attacker_model") or "qwen2.5:3b"),
-            "endpoint": a.get("endpoint") or self.aux_endpoint,
-            "api_key": a.get("api_key") or self.config.get("api_key"),
+            "endpoint": endpoint,
+            "api_key": a.get("api_key") or own_key,
+            "auth_header": (a.get("auth_header") if a.get("api_key") else None) or own_hdr,
             "system_prompt": (str(a.get("system_prompt")).strip() if a.get("system_prompt") else ""),
             "strategy": (str(a.get("strategy")).strip() if a.get("strategy") else ""),
             "tools": [t for t in (a.get("tools") or []) if isinstance(t, str) and t in TOOL_IDS],
@@ -195,6 +198,7 @@ class GraphAttack(LiveAttack):
             conn = build_target_connector({
                 "kind": "openai_chat", "base_url": node["endpoint"],
                 "model": node["model"], "api_key": node.get("api_key"),
+                "auth_header": node.get("auth_header"),
             })
             self._conn_cache[key] = conn
         return conn
