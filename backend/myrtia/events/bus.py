@@ -54,8 +54,9 @@ class EventBus:
         from myrtia.store import db
         db.append_event(event.run_id, event.seq, event.ts, event.type.value,
                         event.payload, event.id)
-        from myrtia import telemetry
+        from myrtia import telemetry, tracing
         telemetry.observe_event(event)  # run, judge, shield and event metrics (spec 008)
+        tracing.observe_event(event)    # the run's trace, when tracing is on (spec 009)
         return event
 
     def backlog(self, run_id: str) -> list[Event]:

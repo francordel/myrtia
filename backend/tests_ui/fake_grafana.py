@@ -40,6 +40,14 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(404, b"{}", "application/json")
 
 
+    def do_POST(self) -> None:  # noqa: N802 - http.server API
+        # Accepts (and drops) the traces the instance exports, so nothing is retried.
+        length = int(self.headers.get("Content-Length") or 0)
+        if length:
+            self.rfile.read(length)
+        self._send(200, b"{}", "application/json")
+
+
 class _Server(ThreadingHTTPServer):
     daemon_threads = True
     up = True
