@@ -27,6 +27,10 @@ pytest -m e2e         # needs a live OpenAI-compatible endpoint (local Ollama)
 
 Point the e2e tier elsewhere with `MYRTIA_TEST_ENDPOINT` / `MYRTIA_TEST_MODEL`.
 
+Work test first: write the failing test, then the code that passes it. Acceptance
+criteria are Gherkin scenarios in `backend/tests/features/*.feature`, bound to step
+functions with `pytest-bdd`; the scenarios tagged `e2e` drive a whole run end to end.
+
 ## Lint & format
 
 ```bash
@@ -59,7 +63,18 @@ protocol in `connectors/base.py` (`generate(prompt) -> Response`, plus `config` 
 `tokens`). Wire a new `kind` into `connectors/factory.py`. All outbound requests must be
 SSRF-guarded (the factory validates the URL) and must not follow redirects.
 
+## Specs first
+
+Myrtia uses spec-driven development. A change in behaviour starts as a feature folder in
+`specs/features/` with a `spec.md` (what and why), a `plan.md` (how) and a `tasks.md`
+(small steps), written from the templates in `specs/templates/`. Read
+[`specs/README.md`](specs/README.md) and [`specs/constitution/`](specs/constitution/)
+before proposing a feature. Typo fixes and small bug fixes that do not change specified
+behaviour do not need a spec.
+
 ## Pull requests
+
+- Link the feature spec and list the requirement ids (`FR-n`) the change covers.
 
 - Keep the offline tests green (`pytest -m "not e2e"`).
 - Run `ruff check .` before pushing.

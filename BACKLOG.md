@@ -1,5 +1,9 @@
 # Myrtia — backlog
 
+> New features are now specified in [`specs/`](specs/README.md) and ordered in
+> [`specs/constitution/roadmap.md`](specs/constitution/roadmap.md). This file remains as the
+> record of earlier sprints and of items not yet turned into specs.
+
 Living task board, organised in sprints. Claude maintains this: when we talk, new
 items get added here and picked up. Rule: there should always be one task in progress.
 Status: ✅ done · 🚧 in progress · ⬜ todo.
