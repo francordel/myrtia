@@ -537,7 +537,7 @@ Then press **Dashboard** in the console's header; **Open Myrtia** on the dashboa
 you back.
 
 To also record each run as a trace you can follow step by step, start Myrtia with tracing
-on (it is off by default):
+on (it is off by default) and press **Traces** in the header:
 
 ```bash
 MYRTIA_TRACES=on uv run --extra otel myrtia

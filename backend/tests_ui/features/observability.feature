@@ -19,3 +19,27 @@ Feature: From the console to the dashboard
     And the dialog offers to open the dashboard anyway
     When I close the dialog
     Then the console is still on the graph builder
+
+  Scenario: The Traces control opens the traces dashboard
+    Given the Myrtia console is open
+    And the dashboard is running
+    When I press the Traces control
+    Then the traces dashboard opens in a new tab
+    And the console is still on the graph builder
+
+  Scenario: The Traces control explains how to switch tracing on
+    Given the Myrtia console is open
+    And the dashboard is running
+    And tracing is switched off
+    When I press the Traces control
+    Then a dialog says tracing is switched off
+    And the dialog shows the command that starts Myrtia with tracing on
+    When I close the dialog
+    Then the console is still on the graph builder
+
+  Scenario: The Traces control explains how to start the dashboard
+    Given the Myrtia console is open
+    And the dashboard is not running
+    When I press the Traces control
+    Then a dialog says the dashboard is not running
+    And the dialog shows the command that starts it

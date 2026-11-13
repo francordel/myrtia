@@ -41,6 +41,11 @@
   `docs/observability.md`, `README.md`, `AGENTS.md`, roadmap row.
   Done when: a reader can switch tracing on and find a run's trace from the docs alone.
 
+- [x] **T11 — Traces control in the console** (FR-19 … FR-22)
+  Scenarios first (UI tier), then `traces_url` and the start command in `/observability`,
+  the header control and the dialog text.
+  Done when: the scenarios pass in the browser tier and the control was used by hand.
+
 - [x] **T10 — Validate the spec**
   Walk `spec.md` requirement by requirement, run the checks, trace a real run and open it
   in the dashboard.

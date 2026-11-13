@@ -22,6 +22,8 @@ trace store and a second Grafana dashboard.
 | `backend/myrtia/connectors/base.py` | The `observed` wrapper also opens and closes a model-call span | FR-7, FR-15 |
 | `backend/myrtia/events/bus.py` | Calls `tracing.observe_event` after publishing | FR-5, FR-6, FR-8 … FR-10 |
 | `backend/myrtia/api/routers/metrics.py`, `api/app.py` | `/observability` reports tracing; spans flushed at shutdown | FR-4 |
+| `frontend/standalone.html` | "Traces" control in the header; the dialog of spec 008 also explains how to switch tracing on | FR-19 … FR-22 |
+| `backend/tests_ui/` | Scenarios for the control; the simulated dashboard also accepts traces | FR-19 … FR-22 |
 | `backend/pyproject.toml` | `otel` extra (SDK and OTLP/HTTP exporter), included in `dev` | NFR-1 |
 | `compose.observability.yaml`, `observability/tempo/`, `observability/grafana/` | Tempo, its data source, the "Myrtia traces" dashboard, links between dashboards | FR-16 … FR-18 |
 | `backend/tests/features/tracing.feature`, `backend/tests/test_tracing.py` (new) | Scenarios and steps | all |
@@ -61,7 +63,9 @@ Span attributes: `gen_ai.operation.name` (`chat`), `gen_ai.request.model`,
 `myrtia.judge.score`, `myrtia.run.status`, `myrtia.content.truncated`. Event payload
 fields become `myrtia.<field>` attributes of the span event.
 
-`GET /observability` gains `"tracing": {"enabled": bool, "reason": str}`.
+`GET /observability` gains `"traces_url"` (the traces dashboard) and `"tracing":
+{"enabled": bool, "reason": str, "start_command": "MYRTIA_TRACES=on uv run --extra otel
+myrtia"}`.
 
 Python seams: `tracing.observe_event(event)`, `tracing.start_model_call(role, model,
 prompt)` → handle with `.end(ok, error, response, prompt_tokens, completion_tokens)` or
@@ -70,7 +74,10 @@ and `tracing.reset()`.
 
 ## UI behaviour
 
-No change to the console. Grafana gets "Myrtia traces": a table of recent runs (attack,
+The console's header gets a "Traces" chip next to "Dashboard". On click it asks
+`/observability`: dashboard not reachable → the dialog of spec 008 (how to start the
+stack); tracing off → the same dialog saying tracing is off, why, and the command that
+starts Myrtia with tracing on; otherwise the traces dashboard opens in a new tab. Grafana gets "Myrtia traces": a table of recent runs (attack,
 start, duration) whose trace id opens the same dashboard on that trace, and a timeline
 panel for the selected trace. Both dashboards link to each other and to the console.
 
@@ -112,6 +119,7 @@ panel for the selected trace. Both dashboards link to each other and to the cons
 | FR-13 | "Keys never reach a trace" |
 | FR-15 | "A tracing failure does not break the model call" |
 | FR-16 | "Trace data stays out of the repository and the image" |
+| FR-19 … FR-22 | UI tier: "The Traces control opens the traces dashboard", "… explains how to switch tracing on", "… explains how to start the dashboard"; offline: "The console is told whether tracing is on" |
 | FR-17, FR-18 | "The stack has a local trace store", "The traces dashboard lists runs and shows one", manual check |
 
 ## Risks

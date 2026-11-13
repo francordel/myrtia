@@ -124,8 +124,8 @@ Myrtia, with the stack running:
 MYRTIA_TRACES=on uv run --extra otel myrtia
 ```
 
-Then open **Traces** from the overview dashboard (or
-<http://localhost:3000/d/myrtia-traces/myrtia-traces>): "Recent runs" lists the runs;
+Then press **Traces** in the console's header (or open it from the overview dashboard, or
+go to <http://localhost:3000/d/myrtia-traces/myrtia-traces>): "Recent runs" lists the runs;
 click a trace ID to see that run step by step. Open a step to read its attributes.
 
 | Setting (on Myrtia) | Default | Meaning |
@@ -158,6 +158,9 @@ Any OpenTelemetry-compatible store works instead of Tempo: point
 `MYRTIA_OTEL_ENDPOINT` at it. Model-call steps use the OpenTelemetry attribute names for
 generative AI (`gen_ai.request.model`, `gen_ai.usage.input_tokens`, …), which are still
 marked as in development upstream; Myrtia's own attributes start with `myrtia.`.
+
+If tracing is off, **Traces** says so, gives the reason and shows the command above
+instead of opening an empty list.
 
 `GET /observability` reports whether tracing is on and, if not, why (packages missing,
 address not allowed, or simply switched off).

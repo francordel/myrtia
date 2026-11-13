@@ -75,3 +75,54 @@ def _anyway(ui: Any, sim_dashboard: FakeGrafana) -> None:
 @when("I close the dialog")
 def _close(ui: Any) -> None:
     ui.locator("#obsClose").click()
+
+
+# --- Traces control (spec 009) ---------------------------------------------------
+TRACES_ON = "MYRTIA_TRACES=on uv run --extra otel myrtia"
+
+
+@given("tracing is switched off")
+def _tracing_off(ui: Any, sim_dashboard: FakeGrafana) -> None:
+    """The instance runs with tracing on; answer for it as if it were off."""
+    base = sim_dashboard.url
+    body = {"enabled": True, "url": base, "reachable": True,
+            "dashboard_url": base + "/d/myrtia-overview/myrtia-overview",
+            "traces_url": base + "/d/myrtia-traces/myrtia-traces",
+            "start_command": START,
+            "tracing": {"enabled": False, "start_command": TRACES_ON,
+                        "reason": "tracing is switched off (set MYRTIA_TRACES=on)"}}
+    ui.route("**/observability", lambda route: route.fulfill(json=body))
+
+
+@when("I press the Traces control", target_fixture="opened")
+def _press_traces(ui: Any, sim_dashboard: FakeGrafana, request: Any) -> Any:
+    button = ui.get_by_role("button", name="Traces")
+    expects_dialog = (not sim_dashboard.up) or "switch tracing on" in request.node.name.replace("_", " ")
+    if expects_dialog:
+        button.click()
+        return None
+    with ui.context.expect_page() as new_page:
+        button.click()
+    return new_page.value
+
+
+@then("the traces dashboard opens in a new tab")
+def _traces_tab(opened: Any, sim_dashboard: FakeGrafana) -> None:
+    opened.wait_for_load_state()
+    assert opened.url == sim_dashboard.url + "/d/myrtia-traces/myrtia-traces"
+    opened.close()
+
+
+@then("a dialog says tracing is switched off")
+def _traces_dialog(ui: Any, sim_dashboard: FakeGrafana) -> None:
+    dialog = ui.get_by_role("dialog", name="Run traces")
+    dialog.wait_for()
+    text = dialog.inner_text()
+    assert "Tracing is switched off" in text and "MYRTIA_TRACES=on" in text
+    link = ui.get_by_role("link", name="Open anyway")
+    assert link.get_attribute("href") == sim_dashboard.url + "/d/myrtia-traces/myrtia-traces"
+
+
+@then("the dialog shows the command that starts Myrtia with tracing on")
+def _traces_command(ui: Any) -> None:
+    assert ui.locator("#obsCmd").inner_text().strip() == TRACES_ON

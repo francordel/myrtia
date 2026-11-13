@@ -220,6 +220,8 @@ def _where(monkeypatch: pytest.MonkeyPatch) -> dict:
 @then("it is told tracing is on")
 def _told(where: dict) -> None:
     assert where["tracing"]["enabled"] is True
+    assert where["tracing"]["start_command"] == "MYRTIA_TRACES=on uv run --extra otel myrtia"
+    assert where["traces_url"] == "http://127.0.0.1:9/d/myrtia-traces/myrtia-traces"
 
 
 # --- driving runs -------------------------------------------------------------

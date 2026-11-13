@@ -90,6 +90,17 @@ Viewing
   and shows the step timeline of the one the operator picks, and SHALL link it with the
   overview dashboard in both directions.
 
+From the console
+
+- **FR-19** — THE console SHALL show a "Traces" control in its header, next to "Dashboard".
+- **FR-20** — WHEN the operator activates it, tracing is on and the dashboard is reachable,
+  THE SYSTEM SHALL open the traces dashboard in a new tab.
+- **FR-21** — IF tracing is off when the control is activated, THEN THE SYSTEM SHALL say
+  so, give the reason, show the command that starts Myrtia with tracing on, and offer to
+  open the traces dashboard anyway.
+- **FR-22** — IF the dashboard is not reachable when the control is activated, THEN THE
+  SYSTEM SHALL explain how to start it, as the "Dashboard" control does.
+
 ## Non-functional requirements
 
 - **NFR-1** — Optional dependency: the default install is unchanged; without the tracing
@@ -117,7 +128,8 @@ Viewing
 ## Out of scope
 
 - Shipping logs.
-- A "view trace" link from a run inside the console.
+- A link from one run in the console to that run's own trace (the control opens the
+  list of recent runs).
 - Sampling: every run is traced when tracing is on.
 - Rebuilding traces for runs executed before tracing was switched on.
 - Tracing inside the vendored council's own model client.
