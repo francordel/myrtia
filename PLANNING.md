@@ -1,5 +1,8 @@
 # Myrtia — planning
 
+> Historical planning notes. The current mission, principles and feature order live in
+> [`specs/constitution/`](specs/constitution/); see [`specs/README.md`](specs/README.md).
+
 Working method: small, verifiable loops ("loop engineering"). Each phase ends in
 something runnable or a written decision, not a big-bang. Provenance and licence are
 checked continuously (see `THIRD_PARTY_NOTICES.md`), not at the end.
