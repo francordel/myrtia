@@ -45,6 +45,11 @@
   the roadmap row.
   Done when: a reader can start the stack from the docs alone.
 
+- [x] **T11 — Console to dashboard and back** (FR-20 … FR-24)
+  Scenarios first (offline and UI tier), then `GET /observability`, the header control
+  with its dialog, and the "Open Myrtia" link in the dashboard.
+  Done when: the new scenarios pass in both tiers and both links were followed by hand.
+
 - [x] **T10 — Validate the spec**
   Walk `spec.md` requirement by requirement, run the checks, start the stack and watch a
   run on the dashboard.

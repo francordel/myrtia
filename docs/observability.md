@@ -23,15 +23,32 @@ The dashboard answers, while runs are in flight:
 
 ## Start it
 
-Myrtia on the host:
+You need Docker (Docker Desktop or Colima) for the dashboard; Myrtia itself runs as usual.
 
-```bash
-uv run myrtia
-docker compose -f compose.observability.yaml up -d
-```
+1. Start Myrtia:
 
-Open <http://localhost:3000/>. There is no login: Grafana is a read-only viewer bound to
-`127.0.0.1`, and so is Prometheus (<http://localhost:9090/>).
+   ```bash
+   uv run myrtia
+   ```
+
+2. In another terminal, from the Myrtia folder, start the dashboard (the first time it
+   downloads two images):
+
+   ```bash
+   docker compose -f compose.observability.yaml up -d
+   ```
+
+3. In the console, press **Dashboard** in the header. The dashboard opens in a new tab;
+   **Open Myrtia**, at the top of the dashboard, brings you back. You can also open
+   <http://localhost:3000/> directly.
+
+4. Launch a run. The panels fill within a few seconds and refresh every five.
+
+There is no login: Grafana is a read-only viewer bound to `127.0.0.1`, and so is
+Prometheus (<http://localhost:9090/>).
+
+If the dashboard is not running, **Dashboard** says so and shows the command of step 2
+instead of opening an empty tab.
 
 Myrtia in Docker as well:
 
@@ -47,14 +64,25 @@ the stored metrics.
 | Setting | Default | Meaning |
 |---|---|---|
 | `MYRTIA_SCRAPE_TARGET` | `host.docker.internal:8000` | Where Prometheus finds Myrtia (`host:port`) |
+| `MYRTIA_URL` | `http://localhost:8000` | Where the dashboard's **Open Myrtia** link leads |
 | `GRAFANA_PORT` | `3000` | Grafana's port on this machine |
 | `PROMETHEUS_PORT` | `9090` | Prometheus's port on this machine |
 | `MYRTIA_METRICS_RUNS` | `20` | How many recent runs keep per-run series (set on Myrtia) |
+| `MYRTIA_GRAFANA_URL` | `http://localhost:3000` | Where the console's **Dashboard** control leads (set on Myrtia); `off` hides it |
 
 Notes:
 
-- **Another port.** `uv run myrtia --port 8010` needs
-  `MYRTIA_SCRAPE_TARGET=host.docker.internal:8010`.
+- **Another port.** `uv run myrtia --port 8010` needs both addresses changed:
+
+  ```bash
+  MYRTIA_SCRAPE_TARGET=host.docker.internal:8010 MYRTIA_URL=http://localhost:8010 docker compose -f compose.observability.yaml up -d
+  ```
+
+- **Another Grafana port.** With `GRAFANA_PORT=3001`, start Myrtia with
+  `MYRTIA_GRAFANA_URL=http://localhost:3001` so **Dashboard** finds it.
+- **Check it is collecting.** <http://localhost:9090/targets> must show the `myrtia`
+  target as `UP`. `DOWN` means the address in `MYRTIA_SCRAPE_TARGET` is wrong or Myrtia
+  is not running.
 - **Linux.** A container cannot reach a server bound to the host's `127.0.0.1`. Run
   Myrtia in Docker too (command above), or start it with `--host 0.0.0.0` on a machine
   whose firewall keeps that port private.
@@ -89,6 +117,9 @@ Notes:
 
 ## How it is built
 
+- `GET /observability` tells the console where the dashboard is and whether it
+  answers. The server checks because the page's content policy only lets it talk to
+  Myrtia itself.
 - `backend/myrtia/telemetry.py` is the registry. It is fed by the connectors (every
   `generate()` reports its call) and by the event bus (every published event), so a new
   attack plugin is measured without writing any metrics code.

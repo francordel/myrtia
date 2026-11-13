@@ -967,5 +967,19 @@
         "displayMode": "basic"
       }
     }
+  ],
+  "links": [
+    {
+      "title": "Open Myrtia",
+      "type": "link",
+      "icon": "external link",
+      "url": "__MYRTIA_URL__",
+      "tooltip": "Back to the Myrtia console",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": false,
+      "keepTime": false,
+      "tags": []
+    }
   ]
 }

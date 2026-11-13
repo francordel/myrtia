@@ -25,6 +25,10 @@ the metric names the registry declares.
 | `backend/myrtia/judges/graded.py`, `defenses.py`, `plugins/{crescendo,tap,graph}.py`, `api/routers/runs.py` | Pass their role when building or calling a connector | FR-7 |
 | `backend/myrtia/events/bus.py` | Calls `telemetry.observe_event` after publishing | FR-8 … FR-12 |
 | `backend/myrtia/api/routers/metrics.py` (new), `api/app.py` | `GET /metrics`, token gate | FR-1, FR-2 |
+| `backend/myrtia/api/routers/metrics.py` | `GET /observability`: dashboard address and whether it answers | FR-21, FR-22, FR-23 |
+| `frontend/standalone.html` | "Dashboard" control in the header and its "not running" dialog | FR-20 … FR-23 |
+| `observability/grafana/dashboards/myrtia-overview.json`, `compose.observability.yaml` | "Open Myrtia" dashboard link; its address filled in at start from `MYRTIA_URL` | FR-24 |
+| `backend/tests_ui/` | `fake_grafana.py`, `features/observability.feature`, steps | FR-20 … FR-22 |
 | `compose.observability.yaml`, `observability/` (new) | Prometheus and Grafana, provisioning, dashboard | FR-17, FR-18, NFR-5 |
 | `backend/tests/features/observability.feature`, `backend/tests/test_observability.py` (new) | Scenarios and steps | all |
 | `docs/observability.md` (new), `README.md`, `AGENTS.md` | How to start and read it | FR-17 |
@@ -49,6 +53,12 @@ orchestrator and copied into the worker thread that executes the attack.
 `Authorization: Bearer <token>` or `X-Myrtia-Token`; otherwise `401`. The token is not
 accepted as a query parameter here.
 
+`GET /observability` → `{"enabled": true, "url": "http://localhost:3000",
+"dashboard_url": "http://localhost:3000/d/myrtia-overview/myrtia-overview", "reachable":
+false, "start_command": "docker compose -f compose.observability.yaml up -d"}`, or
+`{"enabled": false}` when `MYRTIA_GRAFANA_URL` is `off`. `reachable` is one guarded,
+short request to the dashboard's health address (SSRF rules, no redirects).
+
 | Metric | Type | Labels |
 |---|---|---|
 | `myrtia_build_info` | gauge | `version` |
@@ -72,13 +82,18 @@ attack)`, `telemetry.render()`, `telemetry.reset()`. A connector call may pass
 `role="…"` to `generate()` to override the connector's own role for that call (the graph
 plugin shares one connector between agents of different roles).
 
-Environment: `MYRTIA_METRICS_RUNS` (per-run cap, default 20); for the stack,
+Environment: `MYRTIA_METRICS_RUNS` (per-run cap, default 20) and `MYRTIA_GRAFANA_URL`
+(where the console's control leads, default `http://localhost:3000`, `off` hides it); for
+the stack, `MYRTIA_URL` (where "Open Myrtia" leads, default `http://localhost:8000`),
 `MYRTIA_SCRAPE_TARGET` (default `host.docker.internal:8000`), `GRAFANA_PORT` (3000),
 `PROMETHEUS_PORT` (9090).
 
 ## UI behaviour
 
-No change to Myrtia's UI. Grafana opens on the provisioned dashboard as an anonymous
+The header gets a "Dashboard" chip next to "Demo". On click the console asks
+`/observability`: reachable → the dashboard opens in a new tab; not reachable → a dialog
+says it is not running, shows the start command with a copy button, and offers "Open
+anyway" and "Close". With the address off the chip is hidden. Grafana opens on the provisioned dashboard as an anonymous
 viewer; the login form is disabled and both ports bind to `127.0.0.1`.
 
 ## Decisions
@@ -93,6 +108,8 @@ viewer; the login form is disabled and both ports bind to `127.0.0.1`.
 | Role and model as the "agent" dimension | Bounded and meaningful; agent names are free text and stay in the browser | Agent name label: unbounded, and names are not sent to the backend |
 | Opt-in Compose overlay | The default install must stay one process (NFR-1) | Adding the services to `compose.yaml`: heavier default |
 | Dashboard totals read the counters directly | A counter born with a non-zero value is missed by `increase()`; "since Myrtia started" is exact | `increase()` over the time range: under-counts short runs |
+| The server checks whether the dashboard answers | The console's content policy only lets the page talk to its own origin | Probing from the browser: blocked by that policy |
+| Dashboard opens in a new tab | A live run view and an unsaved graph stay as they were | Same tab: loses the operator's place |
 | Traces left out | Metrics answer the roadmap's questions; traces need an SDK and a store | OpenTelemetry now: larger change, new dependencies |
 
 ## Constitution check
@@ -121,6 +138,9 @@ viewer; the login form is disabled and both ports bind to `127.0.0.1`.
 | FR-13, FR-14 | "Calls inside a run feed its per-run series", "Only the most recent runs keep per-run series" |
 | FR-15 | "Secrets and addresses never reach the metrics" |
 | FR-16 | "A metrics failure does not break the model call" |
+| FR-20, FR-21, FR-22 | UI tier: "The Dashboard control opens the dashboard", "The Dashboard control explains how to start it" |
+| FR-21 … FR-23 | "The console is told where the dashboard is", "… when it answers", "The dashboard address can be switched off" |
+| FR-24 | "The dashboard links back to the console" |
 | FR-17 | Manual: stack started, dashboard seen; "The stack is local and anonymous" checks the Compose file |
 | FR-18, FR-19 | "The dashboard only queries exported metrics", "The dashboard has the promised panels" |
 

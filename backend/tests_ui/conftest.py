@@ -24,6 +24,7 @@ if str(_BACKEND) not in sys.path:
     sys.path.insert(0, str(_BACKEND))
 
 from app_launcher import AppInstance  # noqa: E402
+from fake_grafana import FakeGrafana  # noqa: E402
 from fake_model import FakeModel  # noqa: E402
 
 INSTALL_HINT = (
@@ -83,8 +84,15 @@ def sim_model() -> Generator[FakeModel, None, None]:
 
 
 @pytest.fixture(scope="session")
-def app(sim_model: FakeModel) -> Generator[AppInstance, None, None]:
-    with AppInstance(model_url=sim_model.url) as instance:
+def sim_dashboard() -> Generator[FakeGrafana, None, None]:
+    with FakeGrafana() as dashboard:
+        yield dashboard
+
+
+@pytest.fixture(scope="session")
+def app(sim_model: FakeModel, sim_dashboard: FakeGrafana) -> Generator[AppInstance, None, None]:
+    with AppInstance(model_url=sim_model.url,
+                     extra_env={"MYRTIA_GRAFANA_URL": sim_dashboard.url}) as instance:
         yield instance
 
 

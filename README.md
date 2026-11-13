@@ -526,12 +526,14 @@ each attack's configuration schema and renders the advanced options automaticall
 ### Observability dashboard
 
 Myrtia serves its metrics at `/metrics` (Prometheus text format). To watch tokens, latency
-and activity in real time, start the optional stack next to it and open
-<http://localhost:3000/>:
+and activity in real time, start the optional stack next to it (it needs Docker):
 
 ```bash
 docker compose -f compose.observability.yaml up -d
 ```
+
+Then press **Dashboard** in the console's header; **Open Myrtia** on the dashboard brings
+you back.
 
 Details, settings and the metric list are in [docs/observability.md](docs/observability.md).
 

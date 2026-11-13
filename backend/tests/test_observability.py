@@ -494,3 +494,80 @@ def _anonymous(compose: str) -> None:
 def _no_analytics(compose: str) -> None:
     assert 'GF_ANALYTICS_REPORTING_ENABLED: "false"' in compose
     assert 'GF_ANALYTICS_CHECK_FOR_UPDATES: "false"' in compose
+
+
+# --- console <-> dashboard ----------------------------------------------------
+@given("the dashboard address is one where nothing answers")
+def _grafana_down(monkeypatch: pytest.MonkeyPatch) -> None:
+    import myrtia.api.routers.metrics as m
+    import requests
+
+    def refuse(*_a: Any, **_k: Any) -> Any:
+        raise requests.ConnectionError("refused")
+
+    monkeypatch.setattr(m, "GRAFANA_URL", "http://127.0.0.1:9")
+    monkeypatch.setattr(m.requests, "get", refuse)
+
+
+@given("the dashboard address is one that answers")
+def _grafana_up(monkeypatch: pytest.MonkeyPatch, world: dict) -> None:
+    import myrtia.api.routers.metrics as m
+
+    def ok(url: str, **kwargs: Any) -> _HTTP:
+        world["health"] = (url, kwargs)
+        return _HTTP(200, {"database": "ok"})
+
+    monkeypatch.setattr(m, "GRAFANA_URL", "http://127.0.0.1:9")
+    monkeypatch.setattr(m.requests, "get", ok)
+
+
+@given("the dashboard address is switched off")
+def _grafana_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    import myrtia.api.routers.metrics as m
+    monkeypatch.setattr(m, "GRAFANA_URL", "off")
+
+
+@when("the console asks where the dashboard is", target_fixture="where")
+def _where() -> dict:
+    r = _client().get("/observability")
+    assert r.status_code == 200
+    return r.json()
+
+
+@then("it gets the dashboard's address and the command that starts it")
+def _address(where: dict) -> None:
+    assert where["enabled"] is True
+    assert where["url"] == "http://127.0.0.1:9"
+    assert where["dashboard_url"] == "http://127.0.0.1:9/d/myrtia-overview/myrtia-overview"
+    assert where["start_command"] == "docker compose -f compose.observability.yaml up -d"
+
+
+@then("it is told the dashboard is not reachable")
+def _unreachable(where: dict) -> None:
+    assert where["reachable"] is False
+
+
+@then("it is told the dashboard is reachable")
+def _reachable(where: dict, world: dict) -> None:
+    assert where["reachable"] is True
+    url, kwargs = world["health"]
+    assert url == "http://127.0.0.1:9/api/health"
+    assert kwargs.get("allow_redirects") is False and kwargs.get("timeout", 99) <= 2
+
+
+@then("it is told there is no dashboard")
+def _disabled(where: dict) -> None:
+    assert where == {"enabled": False}
+
+
+@then('it has an "Open Myrtia" link whose address is filled in when the stack starts')
+def _back_link(dashboard: dict) -> None:
+    links = [link for link in dashboard.get("links", []) if link["title"] == "Open Myrtia"]
+    assert len(links) == 1 and links[0]["url"] == "__MYRTIA_URL__"
+
+
+@then("the Compose file fills it in from the console's address setting")
+def _fills_in() -> None:
+    compose = (REPO / "compose.observability.yaml").read_text()
+    assert "MYRTIA_URL: ${MYRTIA_URL:-http://localhost:8000}" in compose
+    assert "__MYRTIA_URL__" in compose

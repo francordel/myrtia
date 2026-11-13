@@ -153,6 +153,27 @@ Feature: Observability metrics
     Given the provisioned dashboard
     Then it has panels for runs, tokens, latency, calls, judge scores, shields, events and one run
 
+  Scenario: The console is told where the dashboard is
+    Given the dashboard address is one where nothing answers
+    When the console asks where the dashboard is
+    Then it gets the dashboard's address and the command that starts it
+    And it is told the dashboard is not reachable
+
+  Scenario: The console is told when the dashboard answers
+    Given the dashboard address is one that answers
+    When the console asks where the dashboard is
+    Then it is told the dashboard is reachable
+
+  Scenario: The dashboard address can be switched off
+    Given the dashboard address is switched off
+    When the console asks where the dashboard is
+    Then it is told there is no dashboard
+
+  Scenario: The dashboard links back to the console
+    Given the provisioned dashboard
+    Then it has an "Open Myrtia" link whose address is filled in when the stack starts
+    And the Compose file fills it in from the console's address setting
+
   Scenario: The stack is local and anonymous
     Given the observability Compose file
     Then Grafana and the collector are published on the loopback address only

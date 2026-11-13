@@ -29,6 +29,8 @@ optional, ready-made Grafana dashboard that reads them in real time.
   model time per role so that I can compare runs.
 - **US-4** — As a maintainer, I want one command that starts a dashboard already wired
   to Myrtia so that I do not configure anything by hand.
+- **US-6** — As an operator, I want one click from the console to the dashboard and one
+  click back so that I do not have to remember addresses.
 - **US-5** — As a maintainer, I want the metrics in a standard format so that any
   compatible collector can read them, not only the bundled one.
 
@@ -94,6 +96,18 @@ Dashboard
   by type, and, for a run chosen in a filter, its tokens, calls and model time by role.
 - **FR-19** — THE dashboard SHALL query only metrics the system exports.
 
+Getting there and back
+
+- **FR-20** — THE console SHALL show a "Dashboard" control in its header.
+- **FR-21** — WHEN the operator activates that control and the dashboard is reachable,
+  THE SYSTEM SHALL open the dashboard in a new tab, leaving the console as it was.
+- **FR-22** — IF the dashboard is not reachable when the control is activated, THEN THE
+  SYSTEM SHALL say so, show the command that starts it, and offer to open it anyway.
+- **FR-23** — WHERE the operator has switched the dashboard address off, THE SYSTEM SHALL
+  hide the control.
+- **FR-24** — THE dashboard SHALL offer an "Open Myrtia" link back to the console, at an
+  address the operator can set.
+
 ## Non-functional requirements
 
 - **NFR-1** — No new runtime dependency: the default install and `uv run myrtia` are
@@ -121,11 +135,15 @@ Dashboard
 - More than the limit of runs still running at once: the oldest run is dropped even if
   it has not finished.
 
+- The console runs in Docker and cannot reach the dashboard's address itself although the
+  operator's browser can: the control reports it as not reachable and "Open anyway"
+  still works.
+
 ## Out of scope
 
 - Distributed traces and log shipping (stay in the backlog as their own feature).
 - Alerting rules, cost in currency, long-term retention policy.
-- A link or embedded dashboard inside Myrtia's own UI.
+- Embedding the dashboard inside Myrtia's own UI (the console links to it instead).
 - Metrics for the vendored council's internal model calls that do not go through
   Myrtia's connectors.
 
