@@ -20,6 +20,8 @@ live. It is dual-use security tooling for authorised testing only (see `DUAL_USE
 - UI scenarios: `uv run --group ui pytest backend/tests_ui` (real browser, simulated model;
   once: `uv run --group ui playwright install chromium`)
 - Lint: `uv run --extra dev ruff check backend` (zero warnings)
+- Dashboard (optional): `docker compose -f compose.observability.yaml up -d`, then
+  http://localhost:3000/ (metrics at `/metrics`; see `docs/observability.md`)
 
 ## Structure
 
@@ -28,6 +30,7 @@ live. It is dual-use security tooling for authorised testing only (see `DUAL_USE
 - `backend/tests/` — pytest suite (`features/` holds the behaviour-driven tests)
 - `backend/tests_ui/` — UI scenarios run in a browser (`features/`, steps, simulated model)
 - `frontend/standalone.html` — the whole UI
+- `observability/` — Prometheus and Grafana provisioning for the optional dashboard
 - `specs/` — constitution, feature specs and templates (start at `specs/README.md`)
 - `docs/` — architecture and design notes; `docs/audit-log.md` is the historical findings log
 

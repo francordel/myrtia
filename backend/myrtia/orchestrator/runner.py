@@ -14,12 +14,14 @@ has something to render.
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import logging
 import threading as _threading
 import traceback
 from copy import deepcopy
 from typing import Any
 
+from myrtia import telemetry
 from myrtia.events.bus import EventBus, BUS
 from myrtia.events.schema import Event, EventType
 from myrtia.plugins.base import REGISTRY
@@ -118,7 +120,7 @@ class Orchestrator:
                 run.spec.attack_config.setdefault(
                     "target_base_url", (run.spec.target or {}).get("base_url"))
 
-            target = build_target_connector(run.spec.target)
+            target = build_target_connector({**(run.spec.target or {}), "role": "target"})
             # Optional shield pipeline in front of the target (defense evaluation).
             defenses = getattr(run.spec, "defenses", None)
             if defenses:
@@ -143,8 +145,11 @@ class Orchestrator:
             if run.spec.goals and hasattr(strategy, "load_goals"):
                 strategy.load_goals(run.spec.goals)
 
-            # Blocking strategy call off the event loop.
-            results = await loop.run_in_executor(None, strategy.attack)
+            # Blocking strategy call off the event loop, in a copy of this context bound
+            # to the run so its model calls feed the per-run metrics (spec 008).
+            ctx = contextvars.copy_context()
+            ctx.run(telemetry.bind_run, run.id, run.spec.attack_id)
+            results = await loop.run_in_executor(None, ctx.run, strategy.attack)
             run.results = results or []
             tk = getattr(target, "tokens", None)
             if isinstance(tk, dict) and tk.get("total"):

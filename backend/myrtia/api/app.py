@@ -14,6 +14,7 @@ Routers:
     runs       -> /runs lifecycle, /runs/{id}/export|report, /preflight, WS events
     stats      -> /stats, /audit
     approvals  -> /approvals (human-in-the-loop)
+    metrics    -> /metrics (Prometheus text format)
 
 Run with: ``uvicorn myrtia.api.app:app``.
 """
@@ -35,6 +36,7 @@ from myrtia.api.routers import (
     chat as _chat,
     datasets as _datasets,
     meta as _meta,
+    metrics as _metrics,
     runs as _runs,
     stats as _stats,
 )
@@ -111,6 +113,7 @@ app.include_router(_datasets.router)
 app.include_router(_runs.router)
 app.include_router(_stats.router)
 app.include_router(_approvals.router)
+app.include_router(_metrics.router)
 
 
 # --- compatibility re-exports ---------------------------------------------------

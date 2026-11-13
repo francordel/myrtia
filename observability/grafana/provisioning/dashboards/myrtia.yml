@@ -1,0 +1,9 @@
+apiVersion: 1
+providers:
+  - name: Myrtia
+    folder: Myrtia
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /tmp/dashboards
