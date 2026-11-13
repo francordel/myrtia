@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import PlainTextResponse
 import requests
 
-from myrtia import telemetry
+from myrtia import telemetry, tracing
 from myrtia.api import deps
 
 router = APIRouter()
@@ -68,5 +68,7 @@ async def observability() -> dict[str, Any]:
     if not base or base.lower() in ("off", "false", "0", "none"):
         return {"enabled": False}
     reachable = await asyncio.get_running_loop().run_in_executor(None, _dashboard_answers, base)
+    traces = tracing.status()
     return {"enabled": True, "url": base, "dashboard_url": base + _DASHBOARD_PATH,
-            "reachable": reachable, "start_command": _START_COMMAND}
+            "reachable": reachable, "start_command": _START_COMMAND,
+            "tracing": {"enabled": traces["enabled"], "reason": traces["reason"]}}

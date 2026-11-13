@@ -22,6 +22,7 @@ live. It is dual-use security tooling for authorised testing only (see `DUAL_USE
 - Lint: `uv run --extra dev ruff check backend` (zero warnings)
 - Dashboard (optional): `docker compose -f compose.observability.yaml up -d`, then
   http://localhost:3000/ (metrics at `/metrics`; see `docs/observability.md`)
+- Traces (optional): `MYRTIA_TRACES=on uv run --extra otel myrtia` with the dashboard stack up
 
 ## Structure
 

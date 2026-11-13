@@ -380,6 +380,7 @@ Red teaming in Myrtia is organised around four components:
   API responses and from the live event stream.
 - **Composable attacker topologies.** Seven ways for the attacker agents to cooperate — council, chairman, parallel, debate, pipeline, mixture-of-agents and a free-form custom graph — each opening ready to run and distinct at a glance (see below).
 - **Real-time observability.** Token consumption, latency and activity per role, per model and per run, exported at `/metrics` and shown on an optional, ready-made Grafana dashboard (see [docs/observability.md](docs/observability.md)).
+- **Auditable run traces.** Each run can be emitted as an OpenTelemetry trace (run, goal, turn, model call) with what was sent, what came back and the verdict, kept on your machine and readable in any compatible tool.
 - **Self-hosted and permissive.** Apache-2.0, single-command backend, no vendor lock-in.
 
 ## Attacker topologies
@@ -534,6 +535,13 @@ docker compose -f compose.observability.yaml up -d
 
 Then press **Dashboard** in the console's header; **Open Myrtia** on the dashboard brings
 you back.
+
+To also record each run as a trace you can follow step by step, start Myrtia with tracing
+on (it is off by default):
+
+```bash
+MYRTIA_TRACES=on uv run --extra otel myrtia
+```
 
 Details, settings and the metric list are in [docs/observability.md](docs/observability.md).
 
