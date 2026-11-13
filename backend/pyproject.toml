@@ -28,6 +28,11 @@ dev = [
     "httpx",  # Starlette TestClient (offline API tests in tests/test_api.py)
     "ruff",   # lint + format — `ruff check` / `ruff format` (config in [tool.ruff])
 ]
+# UI scenarios (tests_ui/): drive the web UI in a real browser. Kept out of `dev` so
+# backend work needs no browser. After installing: `playwright install chromium`.
+ui = [
+    "pytest-playwright",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -42,6 +47,8 @@ markers = [
 #   pytest -m "not e2e"     fast, offline (encodings + evaluator)
 #   pytest -m e2e           runs every attack against a live endpoint
 # Point the e2e tier elsewhere with MYRTIA_TEST_ENDPOINT / MYRTIA_TEST_MODEL.
+#   pytest tests_ui         UI scenarios in a real browser (needs the `ui` extra);
+#                           outside `testpaths`, so the commands above never collect it.
 
 [tool.ruff]
 line-length = 100

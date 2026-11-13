@@ -69,8 +69,11 @@ Scenario: A run stores the token usage of the target
 
 The scenario is written before the code and must fail first. Scenarios that drive a
 whole run against a live model are the end-to-end tier (`@e2e`); the rest run offline.
-UI behaviour that no automated scenario can reach yet is covered by a manual check
-written in the spec, and is a candidate for an automated scenario later.
+
+UI behaviour has its own tier: scenarios in `backend/tests_ui/features/` run in a real
+browser against a simulated model (`pytest backend/tests_ui`). A manual check written in
+the spec is only for what no scenario can reach, such as a setting in the repository
+host.
 
 ## Tracking
 

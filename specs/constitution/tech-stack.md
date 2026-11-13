@@ -10,7 +10,7 @@
 | Persistence | SQLite behind the run store |
 | Frontend | `frontend/standalone.html`: a single zero-build file, plain HTML, CSS and JavaScript |
 | Attack plugins | ARES-style strategies, auto-discovered from `backend/myrtia/plugins/`; adapters wrap attacks from ARES, garak and PyRIT |
-| Tests | pytest with `pytest-bdd` (Gherkin `.feature` files); offline tier (`-m "not e2e"`) and end-to-end tier (`-m e2e`) |
+| Tests | pytest with `pytest-bdd` (Gherkin `.feature` files); offline tier (`-m "not e2e"`), end-to-end tier (`-m e2e`) and UI tier in a real browser (`backend/tests_ui`, Playwright) |
 | Lint and format | ruff (line length 100) |
 | Delivery | `uv run myrtia`, plus a Docker image and Compose file |
 | Licence | Apache-2.0; third-party origins recorded in `THIRD_PARTY_NOTICES.md` |
@@ -41,7 +41,8 @@ change this file first, in its own pull request.
 8. **No private dual-use artefacts in git or in the Docker build context.** Files
    matching `*.private.*` and worked harmful completions stay out.
 9. **Verified, not assumed.** A change is done when `ruff check backend` reports nothing,
-   `pytest -m "not e2e"` is green, and UI behaviour has been checked in a browser.
+   `pytest -m "not e2e"` is green, and, for UI behaviour, the UI scenarios pass in the
+   browser tier.
 10. **Small, focused changes.** One feature or fix per pull request, touching only what
     it needs.
 11. **Test-driven.** Code is written test first: a failing test, then the minimum code

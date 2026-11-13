@@ -27,6 +27,40 @@ pytest -m e2e         # needs a live OpenAI-compatible endpoint (local Ollama)
 
 Point the e2e tier elsewhere with `MYRTIA_TEST_ENDPOINT` / `MYRTIA_TEST_MODEL`.
 
+### UI scenarios (browser)
+
+A third tier drives the web UI in a real browser. It lives in `backend/tests_ui/`,
+outside the default test path, so the commands above never need a browser.
+
+```bash
+# once: install the test dependencies and the browser (from the repo root)
+uv sync --group ui
+uv run --group ui playwright install chromium
+
+# run the UI scenarios
+uv run --group ui pytest backend/tests_ui
+
+# watch them in a visible browser window
+uv run --group ui pytest backend/tests_ui --headed
+```
+
+Without uv: `pip install -e "backend[dev,ui]"`, `playwright install chromium`, then
+`pytest tests_ui` from `backend/`.
+
+The tier starts its own Myrtia instance on a free port with a temporary database, and a
+simulated model server with fixed replies. It needs no Ollama, no API key and no
+internet, and it never touches your own run history or stored keys. Requests to any
+other host are blocked.
+
+When a scenario fails, a screenshot and the browser's messages are saved under
+`backend/test-results/<scenario>/`. In CI they are attached to the run as the
+`ui-test-results` artefact. A scenario also fails if the page raises an unhandled script
+error.
+
+Scenarios are written in Gherkin in `backend/tests_ui/features/*.feature` with their
+steps in `backend/tests_ui/test_*.py`. Prefer selectors that already exist (element ids,
+`data-*` attributes); add a `data-testid` attribute only when there is none.
+
 Work test first: write the failing test, then the code that passes it. Acceptance
 criteria are Gherkin scenarios in `backend/tests/features/*.feature`, bound to step
 functions with `pytest-bdd`; the scenarios tagged `e2e` drive a whole run end to end.
@@ -39,8 +73,8 @@ ruff check .      # lint (config in [tool.ruff])
 ruff format .     # format
 ```
 
-CI runs `ruff check` (currently informational) and the offline tests on every push and
-pull request to `main`.
+CI runs `ruff check` (currently informational), the offline tests and the UI scenarios
+on every push and pull request to `main`.
 
 ## Adding an attack (no core edits — Open/Closed)
 
@@ -76,7 +110,8 @@ behaviour do not need a spec.
 
 - Link the feature spec and list the requirement ids (`FR-n`) the change covers.
 
-- Keep the offline tests green (`pytest -m "not e2e"`).
+- Keep the offline tests green (`pytest -m "not e2e"`), and the UI scenarios
+  (`pytest tests_ui`) when you touch the frontend.
 - Run `ruff check .` before pushing.
 - Never commit secrets (`.env*`, API keys) or real high-sensitivity worked exemplars —
   see [DUAL_USE.md](DUAL_USE.md).
