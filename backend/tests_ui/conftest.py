@@ -168,6 +168,7 @@ def context(context: Any, page_log: PageLog) -> Any:
 def page(context: Any, page_log: PageLog,
          request: pytest.FixtureRequest) -> Generator[Any, None, None]:
     pg = context.new_page()
+    pg.set_default_timeout(8000)  # a missing element fails the scenario quickly
     pg.on("console", lambda m: page_log.console.append(f"[{m.type}] {m.text}"))
     pg.on("pageerror", lambda e: page_log.script_errors.append(str(e)))
     yield pg
@@ -191,3 +192,74 @@ def console_page(page: Any, app: AppInstance) -> Any:
     page.goto(app.url)
     page.wait_for_selector("#agenticPane .gnode")
     return page
+
+
+# ── steps shared by the UI features ──────────────────────────────────────────
+
+from playwright.sync_api import Page, expect  # noqa: E402
+from pytest_bdd import given, parsers, then, when  # noqa: E402
+
+CANVAS = "#agenticPane"
+
+
+def nodes(page: Page, role: str) -> Any:
+    return page.locator(f"{CANVAS} .gnode.{role}")
+
+
+def card(page: Page, n: int) -> Any:
+    """The card of attacker `n` (1-based, in creation order)."""
+    return page.locator(f'{CANVAS} .gnode[data-id="a{n}"]')
+
+
+def open_editor(page: Page, node_id: str) -> Any:
+    """Open a node's editor and return the dialog."""
+    page.locator(f'{CANVAS} .gnode[data-id="{node_id}"] .gm').click()
+    dialog = page.locator("#gdialog")
+    expect(dialog).to_be_visible()
+    return dialog
+
+
+def close_editor(page: Page) -> None:
+    dialog = page.locator("#gdialog")
+    dialog.get_by_role("button", name="Done").click()
+    expect(dialog).to_be_hidden()
+
+
+def set_model(page: Page, node_id: str, model: str) -> None:
+    open_editor(page, node_id).locator("#gd_model").fill(model)
+    close_editor(page)
+
+
+@given("the Myrtia console is open", target_fixture="ui")
+def console_is_open(console_page: Page) -> Page:
+    return console_page
+
+
+@given("I have added an attacker")
+@when("I add an attacker")
+def add_attacker(ui: Page) -> None:
+    before = nodes(ui, "attacker").count()
+    ui.locator("#gAddAtk").click()
+    expect(nodes(ui, "attacker")).to_have_count(before + 1)
+
+
+@when("I remove the last attacker")
+def remove_last_attacker(ui: Page) -> None:
+    nodes(ui, "attacker").last.locator(".gx").click()
+
+
+@given(parsers.parse('attacker {n:d} uses the model "{model}"'))
+@when(parsers.parse('I set the model of attacker {n:d} to "{model}"'))
+def set_attacker_model(ui: Page, n: int, model: str) -> None:
+    set_model(ui, f"a{n}", model)
+
+
+@given(parsers.parse('I have chosen the "{name}" topology'))
+@when(parsers.parse('I choose the "{name}" topology'))
+def choose_topology(ui: Page, name: str) -> None:
+    ui.locator(f'{CANVAS} [data-topo="{name.lower()}"]').click()
+
+
+@then(parsers.parse("the canvas shows {count:d} attacker nodes"))
+def canvas_shows_attackers(ui: Page, count: int) -> None:
+    expect(nodes(ui, "attacker")).to_have_count(count)

@@ -17,7 +17,7 @@ spec is validated. Detailed history before specs were adopted lives in `BACKLOG.
 | # | Feature | Summary | Status |
 |---|---|---|---|
 | 001 | `ui-e2e-tests` | Behaviour scenarios for the web UI run automatically in a real browser, against a simulated model, locally and on every pull request. | Implemented; awaiting first CI run |
-| 002 | `agent-cards` | Agent nodes on the canvas show what each agent carries (name, description, prompt, tools, priming) and let the operator add or remove those parts, and add agents, directly from the node. | Not started |
+| 002 | `agent-cards` | Agent nodes on the canvas show what each agent carries (name, description, prompt, tools, priming) and let the operator add or remove those parts, and add agents, directly from the node. | Implemented; awaiting review |
 | 003 | `canvas-preview` | Try the current graph against one goal from a panel docked on the canvas, with the active agent highlighted, without leaving the builder. | Not started |
 | 004 | `execution-trace` | Each turn shows its steps with durations, so the operator can see where time goes and which agent or tool acted. | Not started |
 | 005 | `guardrails-shields` | Checks from the OpenAI open-source guardrails library, and whole guardrails configurations, run as shields in the same pipeline as the literature shields. | Spec clarified |
@@ -26,6 +26,8 @@ spec is validated. Detailed history before specs were adopted lives in `BACKLOG.
 
 ## Backlog (unordered)
 
+- Ring layout that leaves room between neighbouring agents at seven and eight attackers
+  (today adjacent cards overlap and one comes to the front when pointed at).
 - X-Teaming as a new multi-agent, multi-turn attack plugin.
 - Observability dashboards (Grafana): real-time token consumption, latency and activity
   per agent and per run, fed by exported metrics and traces.

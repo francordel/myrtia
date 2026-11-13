@@ -602,18 +602,60 @@
   .gnode .gx { position:absolute; top:-9px; right:-9px; width:20px; height:20px; border-radius:50%; border:1px solid var(--border); background:var(--surface-2); color:var(--text-2); font-size:12px; line-height:18px; text-align:center; cursor:pointer; }
   .gnode .gx:hover { color:var(--danger); border-color:var(--danger); }
   /* attack tools on an attacker node (single-turn attacks it can run) */
-  .gnode .gtools { display:flex; gap:4px; margin-top:7px; flex-wrap:wrap; }
-  .gbubble { display:inline-flex; align-items:center; gap:3px; background:color-mix(in srgb,var(--role-proposal) 16%,transparent); color:var(--role-proposal); border:1px solid var(--role-proposal); border-radius:var(--r-pill); padding:1px 8px 1px 6px; font-size:11px; line-height:1.5; cursor:pointer; }
-  .gbubble b { font-weight:700; } .gbubble:hover { background:var(--role-proposal); color:#fff; }
   .gchat { position:absolute; top:-10px; right:-10px; width:24px; height:24px; border-radius:50%; border:1px solid var(--border); background:var(--surface-2); color:var(--text-2); font-size:12px; line-height:22px; text-align:center; cursor:pointer; padding:0; display:block; box-shadow:var(--shadow-1); }
   .gchat:hover { color:var(--text-1); transform:scale(1.12); }
   .gchat.on { border-color:var(--role-chairman); color:var(--role-chairman); background:var(--accent-bg); }
-  .gsword { position:absolute; bottom:-12px; left:-12px; width:26px; height:26px; border-radius:50%; border:1.5px solid var(--role-proposal); background:var(--role-proposal); color:#fff; font-size:14px; line-height:24px; text-align:center; cursor:pointer; padding:0; display:block; box-shadow:var(--shadow-1); z-index:2; }
-  .gsword:hover { transform:scale(1.14); box-shadow:var(--shadow-2); }
+  /* agent cards (spec 002). A card keeps the footprint of a node: a tinted header band with the
+     name and the add control, the model, and a summary of what the agent carries. Its detail
+     (description and one row per part) opens over the canvas when the card is pointed at,
+     focused or selected, so no layout has to make room for it. --role is the role colour. */
+  .gnode.attacker { --role:var(--role-proposal); } .gnode.chairman { --role:var(--role-chairman); }
+  .gnode.card { padding:0; }
+  .gnode.card .gr { gap:7px; padding:6px 7px 6px 10px; border-radius:calc(var(--r-lg) - 2px) calc(var(--r-lg) - 2px) 0 0;
+    background:color-mix(in srgb,var(--role) 16%,var(--surface-1)); border-bottom:1px solid color-mix(in srgb,var(--role) 38%,transparent); }
+  .gnode.card .gr i { box-shadow:0 0 0 3px color-mix(in srgb,var(--role) 22%,transparent); }
+  .gnode.card .gname { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gnode .gadd { flex:none; width:20px; height:20px; padding:0; border:1px solid color-mix(in srgb,var(--role) 45%,transparent); border-radius:6px;
+    background:color-mix(in srgb,var(--role) 10%,var(--surface-1)); color:var(--role); font-size:14px; line-height:16px; text-align:center; cursor:pointer; transition:background .12s, color .12s; }
+  .gnode .gadd:hover, .gnode .gadd:focus-visible { background:var(--role); color:var(--surface-1); outline:none; }
+  .gnode.card .gbody { padding:7px 10px 8px; }
+  .gnode.card .gm { margin-top:0; display:flex; align-items:center; gap:6px; }
+  .gnode.card .gm svg { flex:none; width:12px; height:12px; color:var(--text-3); }
+  .gnode.card .gm span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  /* summary: one small chip per kind of part */
+  .gnode .gsum { display:flex; gap:4px; margin-top:6px; overflow:hidden; }
+  .gnode .gchip { flex:none; display:inline-flex; align-items:center; gap:4px; height:18px; padding:0 6px 0 5px; border:1px solid var(--border); border-radius:var(--r-pill); background:var(--surface-2); color:var(--text-2); font-size:10.5px; line-height:1; white-space:nowrap; }
+  .gnode .gchip svg { flex:none; width:11px; height:11px; }
+  .gnode .gchip[data-type="tool"] { border-color:color-mix(in srgb,var(--role) 40%,transparent); background:color-mix(in srgb,var(--role) 10%,var(--surface-1)); color:var(--role); font-weight:700; }
+  .gnode .gchip[data-type="priming"] svg { color:var(--role-critique); }
+  .gnode .gchip[data-custom="1"] { color:var(--text-1); border-color:var(--border-strong); }
+  /* detail: continues the card below it (above it for cards in the lower half of the canvas) */
+  .gnode .gdetail { display:none; position:absolute; left:-1.5px; right:-1.5px; top:calc(100% - 6px); padding:9px 10px 10px; background:var(--surface-1);
+    border:1.5px solid var(--role); border-top:0; border-radius:0 0 var(--r-lg) var(--r-lg); box-shadow:var(--shadow-2); cursor:default; }
+  .gnode.up .gdetail { top:auto; bottom:calc(100% - 6px); padding:10px 10px 9px; border-top:1.5px solid var(--role); border-bottom:0; border-radius:var(--r-lg) var(--r-lg) 0 0; box-shadow:none; }
+  .gnode.card:hover .gdetail, .gnode.card:focus-within .gdetail, .gnode.card.sel .gdetail { display:block; }
+  .gnode .gdesc { font-size:11.5px; line-height:1.35; color:var(--text-2); margin-bottom:8px; overflow-wrap:anywhere; }
+  .gnode .gcarries { font-size:9px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--text-3); }
+  .gnode .gparts { display:flex; flex-direction:column; gap:4px; margin-top:4px; }
+  .gnode .gpart { display:flex; align-items:center; gap:2px; height:22px; padding:0 3px 0 0; background:var(--surface-2); border:1px solid var(--border); border-radius:6px; transition:border-color .12s; }
+  .gnode .gpart:hover, .gnode .gpart:focus-within { border-color:var(--border-strong); }
+  .gnode .gpart-open { flex:1; min-width:0; height:100%; display:flex; align-items:center; gap:6px; padding:0 4px 0 7px; border:0; background:transparent; color:var(--text-2); font:inherit; font-size:11.5px; text-align:left; cursor:pointer; }
+  .gnode .gpart-open span { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .gnode .gpart-open svg { flex:none; width:12px; height:12px; }
+  .gnode .gpart-open:hover, .gnode .gpart-open:focus-visible { color:var(--text-1); outline:none; }
+  .gnode .gpart[data-type="tool"] { background:color-mix(in srgb,var(--role) 9%,var(--surface-1)); border-color:color-mix(in srgb,var(--role) 34%,transparent); }
+  .gnode .gpart[data-type="tool"] .gpart-open { font-family:"Roboto Mono",ui-monospace,monospace; font-size:11px; color:var(--role); }
+  .gnode .gpart[data-type="priming"] .gpart-open svg { color:var(--role-critique); }
+  .gnode .gpart-rm { flex:none; width:17px; height:17px; padding:0; border:0; border-radius:5px; background:transparent; color:var(--text-3); font-size:13px; line-height:15px; cursor:pointer; }
+  .gnode .gpart-rm:hover, .gnode .gpart-rm:focus-visible { color:var(--danger); background:color-mix(in srgb,var(--danger) 14%,transparent); outline:none; }
+  .gnode button.gx { padding:0; font-family:inherit; }
+  /* The card being pointed at, focused or selected comes in front of its neighbours. */
+  .gnode:hover, .gnode:focus-within, .gnode.sel { z-index:5; }
+  .gadd-menu { display:flex; flex-direction:column; gap:6px; margin-top:6px; }
+  .gadd-menu .btn-outline { justify-content:flex-start; }
   .gd-toolchips { display:flex; flex-wrap:wrap; gap:5px; margin:4px 0 6px; }
   .gd-chip { display:inline-flex; align-items:center; gap:5px; background:color-mix(in srgb,var(--role-proposal) 15%,transparent); color:var(--role-proposal); border:1px solid var(--role-proposal); border-radius:var(--r-pill); padding:2px 6px 2px 8px; font-size:12px; cursor:pointer; }
   .gd-chip i { font-style:normal; cursor:pointer; opacity:.7; font-weight:700; } .gd-chip i:hover { opacity:1; color:var(--danger); }
-  .gnode.attacker:hover .gsword { box-shadow:var(--shadow-2); }
   #gtool .gtool-row { display:flex; align-items:center; gap:8px; padding:5px 4px; font-size:13px; cursor:pointer; margin:0; border-radius:var(--r-sm); }
   #gtool .gtool-row:hover { background:var(--surface-2); }
   #gtool .gtool-row input { width:16px; height:16px; min-height:0; accent-color:var(--btn); }
@@ -2967,7 +3009,7 @@ function gLayout(W,H){
   return pos;
 }
 const G_HALF={attacker:[85,38],chairman:[85,38],target:[88,40],evaluator:[76,30],defense:[34,22]};
-function gClip(pt,kind,dirx,diry){ const [hx,hy]=G_HALF[kind]||[90,38]; const ax=Math.abs(dirx)||1e-6, ay=Math.abs(diry)||1e-6; const t=Math.min(hx/ax, hy/ay); return {x:pt.x+dirx*t, y:pt.y+diry*t}; }
+function gClip(pt,kind,dirx,diry){ const [hx0,hy0]=G_HALF[kind]||[90,38]; const hx=pt.hx||hx0, hy=pt.hy||hy0; const ax=Math.abs(dirx)||1e-6, ay=Math.abs(diry)||1e-6; const t=Math.min(hx/ax, hy/ay); return {x:pt.x+dirx*t, y:pt.y+diry*t}; }
 function gLine(a,ka,b,kb,cls){
   const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1, ux=dx/len, uy=dy/len;
   const p=gClip(a,ka,ux,uy), q=gClip(b,kb,-ux,-uy);
@@ -3008,6 +3050,9 @@ function renderGraph(){
   cv.style.height=Math.max(420, (n>1 ? Math.max(104, n*36) : 90)*2+180)+"px";
   const W=cv.clientWidth||900, H=cv.clientHeight||400;
   const pos=gLayout(W,H); const chP=pos.chairmen||[];
+  // Cards vary in height: clip each agent's connections at its measured half-height.
+  GS.attackers.forEach(a=>{ const p=pos[a.id]; if(!p) return; if(G_CARD_HY[a.id]) p.hy=G_CARD_HY[a.id]; if(G_CARD_HX[a.id]) p.hx=G_CARD_HX[a.id]; });
+  chP.forEach(cp=>{ if(G_CARD_HY[cp.id]) cp.hy=G_CARD_HY[cp.id]; if(G_CARD_HX[cp.id]) cp.hx=G_CARD_HX[cp.id]; });
   let e=`<defs><marker id="garrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrow"/></marker></defs>`;
   if(GS.topo==="custom") gCustomEdges().forEach((edge,i)=>{
     const a=pos[edge.from], b=pos[edge.to]; if(!a||!b) return;
@@ -3032,7 +3077,7 @@ function renderGraph(){
   if(GS.turns>1){
     const tgt=(GS.attackers[0]&&pos[GS.attackers[0].id])||(pos.chairmen&&pos.chairmen[0]);
     if(tgt){
-      const bot=Math.max(H-14, tgt.y+50), endX=tgt.x, endY=tgt.y+38;
+      const thy=tgt.hy||38, bot=Math.max(H-14, tgt.y+thy+12), endX=tgt.x, endY=tgt.y+thy;
       e+=`<path class="e-judge" d="M${pos.evaluator.x-76},${pos.evaluator.y} C${pos.evaluator.x-160},${bot} ${endX},${bot} ${endX},${endY}" marker-end="url(#garrow)"/>`;
     }
   }
@@ -3045,12 +3090,19 @@ function renderGraph(){
   }
   gShowSelectedEdge();
   const nodes=$("gnodes"); nodes.innerHTML="";
-  const mk=(kind,id,x,y,role,model,sub,removable)=>{
-    const d=document.createElement("div"); d.className="gnode "+kind+(gSel===id?" sel":"")+(gEdgeDraft===id?" edge-source":""); d.style.left=x+"px"; d.style.top=y+"px"; d.dataset.id=id; d.tabIndex=0; d.setAttribute("role","button");
+  const mk=(kind,id,x,y,role,model,sub,removable,agent)=>{
+    const name=agent?gAgentName(agent,role):role;
+    const d=document.createElement("div"); d.className="gnode "+kind+(agent?" card":"")+(agent&&y>H/2+10?" up":"")+(gSel===id?" sel":"")+(gEdgeDraft===id?" edge-source":""); d.style.left=x+"px"; d.style.top=y+"px"; d.dataset.id=id; d.tabIndex=0; d.setAttribute("role","button");
+    if(agent){ const desc=String(agent.desc||"").trim();
+      // An agent card: header (name + add control), model, summary chips; the detail holds the
+      // description and one row per part and opens on hover, focus or selection.
+      d.innerHTML=`<div class="gr"><i></i><span class="gname" title="${esc(desc?name+" — "+desc:name)}">${esc(name)}</span><button type="button" class="gadd" title="Add a part or a new attacker" aria-label="Add to ${esc(name)}">+</button></div><div class="gbody"><div class="gm">${G_ICON.model}<span>${esc(model||"—")}</span></div><div class="gsum"></div></div><div class="gdetail">${desc?`<div class="gdesc">${esc(desc)}</div>`:""}<div class="gcarries">Carries</div><div class="gparts"></div></div>${removable?`<button type="button" class="gx" title="Remove" aria-label="Remove ${esc(name)}">×</button>`:""}`;
+    } else
     d.innerHTML=`<div class="gr"><i></i>${esc(role)}</div><div class="gm">${esc(model||"—")}</div>${sub!==null?`<div class="gp">${esc(sub)}</div>`:""}${removable?'<span class="gx" title="Remove">×</span>':""}`;
-    { const port=document.createElement("button"); port.type="button"; port.className="gport"; port.title="Drag to connect"; port.textContent="+"; d.appendChild(port); }
+    { const port=document.createElement("button"); port.type="button"; port.className="gport"; port.title="Drag to connect"; port.setAttribute("aria-label","Connect from "+name); port.textContent="+"; d.appendChild(port); }
+    if(agent) gCardParts(d,kind,agent,name);
     d.onpointerdown=ev=>{
-      if(ev.target.classList.contains("gx")) return;
+      if(ev.target.classList.contains("gx")||ev.target.closest(".gdetail,.gadd")) return;
       const r=$("gcanvas").getBoundingClientRect();
       if(ev.target.closest(".gport")){
         gEdgeDrag={from:id,x:ev.clientX-r.left,y:ev.clientY-r.top,clientX:ev.clientX,clientY:ev.clientY,moved:false};
@@ -3059,6 +3111,7 @@ function renderGraph(){
       gNodeDrag={id,x:ev.clientX-r.left,y:ev.clientY-r.top,moved:false};
     };
     d.onclick=(ev)=>{
+      if(ev.target.closest(".gdetail,.gadd")) return;
       if(gSuppressNodeClick){ ev.stopPropagation(); return; }
       if(ev.target.classList.contains("gx")){ ev.stopPropagation(); gRemove(id); return; }
       if(GS.topo==="custom"){
@@ -3070,17 +3123,22 @@ function renderGraph(){
       openGDialog(kind,id,d);
     };
     d.ondblclick=(ev)=>{ if(GS.topo==="custom"){ ev.stopPropagation(); gEdgeDraft=null; openGDialog(kind,id,d); } };
-    d.onkeydown=(ev)=>{ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); openGDialog(kind,id,d); } };
+    d.onkeydown=(ev)=>{ if(ev.target!==d) return; if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); openGDialog(kind,id,d); } };
     nodes.appendChild(d); return d;
   };
-  GS.attackers.forEach((a,i)=>{ const el=mk("attacker",a.id,pos[a.id].x,pos[a.id].y,`Attacker ${i+1}`,a.model,a.system?("✎ "+a.system):"paper red-team prompt (default)",GS.attackers.length>1); gAttachTools(el,a); });
+  GS.attackers.forEach((a,i)=>{ mk("attacker",a.id,pos[a.id].x,pos[a.id].y,`Attacker ${i+1}`,a.model,null,GS.attackers.length>1,a); });
   chP.forEach(cp=>{ const c=GS.chairmen.find(x=>x.id===cp.id); if(!c) return; const idx=GS.chairmen.indexOf(c); const _td=topoDef();
     const role=_td.chairmanRole?_td.chairmanRole(idx,GS.chairmen.length):(GS.chairmen.length>1?("Chairman "+(idx+1)):"Chairman");
     const rem=_td.chairmanRemovable?_td.chairmanRemovable(GS.chairmen.length):(GS.chairmen.length>1);
-    mk("chairman",c.id,cp.x,cp.y,role,c.model,c.system?("✎ "+c.system):"synthesises the strike",rem); });
+    mk("chairman",c.id,cp.x,cp.y,role,c.model,null,rem,c); });
   mk("target","target",pos.target.x,pos.target.y,"Target",GS.target.model,GS.target.url.replace(/^https?:\/\//,""),false);
   mk("evaluator","evaluator",pos.evaluator.x,pos.evaluator.y,"Evaluator · 0-5",GS.evaluator.model,null,false);
   (pos.defenses||[]).forEach(dp=>{ const spec=(DEFENSES_LIST||[]).find(x=>x.id===dp.id); mk("defense",dp.id,dp.x,dp.y,"🛡",spec?spec.name:dp.id,null,true); });
+  // Measure the cards just drawn; if one changed height, draw once more so its connections meet it.
+  { let changed=false;
+    nodes.querySelectorAll(".gnode.card").forEach(el=>{ const h=el.offsetHeight/2, w=el.offsetWidth/2, cid=el.dataset.id;
+      if(h>0&&(Math.abs((G_CARD_HY[cid]||0)-h)>1||Math.abs((G_CARD_HX[cid]||0)-w)>1)){ G_CARD_HY[cid]=h; G_CARD_HX[cid]=w; changed=true; } });
+    if(changed&&!gCardRemeasuring){ gCardRemeasuring=true; try{ renderGraph(); } finally{ gCardRemeasuring=false; } return; } }
   document.querySelectorAll("#gtopo button").forEach(b=>b.classList.toggle("active",b.dataset.topo===GS.topo));
   { const ab=document.querySelector('#gtopo button[data-topo="'+GS.topo+'"]'), td=$("gTopoDesc");
     if(td) td.innerHTML = ab ? ('<b>'+esc(ab.textContent.trim().replace(/\s+/g," "))+'</b> — '+esc(ab.getAttribute("title")||"")) : ""; }
@@ -3167,24 +3225,139 @@ const TOOL_FIELDS={
   "latent-injection":[{key:"variants",label:"Variant",def:"resume",help:"resume · report · translation"}],
   direct:[],
 };
-function gAttachTools(el,a){
-  if(!Array.isArray(a.tools)) a.tools=[]; if(!a.tool_cfg||typeof a.tool_cfg!=="object") a.tool_cfg={};
-  if(a.tools.length){ const bar=document.createElement("div"); bar.className="gtools";
-    a.tools.forEach(tid=>{ const bub=document.createElement("button"); bub.className="gbubble"; bub.title=tid;
-      bub.innerHTML=`⚔<b>${toolIdx(tid)+1}</b>`;
-      bub.onclick=(ev)=>{ ev.stopPropagation(); openToolConfig(a.id,tid,bub); };
-      bar.appendChild(bub); });
-    el.appendChild(bar); }
-  const sw=document.createElement("button"); sw.className="gsword"; sw.title="Attack tools — grant single-turn attacks this agent can wield"; sw.setAttribute("aria-label","Attack tools"); sw.innerHTML="🗡";
-  sw.onclick=(ev)=>{ ev.stopPropagation(); openToolPicker(a.id,sw); };
-  el.appendChild(sw);
+// --- agent cards: what an agent carries, shown as rows on its node (spec 002) ---------------
+const G_MAX_ATTACKERS=8, G_NAME_MAX=40, G_DESC_MAX=140;
+const G_CARD_HY={}, G_CARD_HX={};   // node id -> half-height / half-width of its card as last measured
+let gCardRemeasuring=false;
+function gAgentName(agent,fallback){ return String((agent&&agent.name)||"").trim()||fallback; }
+function gAgentById(id){ return GS.attackers.find(x=>x.id===id)||(GS.chairmen||[]).find(x=>x.id===id)||null; }
+function gNodeEl(id){ return document.querySelector(`.gnode[data-id="${id}"]`); }
+function gNodeText(id,sel,text){ const el=gNodeEl(id), t=el&&(el.querySelector(sel+" span")||el.querySelector(sel)); if(t) t.textContent=text; }
+// Small inline icons (currentColor) for the model line and the part rows.
+const G_ICON={
+  model:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M6.5 1.5v2.5M9.5 1.5v2.5M6.5 12v2.5M9.5 12v2.5M1.5 6.5h2.5M1.5 9.5h2.5M12 6.5h2.5M12 9.5h2.5"/></svg>',
+  prompt:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v9.2H4z"/><path d="M9 1.8V5h3.5M6 8.2h4.5M6 10.8h4.5"/></svg>',
+  tool:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.2 1.5 3.5 9h4L6.8 14.5 12.5 7h-4z"/></svg>',
+  priming:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h8.5v6H6l-2.5 2V9H2z"/><path d="M12 6h2v6h-1.2v1.8L10.5 12H7.5"/></svg>',
+  more:'<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3.5" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.5" cy="8" r="1.3"/></svg>'
+};
+// The parts an agent carries, in display order. Every agent has a prompt part.
+function gAgentParts(kind,a){
+  const custom=!!String(a.system||"").trim();
+  const parts=[{type:"prompt",key:"prompt",label:custom?"Custom prompt":"Default prompt",removable:custom}];
+  if(kind==="attacker"){
+    (Array.isArray(a.tools)?a.tools:[]).forEach(t=>parts.push({type:"tool",key:t,label:t,removable:true}));
+    if(a.priming&&a.priming.mode==="contextual") parts.push({type:"priming",key:"priming",label:"Few-shot priming",removable:true});
+  }
+  return parts;
+}
+function gOpenAgent(kind,id,focusSel){ const el=gNodeEl(id); if(el) openGDialog(kind,id,el,focusSel); }
+function gOpenPart(kind,id,part,anchor){
+  if(part.type==="tool") openToolConfig(id,part.key,anchor);
+  else gOpenAgent(kind,id,part.type==="priming"?"#gd_prime_ctx":"#gd_sys");
+}
+function gRemovePart(id,part){
+  const a=gAgentById(id); if(!a||!part.removable) return;
+  gCheckpoint();
+  if(part.type==="tool"){ a.tools=(a.tools||[]).filter(t=>t!==part.key); if(a.tool_cfg) delete a.tool_cfg[part.key]; }
+  else if(part.type==="prompt") a.system="";
+  else if(part.type==="priming"){ if(!a.priming) a.priming={mode:"single",context:""}; a.priming.mode="single"; }
+  if(gSel===id) closeGDialog();
+  $("gtool").hidden=true; gsSave(); renderGraph();
+}
+// The summary chips of a card: the prompt (default or custom), the number of tools, priming.
+function gCardSummary(parts){
+  const prompt=parts.find(p=>p.type==="prompt"), tools=parts.filter(p=>p.type==="tool"), priming=parts.some(p=>p.type==="priming");
+  const chips=[{type:"prompt",text:prompt.removable?"Custom":"Default",title:prompt.label,custom:prompt.removable}];
+  if(tools.length) chips.push({type:"tool",text:String(tools.length),title:(tools.length===1?"1 attack tool: ":tools.length+" attack tools: ")+tools.map(t=>t.label).join(", ")});
+  if(priming) chips.push({type:"priming",text:"",title:"Few-shot priming"});
+  return chips;
+}
+function gCardParts(el,kind,a,name){
+  if(kind==="attacker"){ if(!Array.isArray(a.tools)) a.tools=[]; if(!a.tool_cfg||typeof a.tool_cfg!=="object") a.tool_cfg={}; }
+  const parts=gAgentParts(kind,a);
+  const sum=el.querySelector(".gsum");
+  gCardSummary(parts).forEach(c=>{ const chip=document.createElement("span"); chip.className="gchip"; chip.dataset.type=c.type; chip.title=c.title;
+    if(c.custom) chip.dataset.custom="1"; chip.innerHTML=G_ICON[c.type];
+    if(c.text){ const t=document.createElement("span"); t.textContent=c.text; chip.appendChild(t); } sum.appendChild(chip); });
+  const box=el.querySelector(".gparts");
+  const btn=(cls,text,label,icon)=>{ const b=document.createElement("button"); b.type="button"; b.className=cls; b.setAttribute("aria-label",label);
+    if(icon){ b.innerHTML=icon; const t=document.createElement("span"); t.textContent=text; b.appendChild(t); } else b.textContent=text; return b; };
+  parts.forEach(part=>{
+    const row=document.createElement("div"); row.className="gpart"; row.dataset.type=part.type; row.dataset.part=part.key;
+    const open=btn("gpart-open",part.label,"Open "+part.label,G_ICON[part.type]); open.title=part.label;
+    open.onclick=ev=>{ ev.stopPropagation(); gOpenPart(kind,a.id,part,el); };
+    row.appendChild(open);
+    if(part.removable){ const rm=btn("gpart-rm","×","Remove "+part.label); rm.title="Remove";
+      rm.onclick=ev=>{ ev.stopPropagation(); gRemovePart(a.id,part); }; row.appendChild(rm); }
+    box.appendChild(row);
+  });
+  const detail=el.querySelector(".gdetail"); if(detail) detail.onclick=ev=>ev.stopPropagation();
+  const add=el.querySelector(".gadd"); if(add) add.onclick=ev=>{ ev.stopPropagation(); openAddMenu(kind,a.id,add,name); };
+}
+// The card's add control: the parts this agent can still take, plus a new attacker.
+function openAddMenu(kind,id,anchor,name){
+  const a=gAgentById(id); if(!a) return;
+  $("gdialog").hidden=true; const d=$("gtool");
+  const items=[];
+  if(!String(a.system||"").trim()) items.push(["prompt","Custom prompt"]);
+  if(kind==="attacker"){ items.push(["tools","Attack tools"]);
+    if(!(a.priming&&a.priming.mode==="contextual")) items.push(["priming","Few-shot priming"]); }
+  items.push(["attacker","New attacker"]);
+  d.innerHTML=`<div class="gd-h">Add to <span class="gadd-who"></span><button class="x" data-close aria-label="Close">✕</button></div><div class="gadd-menu">`
+    +items.map(([k,l])=>`<button type="button" class="btn-outline" data-add="${k}">${l}</button>`).join("")+`</div>`;
+  d.querySelector(".gadd-who").textContent=name;
+  d.hidden=false; gFloatPos(d,anchor);
+  d.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>{ d.hidden=true; });
+  d.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{ const k=b.dataset.add;
+    if(k==="tools"){ openToolPicker(id,anchor); return; }
+    d.hidden=true;
+    if(k==="prompt") gOpenAgent(kind,id,"#gd_sys");
+    else if(k==="priming"){ gCheckpoint(); if(!a.priming) a.priming={mode:"single",context:""}; a.priming.mode="contextual";
+      gsSave(); renderGraph(); gOpenAgent(kind,id,"#gd_prime_ctx"); }
+    else if(k==="attacker") openNewAttacker(id);
+  });
+  const first=d.querySelector("[data-add]"); if(first) first.focus();
+}
+// A short form for a new attacker, pre-filled with the model of the agent it was opened from.
+function openNewAttacker(fromId){
+  const full=()=>GS.attackers.length>=G_MAX_ATTACKERS;
+  if(full()){ toast("Eight attackers is the canvas limit for now.","info"); return; }
+  const from=gAgentById(fromId)||GS.attackers[GS.attackers.length-1];
+  $("gdialog").hidden=true; const d=$("gtool");
+  d.innerHTML=`<div class="gd-h">New attacker<button class="x" data-close aria-label="Close">✕</button></div>`
+    +`<label for="ga_name">Name <span class="hint">(optional)</span></label><input id="ga_name" maxlength="${G_NAME_MAX}" placeholder="Attacker ${GS.attackers.length+1}">`
+    +`<label for="ga_model">Model</label><input id="ga_model" autocomplete="off" placeholder="${esc(DEF_MODEL)}">`
+    +`<label for="ga_desc">Description <span class="hint">(optional)</span></label><input id="ga_desc" maxlength="${G_DESC_MAX}" placeholder="What this agent is for">`
+    +`<div class="gd-acts"><button type="button" class="btn-outline" id="ga_cancel">Cancel</button><button type="button" class="btn-outline" id="ga_create">Add attacker</button></div>`;
+  d.querySelector("#ga_model").value=(from&&from.model)||DEF_MODEL;
+  d.hidden=false; gFloatPos(d,gNodeEl(fromId)||$("gcanvas"));
+  const close=()=>{ d.hidden=true; };
+  d.querySelector("[data-close]").onclick=close; d.querySelector("#ga_cancel").onclick=close;
+  d.querySelector("#ga_create").onclick=()=>{
+    if(full()){ toast("Eight attackers is the canvas limit for now.","info"); close(); return; }
+    gCheckpoint(); const id=gNextId();
+    GS.attackers.push({id,model:d.querySelector("#ga_model").value.trim()||DEF_MODEL,system:"",endpoint:"",tools:[],tool_cfg:{},
+      name:d.querySelector("#ga_name").value.trim().slice(0,G_NAME_MAX),desc:d.querySelector("#ga_desc").value.trim().slice(0,G_DESC_MAX)});
+    close(); gsSave(); renderGraph();
+  };
+  d.querySelector("#ga_name").focus();
+}
+// Name and description fields shared by the attacker and chairman editors.
+function gNameFields(a,fallback){
+  return `<label for="gd_name">Name</label><input id="gd_name" maxlength="${G_NAME_MAX}" value="${esc(a.name||"")}" placeholder="${esc(fallback)}">`
+    +`<label for="gd_desc">Description <span class="hint">(shown on the card)</span></label><input id="gd_desc" maxlength="${G_DESC_MAX}" value="${esc(a.desc||"")}" placeholder="What this agent is for">`;
 }
 function gUpdatePrimeBadge(id){ const el=document.querySelector(`.gnode[data-id="${id}"] .gchat`); const a=GS.attackers.find(x=>x.id===id); if(el&&a){ const on=a.priming&&a.priming.mode==="contextual"; el.classList.toggle("on",!!on); el.title=on?"Attacker priming set — edit":"Attacker priming: single prompt (click to add context)"; } }
 function gFloatPos(d,anchor){
   const nb=(anchor||$("gcanvas")).getBoundingClientRect();
   let left=nb.right+10; if(left+310>window.innerWidth) left=nb.left-320;
   left=Math.max(8,Math.min(left,window.innerWidth-320));
-  const top=Math.max(8,Math.min(nb.top,window.innerHeight-280));
+  // Keep the whole panel on screen: clamp with its real height (it is already visible here),
+  // and let a panel taller than the window scroll instead of hiding its buttons.
+  d.style.maxHeight=(window.innerHeight-16)+"px"; d.style.overflowY="auto";
+  const h=d.offsetHeight||280;
+  const top=Math.max(8,Math.min(nb.top,window.innerHeight-h-8));
   d.style.left=left+"px"; d.style.top=top+"px";
 }
 function openToolPicker(agentId,anchor){
@@ -3198,7 +3371,7 @@ function openToolPicker(agentId,anchor){
     +`<div class="gd-acts"><button class="btn-outline" data-close>Done</button></div>`;
   d.hidden=false; gFloatPos(d,anchor);
   d.querySelectorAll("#gtoolmode button").forEach(bt=>bt.onclick=()=>{ a.tool_mode=bt.dataset.tm; d.querySelectorAll("#gtoolmode button").forEach(x=>x.classList.toggle("active",x===bt)); gsSave(); });
-  d.querySelectorAll("input[data-tid]").forEach(cb=>cb.onchange=()=>{ const tid=cb.dataset.tid;
+  d.querySelectorAll("input[data-tid]").forEach(cb=>cb.onchange=()=>{ const tid=cb.dataset.tid; gCheckpoint();
     if(cb.checked){ if(!a.tools.includes(tid)) a.tools.push(tid); } else a.tools=a.tools.filter(t=>t!==tid);
     gsSave(); renderGraph(); });
   d.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>{ d.hidden=true; });
@@ -3261,7 +3434,7 @@ $("gTurl").addEventListener("input",()=>{ GS.target.url=$("gTurl").value.trim();
 
 // --- floating node editor --------------------------------------------
 function closeGDialog(){ const d=$("gdialog"); d.hidden=true; d.innerHTML=""; gSel=null; document.querySelectorAll(".gnode.sel").forEach(n=>n.classList.remove("sel")); }
-function openGDialog(kind,id,nodeEl){
+function openGDialog(kind,id,nodeEl,focusSel){
   if(kind==="defense"){ openDefensePicker(nodeEl); return; }
   gSel=id; document.querySelectorAll(".gnode.sel").forEach(n=>n.classList.remove("sel")); nodeEl.classList.add("sel");
   const d=$("gdialog"); let html="", title="";
@@ -3269,9 +3442,9 @@ function openGDialog(kind,id,nodeEl){
     ? `<label for="${idn}">${lab}</label><textarea id="${idn}" placeholder="${esc(ph)}">${esc(val||"")}</textarea>`
     : `<label for="${idn}">${lab}</label><input id="${idn}"${idn==="gd_model"?' data-models="1" autocomplete="off"':""} value="${esc(val||"")}" placeholder="${esc(ph)}">`;
   if(kind==="attacker"){
-    const a=GS.attackers.find(x=>x.id===id); const i=GS.attackers.indexOf(a); title=`Attacker ${i+1}`;
+    const a=GS.attackers.find(x=>x.id===id); const i=GS.attackers.indexOf(a); const dflt=`Attacker ${i+1}`; title=gAgentName(a,dflt);
     const pr=a.priming||{mode:"single",context:""};
-    html=f("Model","gd_model",a.model,"qwen2.5:3b")
+    html=gNameFields(a,dflt)+f("Model","gd_model",a.model,"qwen2.5:3b")
         +f("Endpoint (blank = default)","gd_ep",a.endpoint,OLLAMA_V1)
         +f("System prompt · persona","gd_sys",a.system,"Blank = the CouncilAttack red-team prompt (paper default).","textarea")
         +`<div class="desc" style="margin:-2px 0 8px">Blank uses the paper's default red-team system prompt. <a href="#" id="gd_usepaper">Reset to paper default</a></div>`
@@ -3284,8 +3457,8 @@ function openGDialog(kind,id,nodeEl){
         +`<div id="gd_prime_wrap"${pr.mode==="contextual"?"":' style="display:none"'}>`+f("Example priming turns","gd_prime_ctx",pr.context,"e.g. earlier the assistant already agreed to help with a fictional scenario…","textarea")+`</div>`;
   } else if(kind==="chairman"){
     const c=GS.chairmen.find(x=>x.id===id)||GS.chairmen[0]; const ci=GS.chairmen.indexOf(c);
-    title=GS.topo==="debate"?"Synthesiser":(GS.chairmen.length>1?`Chairman ${ci+1}`:"Chairman");
-    html=f("Model","gd_model",c.model,"qwen2.5:3b")
+    const dflt=GS.topo==="debate"?"Synthesiser":(GS.chairmen.length>1?`Chairman ${ci+1}`:"Chairman"); title=gAgentName(c,dflt);
+    html=gNameFields(c,dflt)+f("Model","gd_model",c.model,"qwen2.5:3b")
         +f("Endpoint (blank = default)","gd_ep",c.endpoint,OLLAMA_V1)
         +f("System prompt","gd_sys",c.system,"e.g. Merge the strongest ideas into one prompt.","textarea");
   } else if(kind==="target"){
@@ -3311,35 +3484,39 @@ function openGDialog(kind,id,nodeEl){
   d.style.left=left+"px"; d.style.top=top+"px";
   // live wiring — update GS + the node label without a full re-render (keeps focus)
   const set=(sel,fn)=>{ const el=d.querySelector(sel); if(el) el.oninput=()=>fn(el.value); };
-  const gm=nodeEl.querySelector(".gm"), gp=nodeEl.querySelector(".gp");
+  // The canvas re-renders while this editor is open (rows change), so the node is looked up by id.
+  const nameAndDesc=(a)=>{ set("#gd_name",v=>{ a.name=v.slice(0,G_NAME_MAX); gsSave(); renderGraph(); });
+    set("#gd_desc",v=>{ a.desc=v.slice(0,G_DESC_MAX); gsSave(); renderGraph(); }); };
   if(kind==="attacker"){ const a=GS.attackers.find(x=>x.id===id);
-    set("#gd_model",v=>{a.model=v.trim(); if(gm)gm.textContent=a.model||"—"; gsSave();});
+    nameAndDesc(a);
+    set("#gd_model",v=>{a.model=v.trim(); gNodeText(id,".gm",a.model||"—"); gsSave();});
     set("#gd_ep",v=>{a.endpoint=v.trim(); gsSave();});
-    set("#gd_sys",v=>{a.system=v; if(gp)gp.textContent=a.system?("✎ "+a.system):"paper red-team prompt (default)"; gsSave();});
+    set("#gd_sys",v=>{a.system=v; gsSave(); renderGraph();});
     const renderChips=()=>{ const box=d.querySelector("#gd_toolchips"); if(!box) return;
       box.innerHTML=(a.tools&&a.tools.length)?a.tools.map(t=>`<span class="gd-chip" data-t="${esc(t)}">🗡 ${toolIdx(t)+1} · ${esc(t)}<i data-rm="${esc(t)}" title="Remove tool">×</i></span>`).join(""):'<span class="caption">No tools granted yet.</span>';
       box.querySelectorAll(".gd-chip").forEach(chp=>chp.onclick=(ev)=>{ if(ev.target.hasAttribute("data-rm")){ ev.stopPropagation(); const t=ev.target.getAttribute("data-rm"); a.tools=(a.tools||[]).filter(z=>z!==t); if(a.tool_cfg) delete a.tool_cfg[t]; gsSave(); renderChips(); renderGraph(); return; } openToolConfig(a.id, chp.getAttribute("data-t"), chp); }); };
     renderChips();
     const addt=d.querySelector("#gd_addtools"); if(addt) addt.onclick=()=>openToolPicker(a.id, addt);
-    const usep=d.querySelector("#gd_usepaper"); if(usep) usep.onclick=(ev)=>{ ev.preventDefault(); const ta=d.querySelector("#gd_sys"); if(ta) ta.value=""; a.system=""; if(gp)gp.textContent="paper red-team prompt (default)"; gsSave(); toast("Using the paper's default red-team system prompt.","ok"); };
+    const usep=d.querySelector("#gd_usepaper"); if(usep) usep.onclick=(ev)=>{ ev.preventDefault(); const ta=d.querySelector("#gd_sys"); if(ta) ta.value=""; a.system=""; gsSave(); renderGraph(); toast("Using the paper's default red-team system prompt.","ok"); };
     if(!a.priming) a.priming={mode:"single",context:""};
-    const pm=d.querySelector("#gd_prime_mode"); if(pm) pm.onchange=()=>{ a.priming.mode=pm.value; const w=d.querySelector("#gd_prime_wrap"); if(w) w.style.display=pm.value==="contextual"?"":"none"; gsSave(); gUpdatePrimeBadge(id); };
+    const pm=d.querySelector("#gd_prime_mode"); if(pm) pm.onchange=()=>{ a.priming.mode=pm.value; const w=d.querySelector("#gd_prime_wrap"); if(w) w.style.display=pm.value==="contextual"?"":"none"; gsSave(); renderGraph(); };
     set("#gd_prime_ctx",v=>{ a.priming.context=v; gsSave(); });
   } else if(kind==="chairman"){ const c=GS.chairmen.find(x=>x.id===id)||GS.chairmen[0];
-    set("#gd_model",v=>{c.model=v.trim(); if(gm)gm.textContent=c.model||"—"; gsSave();});
+    nameAndDesc(c);
+    set("#gd_model",v=>{c.model=v.trim(); gNodeText(id,".gm",c.model||"—"); gsSave();});
     set("#gd_ep",v=>{c.endpoint=v.trim(); gsSave();});
-    set("#gd_sys",v=>{c.system=v; if(gp)gp.textContent=c.system?("✎ "+c.system):"synthesises the strike"; gsSave();});
+    set("#gd_sys",v=>{c.system=v; gsSave(); renderGraph();});
   } else if(kind==="target"){
-    set("#gd_model",v=>{GS.target.model=v.trim(); $("gTmodel").value=GS.target.model; if(gm)gm.textContent=GS.target.model||"—"; gsSave();});
-    set("#gd_ep",v=>{GS.target.url=v.trim(); $("gTurl").value=GS.target.url; if(gp)gp.textContent=GS.target.url.replace(/^https?:\/\//,""); gsSave();});
+    set("#gd_model",v=>{GS.target.model=v.trim(); $("gTmodel").value=GS.target.model; gNodeText(id,".gm",GS.target.model||"—"); gsSave();});
+    set("#gd_ep",v=>{GS.target.url=v.trim(); $("gTurl").value=GS.target.url; gNodeText(id,".gp",GS.target.url.replace(/^https?:\/\//,"")); gsSave();});
     set("#gd_key",v=>{gKey=v;});
   } else {
-    set("#gd_model",v=>{GS.evaluator.model=v.trim(); if(gm)gm.textContent=GS.evaluator.model||"—"; gsSave();});
+    set("#gd_model",v=>{GS.evaluator.model=v.trim(); gNodeText(id,".gm",GS.evaluator.model||"—"); gsSave();});
     set("#gd_ep",v=>{GS.evaluator.endpoint=v.trim(); gsSave();});
   }
   d.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeGDialog);
   const rm=d.querySelector("[data-remove]"); if(rm) rm.onclick=()=>gRemove(id);
-  const first=d.querySelector("input,textarea"); if(first) first.focus();
+  const first=(focusSel&&d.querySelector(focusSel))||d.querySelector("input,textarea"); if(first) first.focus();
 }
 document.addEventListener("keydown",(e)=>{
   const shortcut=(e.metaKey||e.ctrlKey)&&!e.altKey, key=e.key.toLowerCase();
