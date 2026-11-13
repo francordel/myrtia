@@ -17,6 +17,8 @@ live. It is dual-use security tooling for authorised testing only (see `DUAL_USE
 - Run: `uv run myrtia --reload` (API + UI at http://127.0.0.1:8000/)
 - Tests: `uv run --extra dev pytest -m "not e2e"` (offline tier; must stay green)
 - End-to-end: `uv run --extra dev pytest -m e2e` (Gherkin scenarios against a live local model)
+- UI scenarios: `uv run --group ui pytest backend/tests_ui` (real browser, simulated model;
+  once: `uv run --group ui playwright install chromium`)
 - Lint: `uv run --extra dev ruff check backend` (zero warnings)
 
 ## Structure
@@ -24,6 +26,7 @@ live. It is dual-use security tooling for authorised testing only (see `DUAL_USE
 - `backend/myrtia/` — `api/`, `orchestrator/`, `plugins/` (attacks, auto-discovered),
   `connectors/` (targets), `judges/`, `events/`, `hitl/`, `store/`
 - `backend/tests/` — pytest suite (`features/` holds the behaviour-driven tests)
+- `backend/tests_ui/` — UI scenarios run in a browser (`features/`, steps, simulated model)
 - `frontend/standalone.html` — the whole UI
 - `specs/` — constitution, feature specs and templates (start at `specs/README.md`)
 - `docs/` — architecture and design notes; `docs/audit-log.md` is the historical findings log
@@ -47,6 +50,8 @@ live. It is dual-use security tooling for authorised testing only (see `DUAL_USE
   Write the scenario from the spec before the code.
 - Scenarios that need a live model endpoint are end-to-end tests: mark them `e2e`. They
   run with `uv run --extra dev pytest -m e2e` against a local model.
+- UI behaviour is tested the same way: write the scenario in
+  `backend/tests_ui/features/*.feature` first and see it fail in the browser tier.
 - Unit tests cover the logic underneath the scenarios; both tiers must pass before a
   task is done.
 
@@ -70,5 +75,5 @@ live. It is dual-use security tooling for authorised testing only (see `DUAL_USE
 ## Before finishing any task
 
 - Run the lint and test commands above and report the real output.
-- For UI changes, load the page and check the behaviour in a browser.
+- For UI changes, run the UI scenarios and add one for the new behaviour.
 - List the requirement ids (`FR-n`) the change covers and tick the task in `tasks.md`.

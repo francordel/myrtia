@@ -25,6 +25,7 @@ __pycache__/
 pentagi-reference/
 .data/
 results/
+test-results/
 
 # Private dual-use artifacts (real worked jailbreak examples — never publish)
 *.private.txt

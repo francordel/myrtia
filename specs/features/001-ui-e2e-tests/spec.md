@@ -2,7 +2,7 @@
 
 > What and why. No stack, architecture or file names: those belong in `plan.md`.
 
-- **Status:** Clarified
+- **Status:** Implemented (pending the first pull-request run, FR-14 and FR-15)
 - **Issue:** to be created
 
 ## Context and goal
@@ -135,7 +135,9 @@ Feature: Graph builder
   Scenario: The builder opens with its default agents            # FR-16.1
     Given the Myrtia console is open
     Then the graph builder is shown
-    And the canvas shows 3 attacker nodes, a target node and an evaluator node
+    And the canvas shows 3 attacker nodes
+    And the canvas shows a target node
+    And the canvas shows an evaluator node
 
   Scenario: Adding an attacker adds a node                        # FR-16.2
     Given the Myrtia console is open
@@ -170,26 +172,30 @@ Feature: Graph builder
 Behaviour of the test system itself, proven by its own tests:
 
 ```gherkin
-  Scenario: The operator's data is untouched                      # FR-2, FR-4
-    Given a run history that already contains one run
-    When the UI scenarios run
-    Then that run history still contains exactly that run
+Feature: The UI scenarios are isolated and leave evidence
 
-  Scenario: Nothing leaves the machine                             # FR-8
-    Given the UI scenarios are running
-    When the page requests a resource from an external host
+  Scenario: The operator's data is untouched                      # FR-2, FR-4
+    Given the operator's run history as it was before the scenarios started
+    When a run is launched in the private instance
+    Then the private instance has stored that run
+    And the operator's run history is unchanged
+
+  Scenario: Nothing leaves the machine                            # FR-8
+    Given the Myrtia console is open
+    When the browser requests a page from an external host
     Then the request is blocked
-    And the scenario still passes
+    And the graph builder is shown
 
   Scenario: A failing scenario leaves evidence                    # FR-10
     Given a UI scenario that fails
     When it finishes
-    Then a screenshot and the browser's error messages are saved for it
+    Then a screenshot and the browser's messages are saved for it
 
-  Scenario: A script error fails the scenario                     # FR-11
-    Given a page that raises an unhandled script error
-    When a scenario uses that page
-    Then the scenario fails and reports the error
+  Scenario: A script error fails the scenario                     # FR-10, FR-11
+    Given a UI scenario whose page raises an unhandled script error
+    When it finishes
+    Then the scenario is reported as failed with that error
+    And a screenshot and the browser's messages are saved for it
 ```
 
 Manual checks:
@@ -214,6 +220,15 @@ Manual checks:
   browser; the UI scenarios have their own command (FR-5).
 - Scope is the six baseline scenarios; a simulated model is used for full runs; the
   scenarios run on every pull request and block the merge.
+
+## Decisions from implementation
+
+- Scenarios act as a returning operator: the first-visit welcome offer is marked as
+  already seen, because it covers the canvas and is not what the scenarios test.
+- No identifier had to be added to the UI markup: the existing element ids and data
+  attributes were enough. The page is unchanged by this feature.
+- The fixed reply of the simulated model is accepted by every role of the default
+  topology, so it has no request-specific rules.
 
 ## Open questions
 

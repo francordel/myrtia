@@ -24,10 +24,12 @@ identifier attributes in the UI markup, where no stable selector exists.
 | `backend/tests_ui/features/builder.feature` | The six baseline scenarios | FR-16 |
 | `backend/tests_ui/features/harness.feature` | Scenarios about the test system itself | FR-4, FR-8, FR-10, FR-11 |
 | `backend/tests_ui/fake_model.py` | Simulated model server (standard library only) | FR-7, FR-9 |
-| `backend/tests_ui/conftest.py` | Process lifecycle, browser context, request blocking, error capture | FR-2, FR-3, FR-6, FR-8, FR-10 … FR-13 |
+| `backend/tests_ui/conftest.py` | Session fixtures, browser context, request blocking, evidence, error capture | FR-6, FR-8, FR-10 … FR-12 |
+| `backend/tests_ui/app_launcher.py` | The private application instance | FR-2, FR-3, FR-4, FR-13 |
+| `backend/tests_ui/inner_cases.py` | Scenarios that fail on purpose, run in a separate pytest process by the harness scenarios | FR-10, FR-11 |
 | `backend/pyproject.toml` | New optional extra `ui` (`pytest-playwright`); `ui` marker | FR-5, NFR-5 |
-| `pyproject.toml` (root) | New dependency group `ui` so `uv run --group ui …` works | FR-5 |
-| `frontend/standalone.html` | `data-testid` attributes only where needed | FR-16 |
+| `pyproject.toml` (root) | New dependency group `ui` so `uv run --group ui …` works; pytest `testpaths` so a run from the repo root collects `backend/tests` only | FR-5 |
+| `frontend/standalone.html` | None. Existing ids and data attributes were enough | FR-16, NFR-4 |
 | `.gitignore` | Ignore `test-results/` (failure evidence) | FR-10 |
 | `.github/workflows/ci.yml` | New job `ui-scenarios` with artefact upload on failure | FR-14, FR-15 |
 | `CONTRIBUTING.md`, `AGENTS.md`, `specs/README.md` | How to install and run the tier; where UI scenarios live | FR-5, FR-12 |
@@ -43,11 +45,16 @@ identifier attributes in the UI markup, where no stable selector exists.
   | `MYRTIA_GOAL_DATA_DIR` | a temporary directory | uploads never reach the real data folder (FR-4) |
   | `MYRTIA_OLLAMA_URL` | the simulated model's address | the UI's default endpoints become the simulated model (FR-7) |
 
-  `MYRTIA_TOKEN` is removed from the environment so the instance is not gated.
+  `MYRTIA_DEFAULT_MODEL` is set to the simulated model. `MYRTIA_TOKEN` and every
+  variable ending in `_API_KEY` or `_TOKEN` are removed, so the instance is not gated
+  and no real key reaches it.
 - **Browser state.** One new browser context per scenario: empty `localStorage`, so
-  stored keys, theme and tokens from the operator's browser are never read (FR-4).
+  stored keys, theme and tokens from the operator's browser are never read (FR-4). The
+  only value preset is `myrtia-demo-seen`, so the first-visit welcome offer does not
+  cover the canvas.
 - **Failure evidence.** Written under `backend/test-results/` (added to `.gitignore`): one folder
-  per failed scenario with `screenshot.png` and `console.txt` (FR-10).
+  per failed scenario with `screenshot.png` and `console.txt` (FR-10). The folder can be
+  redirected with `MYRTIA_UI_RESULTS`, which the harness scenarios use.
 
 ## Contracts
 
@@ -68,9 +75,8 @@ Simulated reply. {"harm": 1, "argument": "Simulated verdict."}
 ```
 
 The judge parser extracts `harm` and `argument` from that text; every other role treats
-it as plain text. If a role in the default topology needs a stricter format (for
-example critique rankings), the server gains a rule keyed on a marker in the request,
-decided in task T3 from a real run against it.
+it as plain text. A real run of the default council against the server finishes with
+this reply alone, so the server has no request-specific rules.
 
 ## UI behaviour
 
@@ -116,14 +122,14 @@ these, and change nothing visible.
 | FR-1 | `builder.feature` runs under `pytest` with `pytest-bdd` |
 | FR-2, FR-13 | Unit tests of the launcher: free port, readiness wait, startup output in the error |
 | FR-3 | Unit test: after the session fixture exits, both ports are closed and the temp files are gone |
-| FR-4 | `harness.feature` "The operator's data is untouched": a sentinel database at the default path is byte-identical after the tier runs |
+| FR-4 | `harness.feature` "The operator's data is untouched": the operator's database file, hashed before anything runs, is identical after a run in the private instance |
 | FR-5 | Manual: `pytest -m "not e2e"` passes in an environment without Playwright |
 | FR-6 | Manual: `--headed` opens a window |
 | FR-7, FR-9 | Unit tests of the simulated model: each route, default reply, judge parser accepts the reply |
 | FR-8 | `harness.feature` "Nothing leaves the machine" |
 | FR-10 | `harness.feature` "A failing scenario leaves evidence", using an inner pytest run of a deliberately failing scenario |
 | FR-11 | `harness.feature` "A script error fails the scenario" |
-| FR-12 | Unit test: the launcher turns Playwright's missing-executable error into the documented message |
+| FR-12 | Unit test: the browser fixture turns Playwright's missing-executable error into the documented message |
 | FR-14, FR-15 | Manual, once: a pull request that breaks a baseline behaviour shows a red check with downloadable evidence |
 | FR-16 | The six scenarios in `builder.feature` |
 | NFR-1, NFR-2 | Measured once locally: wall time, and twenty consecutive runs |

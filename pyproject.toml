@@ -15,6 +15,15 @@ ares-council = { workspace = true }
 [dependency-groups]
 app = ["myrtia", "ares-council"]
 dev = ["myrtia[dev]"]
+ui = ["myrtia[dev,ui]"]   # UI scenarios: `uv run --group ui pytest backend/tests_ui`
 
 [tool.uv]
 default-groups = ["app"]
+
+# Running pytest from the repo root collects the backend suite only. The UI scenarios in
+# backend/tests_ui need a browser and are run explicitly (see CONTRIBUTING.md).
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+markers = [
+    "e2e: needs a live model endpoint (local Ollama); skipped by -m 'not e2e'",
+]

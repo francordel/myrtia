@@ -38,3 +38,50 @@ jobs:
       # locally with `pytest -m e2e` against a served model.
       - name: Run offline behaviour-driven tests
         run: pytest -m "not e2e" -q
+
+  # UI scenarios: Gherkin scenarios driven through a real browser against a simulated
+  # model, so they need no model server, no API key and no network beyond this job.
+  ui-scenarios:
+    name: UI scenarios (browser)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install backend + dev and ui extras
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,ui]"
+
+      - name: Read the Playwright version (browser cache key)
+        id: playwright
+        run: echo "version=$(python -c 'from importlib.metadata import version; print(version("playwright"))')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      # Downloads Chromium unless the cache already has it; always installs its system libraries.
+      - name: Install Chromium
+        run: playwright install --with-deps chromium
+
+      - name: Run UI scenarios
+        run: pytest tests_ui -q
+
+      # Screenshot and browser messages of every failed scenario.
+      - name: Upload failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results
+          path: backend/test-results/
+          if-no-files-found: ignore
