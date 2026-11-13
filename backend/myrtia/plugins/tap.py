@@ -108,6 +108,7 @@ class TapLive(LiveAttack):
             "model": model,
             "api_key": self.judge_api_key if judge else self.aux_api_key,
             "auth_header": self.judge_auth_header if judge else self.aux_auth_header,
+            "role": "judge" if judge else "attacker",
         })
 
     def _ensure_aux(self) -> None:

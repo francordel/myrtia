@@ -222,7 +222,9 @@ class GraphAttack(LiveAttack):
         is_chair = node["role"] in ("chairman", "synthesizer")
         limit = max_tokens or (self.chairman_max_tokens if is_chair else self.council_max_tokens)
         temp = temperature if temperature is not None else (0.3 if is_chair else 0.85)
-        return _text(self._connector_for(node).generate(msgs, max_tokens=limit, temperature=temp))
+        return _text(self._connector_for(node).generate(
+            msgs, max_tokens=limit, temperature=temp,
+            role="chairman" if is_chair else "attacker"))
 
     def _candidate(self, raw: str, fallback: str = "") -> str:
         if not self.contextual_mode:

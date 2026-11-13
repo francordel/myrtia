@@ -1,0 +1,63 @@
+# Optional observability stack for Myrtia (spec 008): Prometheus collects the metrics
+# Myrtia serves at /metrics and Grafana shows them on a ready-made dashboard.
+#
+#   uv run myrtia                                             # Myrtia on the host
+#   docker compose -f compose.observability.yaml up -d
+#
+# then open http://localhost:3000/ (no login: read-only viewer on this machine only).
+#
+# With Myrtia in Docker too, start both files together and point the collector at the
+# service that publishes Myrtia's port:
+#
+#   MYRTIA_SCRAPE_TARGET=ollama:8000 \
+#     docker compose -f compose.yaml -f compose.observability.yaml up
+#
+# Settings: MYRTIA_SCRAPE_TARGET (host:port of Myrtia, default host.docker.internal:8000),
+# GRAFANA_PORT (3000), PROMETHEUS_PORT (9090). See docs/observability.md.
+
+# No project name here on purpose: alone it takes the folder's name, and together with
+# compose.yaml it joins that project (same network, same volumes).
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    # The scrape target is filled in at start, so one config serves both set-ups.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        sed "s|__MYRTIA_TARGET__|$${MYRTIA_SCRAPE_TARGET}|"
+        /etc/prometheus/prometheus.tmpl.yml > /tmp/prometheus.yml &&
+        exec /bin/prometheus --config.file=/tmp/prometheus.yml
+        --storage.tsdb.path=/prometheus --storage.tsdb.retention.time=15d
+    environment:
+      MYRTIA_SCRAPE_TARGET: ${MYRTIA_SCRAPE_TARGET:-host.docker.internal:8000}
+    extra_hosts:
+      - host.docker.internal:host-gateway   # lets the container reach Myrtia on the host (Linux)
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.tmpl.yml:/etc/prometheus/prometheus.tmpl.yml:ro
+      - prometheus-data:/prometheus
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    environment:
+      # Read-only and local: anyone on this machine can view, nobody can log in or edit.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/myrtia-overview.json
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus-data:

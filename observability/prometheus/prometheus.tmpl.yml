@@ -1,0 +1,15 @@
+# Prometheus configuration for Myrtia (spec 008). __MYRTIA_TARGET__ is replaced with
+# MYRTIA_SCRAPE_TARGET when the container starts (see compose.observability.yaml).
+global:
+  scrape_interval: 5s
+  scrape_timeout: 4s
+
+scrape_configs:
+  - job_name: myrtia
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["__MYRTIA_TARGET__"]
+    # If Myrtia runs with MYRTIA_TOKEN, mount a file holding the token and uncomment:
+    # authorization:
+    #   type: Bearer
+    #   credentials_file: /etc/prometheus/myrtia.token

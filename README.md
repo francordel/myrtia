@@ -379,6 +379,7 @@ Red teaming in Myrtia is organised around four components:
 - **Security-conscious by default.** API keys are supplied at run time and are redacted from all
   API responses and from the live event stream.
 - **Composable attacker topologies.** Seven ways for the attacker agents to cooperate — council, chairman, parallel, debate, pipeline, mixture-of-agents and a free-form custom graph — each opening ready to run and distinct at a glance (see below).
+- **Real-time observability.** Token consumption, latency and activity per role, per model and per run, exported at `/metrics` and shown on an optional, ready-made Grafana dashboard (see [docs/observability.md](docs/observability.md)).
 - **Self-hosted and permissive.** Apache-2.0, single-command backend, no vendor lock-in.
 
 ## Attacker topologies
@@ -521,6 +522,18 @@ smoke test, but the open-weight council above is what reproduces the reported re
 Any role can point at any OpenAI-compatible endpoint. Council, chairman, and judge models,
 turn budget, Borda voting, and chairman synthesis are all configurable per run (the UI reads
 each attack's configuration schema and renders the advanced options automatically).
+
+### Observability dashboard
+
+Myrtia serves its metrics at `/metrics` (Prometheus text format). To watch tokens, latency
+and activity in real time, start the optional stack next to it and open
+<http://localhost:3000/>:
+
+```bash
+docker compose -f compose.observability.yaml up -d
+```
+
+Details, settings and the metric list are in [docs/observability.md](docs/observability.md).
 
 ## Attacks
 
