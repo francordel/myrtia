@@ -149,10 +149,9 @@ def _scores1(world: dict, a: int) -> None:
     world["scores"] = [a]
 
 
-@given(parsers.parse('the first attacker message scores {a:d}, then the optimized message scores {b:d}'))
-def _opt_scores(world: dict, a: int, b: int) -> None:
-    world["scores"] = [a, b]
-    world["messages"] = ["first message", "optimized message"]
+@given(parsers.parse("the verifier scores the turns {a:d} then {b:d}, then the optimized message scores {c:d}"))
+def _opt_scores(world: dict, a: int, b: int, c: int) -> None:
+    world["scores"] = [a, b, c]
 
 
 @given(parsers.parse("the optimizer budget is {n:d}"))
@@ -239,8 +238,9 @@ def _load_defaults() -> dict:
 
 @then("there are prompts for the planner, attacker, verifier and optimizer")
 def _four(prompts: dict) -> None:
-    assert {"planner", "attacker", "verifier", "optimizer"} <= set(prompts)
-    assert all(prompts[r].strip() for r in ("planner", "attacker", "verifier", "optimizer"))
+    keys = ("planner_system", "attacker_system", "verifier_system", "optimizer_user")
+    assert set(keys) <= set(prompts)
+    assert all(prompts[k].strip() for k in keys)
 
 
 @then("none of them contains a worked harmful exemplar")
@@ -255,7 +255,7 @@ def _no_exemplar(prompts: dict) -> None:
 @given(parsers.parse('a private prompt file that sets the planner prompt to "{value}"'))
 def _private_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, value: str) -> None:
     f = tmp_path / "xteaming.private.yaml"
-    f.write_text(f'planner: "{value}"\n')
+    f.write_text(f'planner_system: "{value}"\n')
     monkeypatch.setenv("MYRTIA_XTEAMING_PROMPTS_FILE", str(f))
 
 
@@ -272,13 +272,13 @@ def _load() -> dict:
 
 @then(parsers.parse('the planner prompt is "{value}"'))
 def _planner_is(prompts: dict, value: str) -> None:
-    assert prompts["planner"] == value
+    assert prompts["planner_system"] == value
 
 
 @then("the planner prompt is the committed default")
 def _planner_default(prompts: dict) -> None:
     from myrtia.plugins import xteaming_prompts
-    assert prompts["planner"] == xteaming_prompts.DEFAULTS["planner"]
+    assert prompts["planner_system"] == xteaming_prompts.TEMPLATES["planner_system"]
 
 
 # --- provenance ---------------------------------------------------------------

@@ -29,9 +29,9 @@ Feature: X-Teaming multi-agent attack
     Then the planner's plan was emitted as an agent message
     And there were 2 attacker proposals, 2 target replies and 2 scores
 
-  Scenario: A stalled turn is optimized before moving on              # FR-7
-    Given an X-Teaming attack whose planner returns 1 plan of 1 phase
-    And the first attacker message scores 1, then the optimized message scores 5
+  Scenario: A turn whose score drops is optimized before moving on    # FR-7
+    Given an X-Teaming attack whose planner returns 1 plan of 2 phases
+    And the verifier scores the turns 3 then 1, then the optimized message scores 5
     And the optimizer budget is 2
     When the attack runs against a stub target
     Then the attacker message was optimized before the goal was reached
