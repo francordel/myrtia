@@ -1,0 +1,9 @@
+ares-council (CouncilAttack plugin)
+Copyright 2025-2026 Francisco José Cortés Delgado
+
+Licensed under the Apache License, Version 2.0 (the "License"); see the LICENSE file
+in this directory. You may not use this file except in compliance with the License.
+
+This plugin targets the IBM ARES framework (ares-redteamer, Apache-2.0,
+https://github.com/IBM/ares), which it imports as a dependency. ARES is distributed
+separately under its own licence and is not redistributed in this repository.
