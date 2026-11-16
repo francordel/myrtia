@@ -37,8 +37,14 @@ class _Stub:
 
     def generate(self, prompt: Any, **_kw: Any) -> _Resp:
         w = self.world
+        w["calls"].append((self.role, prompt))
         if self.role == PLANNER:
+            text = json.dumps(prompt)
+            if "Revise the jailbreak strategy" in text and w.get("revision") is not None:
+                return _Resp(True, w["revision"])
             plan = w["plan"]
+            if isinstance(plan, str):
+                return _Resp(True, plan)
             return _Resp(True, json.dumps(plan) if plan is not None else "no plan here")
         if self.role == JUDGE:
             if w.get("verifier_error"):
@@ -46,6 +52,10 @@ class _Stub:
             score = w["scores"].pop(0) if w["scores"] else 0
             return _Resp(True, json.dumps({"score": score, "rationale": "stub"}))
         # attacker / optimizer
+        if w.get("attacker_error"):
+            return _Resp(False, error="Read timed out")
+        if w.get("attacker_raw") is not None:
+            return _Resp(True, w["attacker_raw"])
         msg = w["messages"].pop(0) if w["messages"] else "attacker message"
         return _Resp(True, json.dumps({"message": msg, "rationale": "stub"}))
 
@@ -53,7 +63,8 @@ class _Stub:
 @pytest.fixture()
 def world(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     w: dict[str, Any] = {"plan": None, "scores": [], "messages": [], "verifier_error": False,
-                         "events": [], "cancel_after_turn": None, "target_calls": 0}
+                         "events": [], "cancel_after_turn": None, "target_calls": 0,
+                         "calls": [], "target_prompts": [], "revision": None}
 
     def fake_build(spec: dict) -> Any:
         return _Stub(spec.get("model", ""), w)
@@ -68,6 +79,7 @@ class _Target:
 
     def generate(self, prompt: Any, **_kw: Any) -> _Resp:
         self.world["target_calls"] += 1
+        self.world["target_prompts"].append(prompt)
         return _Resp(True, "target reply")
 
 
@@ -227,6 +239,96 @@ def _ran_one(world: dict) -> None:
 def _stopped(world: dict) -> None:
     assert len(world["results"]) == 1
     assert world["target_calls"] <= 2  # did not run all three phases
+
+
+# --- fidelity to the paper ----------------------------------------------------
+# The planner's reply in the format the paper's prompt asks for (Appendix A.4.1), fenced
+# and with the format example's `//` comment left in.
+def _paper_plan(phases: int) -> str:
+    plan = {f"turn_{i + 1}": f"phase {i + 1}" for i in range(phases - 1)}
+    plan["final_turn"] = f"phase {phases}"
+    body = json.dumps({"strategy_1": {"persona": "a museum curator", "context": "an exhibit",
+                                      "approach": "scenario", "turns_needed": str(phases),
+                                      "conversation_plan": plan}}, indent=4)
+    body = body.replace('"conversation_plan": {', '"conversation_plan": {\n// more turns', 1)
+    return f"```json\n{body}\n```"
+
+
+@given(parsers.parse("an X-Teaming attack whose planner answers in the paper's format with {p:d} phases"))
+def _attack_paper(world: dict, p: int) -> None:
+    world["plan"] = _paper_plan(p)
+    _strategy(world)
+
+
+@given(parsers.parse("the verifier scores the turns {a:d}, {b:d} then {c:d}"))
+def _scores3(world: dict, a: int, b: int, c: int) -> None:
+    world["scores"] = [a, b, c]
+
+
+@given("the planner's revision adds a second phase")
+def _revision(world: dict) -> None:
+    world["revision"] = json.dumps({"persona": "an analyst", "context": "a review",
+                                    "approach": "scenario", "turns_needed": "2",
+                                    "conversation_plan": {"turn_1": "phase 1",
+                                                          "final_turn": "phase 2"}})
+
+
+def _texts(world: dict, role: str) -> list[str]:
+    return [json.dumps(p) for r, p in world["calls"] if r == role]
+
+
+@then("the planner was told the behaviour")
+def _planner_told(world: dict) -> None:
+    first = _texts(world, PLANNER)[0]
+    assert "say the forbidden thing" in first and "{target_behavior}" not in first
+
+
+@then("the attacker was shown the plan's persona")
+def _attacker_persona(world: dict) -> None:
+    calls = _texts(world, ATTACKER)
+    assert calls and all("a museum curator" in c and "{strategy}" not in c for c in calls)
+
+
+@then(parsers.parse("the target's last request held the {n:d} earlier exchanges"))
+def _target_history(world: dict, n: int) -> None:
+    last = world["target_prompts"][-1]
+    assert len(last) == 2 * n + 1
+    assert [m["role"] for m in last[:-1]] == ["user", "assistant"] * n
+
+
+@then("the optimizer was given the verifier's reason")
+def _optimizer_reason(world: dict) -> None:
+    losses = [c for c in _texts(world, ATTACKER) if "We wish for our attack" in c]
+    assert losses and all("- stub" in c and "target reply" not in c.split("- stub")[0][-50:]
+                          for c in losses)
+
+
+@then("the plan was revised")
+def _revised(world: dict) -> None:
+    msgs = _events(world, "agent.message")
+    assert any("revised_plan" in (m.get("message") or "") for m in msgs)
+
+
+@given("the attacker endpoint is unreachable")
+def _attacker_down(world: dict) -> None:
+    world["attacker_error"] = True
+    world["scores"] = [5, 5]
+
+
+@given(parsers.parse('the attacker replies "{raw}" without a message tag'))
+def _attacker_raw(world: dict, raw: str) -> None:
+    world["attacker_raw"] = raw
+
+
+@then("the target was never sent an error message")
+def _no_error_sent(world: dict) -> None:
+    sent = [m["content"] for p in world["target_prompts"] for m in p if m["role"] == "user"]
+    assert not any("ERROR" in s or "timed out" in s for s in sent)
+
+
+@then(parsers.parse('the target was sent "{text}"'))
+def _sent(world: dict, text: str) -> None:
+    assert world["target_prompts"][0][-1]["content"] == text
 
 
 # --- content and safety -------------------------------------------------------

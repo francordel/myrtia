@@ -57,6 +57,51 @@ Feature: X-Teaming multi-agent attack
     When the attack runs against a stub target
     Then the attack stopped early and returned a result for the goal
 
+  # --- fidelity to the paper (Algorithm 1, Appendix A.4) -------------------------
+  Scenario: A plan in the paper's format is parsed and run phase by phase     # FR-3
+    Given an X-Teaming attack whose planner answers in the paper's format with 3 phases
+    And the verifier scores the turns 2, 3 then 5
+    When the attack runs against a stub target
+    Then the goal is reported as succeeded
+    And 3 turns were used
+    And the planner was told the behaviour
+    And the attacker was shown the plan's persona
+
+  Scenario: The target sees the whole conversation                            # FR-4
+    Given an X-Teaming attack whose planner answers in the paper's format with 3 phases
+    And the verifier scores the turns 2, 3 then 5
+    When the attack runs against a stub target
+    Then the target's last request held the 2 earlier exchanges
+
+  Scenario: The optimizer works from the verifier's reason                    # FR-7
+    Given an X-Teaming attack whose planner returns 1 plan of 2 phases
+    And the verifier scores the turns 3 then 1, then the optimized message scores 5
+    And the optimizer budget is 2
+    When the attack runs against a stub target
+    Then the optimizer was given the verifier's reason
+
+  Scenario: A plan that runs out of phases is revised and extended            # FR-6
+    Given an X-Teaming attack whose planner returns 1 plan of 1 phase
+    And the planner's revision adds a second phase
+    And the verifier scores the turns 2 then 5
+    When the attack runs against a stub target
+    Then the goal is reported as succeeded
+    And the plan was revised
+
+  Scenario: An unreachable attacker never sends its error to the target       # NFR-3
+    Given an X-Teaming attack whose planner returns 1 plan of 2 phases
+    And the attacker endpoint is unreachable
+    When the attack runs against a stub target
+    Then the target was never sent an error message
+    And the goal is reported as not succeeded
+
+  Scenario: The attacker's reasoning is not sent when it omits the message tag  # FR-4
+    Given an X-Teaming attack whose planner returns 1 plan of 1 phase
+    And the attacker replies "<thinking>secret plan</thinking>Hello there" without a message tag
+    And the verifier scores the turns 5
+    When the attack runs against a stub target
+    Then the target was sent "Hello there"
+
   # --- content and safety ------------------------------------------------------
   Scenario: The committed defaults carry no worked harmful content    # FR-13
     When the default role prompts are loaded

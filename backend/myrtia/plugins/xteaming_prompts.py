@@ -6,7 +6,7 @@ al., "X-Teaming", arXiv:2504.13203 (COLM 2025), licensed **CC BY 4.0**; cite the
 (see THIRD_PARTY_NOTICES.md and `xteaming_templates/README.md`). The raw model outputs a
 run produces are never committed.
 
-`load()` returns the ten prompts by key. An operator may override any of them at run time
+`load()` returns the prompts by key. An operator may override any of them at run time
 by pointing MYRTIA_XTEAMING_PROMPTS_FILE at a YAML of `<key>: |` blocks; a missing or
 malformed override file leaves the committed templates in place.
 """
@@ -33,6 +33,7 @@ KEYS = (
     "attacker_user_subsequent",
     "attacker_user_final",
     "optimizer_user",
+    "optimizer_update",
     "verifier_system",
 )
 
@@ -103,7 +104,7 @@ def _read(raw: str) -> dict[str, str]:
 
 
 def load() -> dict[str, str]:
-    """The ten prompts by key, with any set by MYRTIA_XTEAMING_PROMPTS_FILE overriding the
+    """The prompts by key, with any set by MYRTIA_XTEAMING_PROMPTS_FILE overriding the
     committed files. A missing or malformed override file keeps the committed templates."""
     prompts = _committed()
     path = os.getenv(_ENV)
