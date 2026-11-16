@@ -31,6 +31,7 @@ test-results/
 *.private.txt
 *.private.yaml
 backend/myrtia/plugins/council_phase2_full.private.txt
+backend/myrtia/plugins/xteaming_prompts.private.yaml
 
 # Local topology review notes (analysis docs, not for GitHub)
 docs/topology_review/

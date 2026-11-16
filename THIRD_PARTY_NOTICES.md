@@ -40,6 +40,7 @@ force Myrtia's entire service open. Also review the other vxcontrol forks before
 | `backend/vendor/ares-council/` | ARES `plugins/ares-council` (own code, ARES Team) | Apache-2.0 | Vendored CouncilAttack. Additive, no-op-by-default seams added: `set_event_emitter`/`_emit` (live events) and `load_goals`. No PentAGI code; no `vxcontrol/cloud`. |
 | `backend/myrtia/plugins/council_official.py` | ARES `experiments/assets/council_system_contextual_phase0c.yaml` (ARES Team) | Apache-2.0 | Verbatim contextual proposer system prompt from the experimental artifact. |
 | `backend/myrtia/plugins/council_prompts.py` | ARES `plugins/ares-council` (ARES Team) | Apache-2.0 | Critic and chairman role instructions adapted for graph agents; placeholder examples removed. |
+| `backend/myrtia/plugins/xteaming.py`, `xteaming_prompts.py` | X-Teaming (Rahman et al., arXiv:2504.13203) | Paper: CC BY 4.0 | **Reimplemented from the paper.** No code is taken from the authors' repository (github.com/salman-lui/x-teaming), which carries **no licence** (all rights reserved) and is therefore not used. Only benign structural role prompts ship; operative prompts load from a private, git-ignored file (`MYRTIA_XTEAMING_PROMPTS_FILE`). |
 | _(no PentAGI code adopted)_ | | | Backend is Python; PentAGI (Go) is a pattern reference only. |
 
 ## Goal datasets

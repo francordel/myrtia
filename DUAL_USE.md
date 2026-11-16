@@ -42,6 +42,25 @@ Accepted formats: raw prompt text, or a YAML `system_prompt: |` block (e.g. the
 `ares-private` artifact). Files matching `*.private.txt` / `*.private.yaml` are gitignored.
 Keep such copies access-controlled and do not publish them.
 
+## X-Teaming (spec 010)
+
+X-Teaming is reimplemented from the paper (arXiv:2504.13203, CC BY 4.0); no code is taken
+from the authors' repository, which carries no licence. As with the council's Phase 2:
+
+- **What ships here:** the engine (planner / attacker / verifier / optimizer loop) and
+  **benign structural role prompts** that make the attack run and stream but embed no
+  worked harmful exemplars and no operational jailbreak guidance. With the defaults,
+  X-Teaming is a weak baseline.
+- **What does NOT ship here:** the paper-faithful operative role prompts. Point an
+  environment variable at your own private copy to load them:
+
+  ```bash
+  export MYRTIA_XTEAMING_PROMPTS_FILE=/path/to/xteaming_prompts.private.yaml
+  ```
+
+  The file sets any of `planner` / `attacker` / `verifier` / `optimizer`. Files matching
+  `*.private.yaml` are git-ignored; keep such copies access-controlled.
+
 ## Responsible release
 
 - Model outputs and successful attacks are treated as sensitive; do not redistribute worked
