@@ -45,3 +45,17 @@ optional `set_event_emitter` hook and recorded on `last_trace`.
 
 - **Principles 4, 5, 6, 7, 11, 12:** Additive connector module, SSRF guard enforced before construction, no unredacted secrets, TDD with `pytest-bdd`, full structured event trace.
 
+
+## Test strategy
+
+| Requirement | Proof |
+|---|---|
+| FR-1, FR-2, FR-3, FR-4 | `backend/tests/features/agent_targets.feature` + `backend/tests/test_agent_targets.py` (`Orchestrator` + `POST /runs`) |
+| FR-5, FR-6 | `test_agent_targets.py::test_factory_builds_agent_sdk_and_enforces_ssrf`, `test_max_turns_and_llm_error_handled_cleanly` |
+| FR-7 | `test_agent_targets.py::test_openai_agents_sdk_bridge_with_stubbed_agents_module` |
+| UI (Standard & Agentic) | `backend/tests_ui/features/agent_targets_ui.feature` in Playwright Chromium |
+
+## Risks
+
+- **Optional `openai-agents` SDK not installed by default:** Mitigated by `has_openai_agents_sdk()` check and pure-Python `SandboxAgentRuntime` fallback so offline tests and default installs work out of the box.
+- **Small chat models ignoring JSON tool/handoff syntax:** Mitigated by treating plain-text replies as a clean single-turn answer and returning a partial summary if `max_turns` is exhausted.
