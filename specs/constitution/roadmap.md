@@ -25,12 +25,12 @@ spec is validated. Detailed history before specs were adopted lives in `BACKLOG.
 | 007 | `mcp-injection` | Myrtia serves simulated MCP tools to an agent target and injects the attack through tool descriptions or results. Depends on 006. | Spec draft |
 | 008 | `observability-metrics` | Metrics for model calls, tokens, latency, runs, verdicts and shields at `/metrics`, and an optional Grafana dashboard that shows them in real time. | Implemented |
 | 009 | `otel-traces` | Each run emitted as an OpenTelemetry trace (run, goal, turn, model call) with content and verdicts, stored locally and shown step by step in Grafana. Off by default. Depends on 008. | Implemented |
+| 010 | `xteaming` | X-Teaming (arXiv:2504.13203) reimplemented as a plugin: a planner drafts diverse multi-turn plans, an attacker executes them, a verifier scores 1-5 and an optimizer revises turns whose score drops. Prompts reproduced from the paper's Appendix A.4 (CC BY 4.0); operators can override them via `MYRTIA_XTEAMING_PROMPTS_FILE`. | Implemented |
 
 ## Backlog (unordered)
 
 - Ring layout that leaves room between neighbouring agents at seven and eight attackers
   (today adjacent cards overlap and one comes to the front when pointed at).
-- X-Teaming as a new multi-agent, multi-turn attack plugin.
 - Observability, next steps: log shipping; a "view trace" link from a run in the console.
 - Itemised evaluation rubric: per-question judge verdicts alongside the 0–5 score.
 - Upload a custom behaviour dataset.

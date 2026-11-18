@@ -42,6 +42,22 @@ Accepted formats: raw prompt text, or a YAML `system_prompt: |` block (e.g. the
 `ares-private` artifact). Files matching `*.private.txt` / `*.private.yaml` are gitignored.
 Keep such copies access-controlled and do not publish them.
 
+## X-Teaming (spec 010)
+
+X-Teaming is reimplemented from the paper (arXiv:2504.13203, CC BY 4.0); the engine is our
+own code and no code is taken from the authors' repository, which carries no licence.
+
+- **What ships here:** the engine (planner / attacker / verifier / optimizer loop) and the
+  role **prompt templates** (`xteaming_prompts.py`), reproduced from the paper's
+  Appendix A.4 under CC BY 4.0 **with attribution** (see `THIRD_PARTY_NOTICES.md`). These
+  are prompt templates — the same class of red-teaming content that garak, PyRIT and ARES
+  publish openly — not worked harmful content.
+- **What does NOT ship here:** the raw model outputs a run produces (worked jailbreak
+  completions). Myrtia does not store them in git; treat them as sensitive results.
+- An operator may tune the prompts at run time with
+  `MYRTIA_XTEAMING_PROMPTS_FILE=/path/to/overrides.yaml` (same keys), which overrides the
+  committed templates; `*.private.yaml` files are git-ignored.
+
 ## Responsible release
 
 - Model outputs and successful attacks are treated as sensitive; do not redistribute worked

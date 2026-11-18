@@ -44,6 +44,8 @@ force Myrtia's entire service open. Also review the other vxcontrol forks before
 | `backend/myrtia/plugins/obfuscation.py`, `garak_probes.py` | garak encoding/probe families (NVIDIA garak) | Reimplemented; garak is Apache-2.0 | Our own implementation of the encoding/probe transforms; garak not imported. |
 | `backend/myrtia/plugins/human_jailbreak.py` | Public DAN/AIM-style persona templates (unknown authorship) | Public, unattributed | Widely circulated jailbreak persona wrappers with a `{goal}` slot; documented as public templates, no ownership claimed. |
 | `backend/myrtia/plugins/tap.py` | TAP / PAIR (arXiv:2312.02119, 2310.08419) | Reimplemented from the papers | Our own implementation; no upstream code used. |
+| `backend/myrtia/plugins/xteaming.py` | X-Teaming (Rahman et al., arXiv:2504.13203) | Engine: our own code (Apache-2.0) | **Engine reimplemented from the paper.** No code is taken from the authors' repository (github.com/salman-lui/x-teaming), which carries **no licence** (all rights reserved) and is therefore not used. |
+| `backend/myrtia/plugins/xteaming_prompts.py` | X-Teaming paper, Appendix A.4 (Rahman et al., arXiv:2504.13203, COLM 2025) | **CC BY 4.0** | Role prompt templates reproduced from the paper's appendix under CC BY 4.0, **with attribution** (cite the paper). Prompt templates only — raw model outputs are never committed. An operator may override them via `MYRTIA_XTEAMING_PROMPTS_FILE`. |
 | _(no PentAGI code adopted)_ | | | Backend is Python; PentAGI (Go) is a pattern reference only. |
 
 ## Goal datasets
