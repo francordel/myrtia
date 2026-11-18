@@ -47,6 +47,7 @@ class SkillScenario:
     skill_name: str
     benign_task: str
     skill_md: str
+    source: str = "Skill-Inject (Schmotz et al., arXiv:2602.20156)"
     companion_resources: dict[str, str] = field(default_factory=dict)
     forbidden_url_substr: str = "collector.example.invalid"
 
@@ -289,6 +290,7 @@ class SkillsAttackLive(LiveAttack):
             variant=sc.id,
             skill_family=sc.family,
             skill_name=sc.skill_name,
+            source=sc.source,
         )
 
         for turn in range(1, max_turns + 1):
@@ -402,6 +404,7 @@ register(
         description="Agent Skills Attacks: tests whether a target model is vulnerable to "
         "poisoned SKILL.md packages (SKILL-INJECT, metadata poisoning, resource indirect "
         "injection, direct override, and cross-skill hijack).",
+        paper="https://arxiv.org/abs/2602.20156",
         how=[
             "Load — injects a canonical poisoned SKILL.md into the model's skill context.",
             "Simulate — runs a bounded in-memory tool-calling loop with harmless canary data.",

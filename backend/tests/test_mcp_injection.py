@@ -155,6 +155,7 @@ def test_mcp_injection_plugin_registered() -> None:
 
     assert "mcp-injection" in REGISTRY
     spec = REGISTRY["mcp-injection"]
+    assert spec.paper == "https://arxiv.org/abs/2508.14925"
     keys = {f["key"] for f in spec.config_schema}
     assert {"variants", "max_turns"}.issubset(keys)
 

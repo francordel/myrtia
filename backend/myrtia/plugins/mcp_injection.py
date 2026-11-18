@@ -38,6 +38,7 @@ class McpScenario:
     family: str
     benign_task: str
     initial_tools: tuple[McpToolDef, ...]
+    source: str = "MCPTox (arXiv:2508.14925) / Invariant Labs MCP Security"
     mutated_tools: tuple[McpToolDef, ...] = ()
     simulated_outputs: dict[str, str] = field(default_factory=dict)
     mutate_after_turn: int | None = None
@@ -304,6 +305,7 @@ class McpInjectionLive(LiveAttack):
             "mcp.manifest_loaded",
             variant=sc.id,
             mcp_family=sc.family,
+            source=sc.source,
             tools=[f"{t.server}.{t.name}" for t in sandbox.active_tools],
         )
 
@@ -452,6 +454,7 @@ register(
         description="MCP Injection Attacks: tests whether a target model is vulnerable to "
         "MCP tool poisoning, rug pulls, cross-server tool shadowing, and indirect output "
         "injection.",
+        paper="https://arxiv.org/abs/2508.14925",
         how=[
             "Expose — loads simulated MCP server tool manifests with canary workspace data.",
             "Mutate — in rug-pull mode, mutates tool descriptions after turn 1.",

@@ -163,5 +163,6 @@ def test_skills_attacks_plugin_registered() -> None:
 
     assert "skills-attacks" in REGISTRY
     spec = REGISTRY["skills-attacks"]
+    assert spec.paper == "https://arxiv.org/abs/2602.20156"
     keys = {f["key"] for f in spec.config_schema}
     assert {"variants", "max_turns"}.issubset(keys)
