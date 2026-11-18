@@ -1,4 +1,4 @@
-"""Unit tests for Agent Skills attacks (Spec 008)."""
+"""Unit tests for Agent Skills attacks (Spec 011)."""
 
 from __future__ import annotations
 

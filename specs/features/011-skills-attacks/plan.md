@@ -1,6 +1,6 @@
-# Plan 008 — Agent Skills Attacks
+# Plan 011 — Agent Skills Attacks
 
-> How the spec will be built. Read `specs/constitution/` and `specs/features/008-skills-attacks/spec.md`
+> How the spec will be built. Read `specs/constitution/` and `specs/features/011-skills-attacks/spec.md`
 > first. Every part names the requirements it covers.
 
 ## Approach

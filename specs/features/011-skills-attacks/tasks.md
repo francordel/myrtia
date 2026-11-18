@@ -1,4 +1,4 @@
-# Tasks 008 — Agent Skills Attacks
+# Tasks 011 — Agent Skills Attacks
 
 > Small tasks (about 20–30 minutes each) in dependency order. Implement one at a time,
 > test first: write the failing scenario or unit test, make it pass with the minimum

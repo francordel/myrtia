@@ -1,4 +1,4 @@
-# Spec 008 — Agent Skills Attacks
+# Spec 011 — Agent Skills Attacks
 
 - **Status:** Implemented
 - **Issue:** #<tbd>

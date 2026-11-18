@@ -54,3 +54,8 @@ and runs a bounded JSON tool-calling loop over `target_connector.generate(messag
 | FR-5 | `mcp_injection.feature` + `test_mcp_injection.py::test_mcp_forbidden_action_detection` |
 | FR-6, FR-7 | `test_mcp_injection.py::test_variant_filtering_and_max_turns_cap`, `test_connector_error_marks_failed` |
 
+## Risks
+
+- **Small chat models ignoring JSON tool syntax:** Mitigated by treating plain-text replies as a clean single-turn answer and extracting fenced JSON blocks when models wrap tool calls in markdown.
+- **Simulated vs. real MCP server gap:** Self-contained simulated manifests test the LLM's susceptibility directly; live MCP server wiring against `agent_sdk` targets is a clean follow-up once `006-agent-targets` lands.
+
