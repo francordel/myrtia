@@ -585,6 +585,13 @@
   .gedge-delete:hover { background:var(--danger); color:var(--bg); }
   .gnode:hover { box-shadow:var(--shadow-2); transform:translate(-50%,-50%) translateY(-1px); }
   .gnode.sel { box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 40%,transparent), var(--shadow-2); }
+  .gnode.is-active { box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 65%,transparent), var(--shadow-2); border-color:var(--accent); }
+  .gpreview-panel { margin-top:10px; border:1px solid var(--border-strong); border-radius:var(--r-lg); background:var(--surface-2); padding:10px 12px; display:flex; flex-direction:column; gap:8px; }
+  .gpreview-panel[hidden] { display:none; }
+  .gpreview-head { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+  .gpreview-ctl { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .gpreview-ctl input { flex:1; min-width:220px; }
+  .gpreview-log { max-height:220px; overflow:auto; display:flex; flex-direction:column; gap:6px; }
   .gnode.edge-source { box-shadow:0 0 0 3px color-mix(in srgb,var(--warning) 45%,transparent), var(--shadow-2); }
   .gnode .gport { display:none; position:absolute; right:-9px; top:50%; transform:translateY(-50%); width:18px; height:18px; padding:0; border:2px solid var(--warning); border-radius:50%; background:var(--surface-1); color:var(--warning); cursor:crosshair; line-height:12px; font-size:13px; z-index:2; }
   .gnode:hover .gport { display:block; }
@@ -603,6 +610,16 @@
   .gnode .gx:hover { color:var(--danger); border-color:var(--danger); }
   /* attack tools on an attacker node (single-turn attacks it can run) */
   .gnode .gtools { display:flex; gap:4px; margin-top:7px; flex-wrap:wrap; }
+  .gc-carries { margin-top:6px; border-top:1px solid var(--border); padding-top:5px; display:flex; flex-direction:column; gap:4px; }
+  .gc-label { font-size:9px; font-weight:700; letter-spacing:.5px; color:var(--text-3); text-transform:uppercase; }
+  .gc-chips { display:flex; flex-wrap:wrap; gap:3px; }
+  .gc-chip { display:inline-flex; align-items:center; gap:3px; font-size:10px; padding:1px 6px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border); color:var(--text-2); max-width:100%; }
+  .gc-chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gc-rm { border:0; background:none; color:var(--text-3); cursor:pointer; padding:0 1px; font-size:11px; line-height:1; }
+  .gc-rm:hover { color:var(--danger); }
+  .gc-acts { display:flex; gap:4px; margin-top:2px; flex-wrap:wrap; }
+  .gc-act { font-size:10px; padding:1px 6px; border-radius:6px; border:1px dashed var(--border); background:transparent; color:var(--text-2); cursor:pointer; }
+  .gc-act:hover { border-color:var(--accent); color:var(--accent); }
   .gbubble { display:inline-flex; align-items:center; gap:3px; background:color-mix(in srgb,var(--role-proposal) 16%,transparent); color:var(--role-proposal); border:1px solid var(--role-proposal); border-radius:var(--r-pill); padding:1px 8px 1px 6px; font-size:11px; line-height:1.5; cursor:pointer; }
   .gbubble b { font-weight:700; } .gbubble:hover { background:var(--role-proposal); color:#fff; }
   .gchat { position:absolute; top:-10px; right:-10px; width:24px; height:24px; border-radius:50%; border:1px solid var(--border); background:var(--surface-2); color:var(--text-2); font-size:12px; line-height:22px; text-align:center; cursor:pointer; padding:0; display:block; box-shadow:var(--shadow-1); }
@@ -783,9 +800,22 @@
         <div class="gb-field"><label for="gTurl">Target base URL</label><input id="gTurl" value="http://127.0.0.1:11434/v1"></div>
         <button type="button" class="btn-outline" id="gPreflight" title="Test the target connection">Test</button>
         <button class="btn-outline" id="gCompare" title="Run the same attack with and without the shields, then show the ASR drop">Compare shields</button>
+        <button type="button" class="btn-outline" id="gPreviewBtn" title="Test the current graph against one goal in a docked panel">Preview</button>
         <button class="primary gb-launch" id="gLaunch">Launch attack</button>
         <div class="source-note" id="gLaunchSummary">Will run the manual smoke-test goal above · 0 library goals selected</div>
         <div class="source-note reco-note" id="gReco" hidden></div>
+      </div>
+      <div id="gPreviewPanel" class="gpreview-panel" hidden>
+        <div class="gpreview-head">
+          <div style="display:flex;align-items:center;gap:8px"><strong>Canvas Preview</strong><span id="gPreviewStatus" class="status"><i></i>Ready</span></div>
+          <button type="button" class="btn-outline" id="gPreviewClose" aria-label="Close preview">✕</button>
+        </div>
+        <div class="gpreview-ctl">
+          <input id="gPreviewGoal" placeholder="Single preview goal (defaults to Goal above)…" />
+          <button type="button" class="primary" id="gPreviewRun">Run preview</button>
+          <button type="button" class="btn-outline" id="gPreviewStop" hidden>Stop</button>
+        </div>
+        <div id="gPreviewLog" class="gpreview-log"></div>
       </div>
       <details class="adv graph-goals" id="glibwrap" open>
         <summary><span class="goals-icon" aria-hidden="true">◎</span><span class="goals-title">Choose goals from the library<small>Search, filter and select multiple behaviours for this run</small></span><span class="goals-count" id="glibSel">0 selected</span></summary>
@@ -3050,7 +3080,7 @@ function renderGraph(){
     d.innerHTML=`<div class="gr"><i></i>${esc(role)}</div><div class="gm">${esc(model||"—")}</div>${sub!==null?`<div class="gp">${esc(sub)}</div>`:""}${removable?'<span class="gx" title="Remove">×</span>':""}`;
     { const port=document.createElement("button"); port.type="button"; port.className="gport"; port.title="Drag to connect"; port.textContent="+"; d.appendChild(port); }
     d.onpointerdown=ev=>{
-      if(ev.target.classList.contains("gx")) return;
+      if(ev.target.classList.contains("gx") || ev.target.closest(".gc-rm, .gc-act")) return;
       const r=$("gcanvas").getBoundingClientRect();
       if(ev.target.closest(".gport")){
         gEdgeDrag={from:id,x:ev.clientX-r.left,y:ev.clientY-r.top,clientX:ev.clientX,clientY:ev.clientY,moved:false};
@@ -3073,7 +3103,7 @@ function renderGraph(){
     d.onkeydown=(ev)=>{ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); openGDialog(kind,id,d); } };
     nodes.appendChild(d); return d;
   };
-  GS.attackers.forEach((a,i)=>{ const el=mk("attacker",a.id,pos[a.id].x,pos[a.id].y,`Attacker ${i+1}`,a.model,a.system?("✎ "+a.system):"paper red-team prompt (default)",GS.attackers.length>1); gAttachTools(el,a); });
+  GS.attackers.forEach((a,i)=>{ const el=mk("attacker",a.id,pos[a.id].x,pos[a.id].y,`Attacker ${i+1}`,a.model,a.system?("✎ "+a.system):"paper red-team prompt (default)",GS.attackers.length>1); gAttachTools(el,a); gAttachAgentCard(el,a); });
   chP.forEach(cp=>{ const c=GS.chairmen.find(x=>x.id===cp.id); if(!c) return; const idx=GS.chairmen.indexOf(c); const _td=topoDef();
     const role=_td.chairmanRole?_td.chairmanRole(idx,GS.chairmen.length):(GS.chairmen.length>1?("Chairman "+(idx+1)):"Chairman");
     const rem=_td.chairmanRemovable?_td.chairmanRemovable(GS.chairmen.length):(GS.chairmen.length>1);
@@ -3178,6 +3208,45 @@ function gAttachTools(el,a){
   const sw=document.createElement("button"); sw.className="gsword"; sw.title="Attack tools — grant single-turn attacks this agent can wield"; sw.setAttribute("aria-label","Attack tools"); sw.innerHTML="🗡";
   sw.onclick=(ev)=>{ ev.stopPropagation(); openToolPicker(a.id,sw); };
   el.appendChild(sw);
+}
+function gAttachAgentCard(el,a){
+  const wrap=document.createElement("div"); wrap.className="gc-carries";
+  wrap.innerHTML='<div class="gc-label">Carries</div><div class="gc-chips"></div><div class="gc-acts"></div>';
+  const chips=wrap.querySelector(".gc-chips"), acts=wrap.querySelector(".gc-acts");
+  const addChip=(kind,label,onRemove)=>{
+    const c=document.createElement("span"); c.className="gc-chip"; c.dataset.gc=kind;
+    c.innerHTML=`<span>${esc(label)}</span>`+(onRemove?'<button type="button" class="gc-rm" title="Remove" aria-label="Remove">×</button>':"");
+    if(onRemove){ const b=c.querySelector(".gc-rm"); b.onclick=(ev)=>{ ev.stopPropagation(); onRemove(); }; }
+    chips.appendChild(c);
+  };
+  if((a.system||"").trim()){
+    addChip("prompt","Custom prompt",()=>{ gCheckpoint(); a.system=""; gsSave(); renderGraph(); });
+  } else {
+    addChip("prompt","Default prompt",null);
+  }
+  (a.tools||[]).forEach(tid=>{
+    addChip("tool",tid,()=>{ gCheckpoint(); a.tools=(a.tools||[]).filter(t=>t!==tid); if(a.tool_cfg) delete a.tool_cfg[tid]; gsSave(); renderGraph(); });
+  });
+  if(a.priming && a.priming.mode==="contextual"){
+    addChip("priming","Few-shot priming",()=>{ gCheckpoint(); a.priming={mode:"single",context:a.priming.context||""}; gsSave(); renderGraph(); });
+  }
+  const addBtn=(act,label,fn)=>{
+    const b=document.createElement("button"); b.type="button"; b.className="gc-act"; b.dataset.act=act; b.textContent=label;
+    b.onclick=(ev)=>{ ev.stopPropagation(); fn(b); };
+    acts.appendChild(b);
+  };
+  addBtn("add-tool","+ Tool",(b)=>openToolPicker(a.id,b));
+  if(!(a.priming && a.priming.mode==="contextual")){
+    addBtn("add-priming","+ Priming",()=>{ gCheckpoint(); a.priming={mode:"contextual",context:(a.priming&&a.priming.context)||""}; gsSave(); renderGraph(); });
+  }
+  addBtn("add-agent","+ Agent",()=>{
+    if(GS.attackers.length>=8){ toast("Eight attackers is the canvas limit for now.","info"); return; }
+    gCheckpoint();
+    const id=gNextId();
+    GS.attackers.push({id,model:a.model||"qwen2.5:3b",system:"",endpoint:""});
+    gsSave(); renderGraph();
+  });
+  el.appendChild(wrap);
 }
 function gUpdatePrimeBadge(id){ const el=document.querySelector(`.gnode[data-id="${id}"] .gchat`); const a=GS.attackers.find(x=>x.id===id); if(el&&a){ const on=a.priming&&a.priming.mode==="contextual"; el.classList.toggle("on",!!on); el.title=on?"Attacker priming set — edit":"Attacker priming: single prompt (click to add context)"; } }
 function gFloatPos(d,anchor){
@@ -3446,6 +3515,115 @@ async function launchGraph(){
   finally{ $("gLaunch").disabled=false; $("gLaunch").textContent="Launch attack"; }
 }
 $("gLaunch").onclick=launchGraph;
+
+// Docked Canvas Preview (Spec 003): run one goal from the builder with live node highlights.
+let gPrevWs=null, gPrevPoll=null, gPrevRunId=null, gPrevSeen=0;
+function gClearActiveNodes(){ document.querySelectorAll("#agenticPane .gnode.is-active").forEach(n=>n.classList.remove("is-active")); }
+function gHighlightForEvent(ev){
+  gClearActiveNodes();
+  if(!ev||!ev.type) return;
+  const p=ev.payload||{};
+  let target=null;
+  if(ev.type==="proposal.created"||ev.type==="agent.message"){
+    const m=String(p.model||"").trim();
+    const atk=GS.attackers.find(a=>a.model===m)||GS.attackers[0];
+    if(atk) target=document.querySelector(`#agenticPane .gnode[data-id="${atk.id}"]`);
+  } else if(ev.type==="chairman.synthesized"){
+    target=document.querySelector("#agenticPane .gnode.chairman");
+  } else if(ev.type==="target.responded"){
+    target=document.querySelector("#agenticPane .gnode.target");
+  } else if(ev.type==="judge.scored"){
+    target=document.querySelector("#agenticPane .gnode.evaluator");
+  }
+  if(target) target.classList.add("is-active");
+}
+function gSetPreviewStatus(cls,label){
+  const st=$("gPreviewStatus"); if(!st) return;
+  st.className="status "+cls; st.innerHTML=`<i></i>${esc(label)}`;
+}
+async function stopCanvasPreview(closePanel){
+  if(gPrevWs){ try{ gPrevWs.close(); }catch(_){} gPrevWs=null; }
+  if(gPrevPoll){ clearInterval(gPrevPoll); gPrevPoll=null; }
+  if(gPrevRunId){
+    const rid=gPrevRunId; gPrevRunId=null;
+    try{ await fetch(API()+"/runs/"+rid+"/stop",{method:"POST"}); }catch(_){}
+  }
+  gClearActiveNodes();
+  if($("gPreviewRun")) $("gPreviewRun").disabled=false;
+  if($("gPreviewStop")) $("gPreviewStop").hidden=true;
+  if(closePanel && $("gPreviewPanel")) $("gPreviewPanel").hidden=true;
+}
+function gAppendPreviewEvent(ev){
+  const log=$("gPreviewLog"); if(!log||!ev) return;
+  if(ev.seq && ev.seq<=gPrevSeen) return;
+  if(ev.seq) gPrevSeen=ev.seq;
+  gHighlightForEvent(ev);
+  if(ev.type==="run.finished" && ev.payload && ev.payload.status==="failed"){
+    const errDiv=document.createElement("div"); errDiv.className="ev blocked";
+    errDiv.innerHTML=`<div class="lab"><span class="role">Error</span></div><div class="body">${esc(ev.payload.error||"Preview run failed.")}</div>`;
+    log.appendChild(errDiv); log.scrollTop=log.scrollHeight; return;
+  }
+  if(["proposal.created","chairman.synthesized","agent.message","target.responded","judge.scored","defense.blocked","error","log"].includes(ev.type)){
+    log.appendChild(evNode(ev)); log.scrollTop=log.scrollHeight;
+  }
+}
+async function startCanvasPreview(){
+  const goal=($("gPreviewGoal").value||$("gGoal").value||"Say hello").trim()||"Say hello";
+  const prevGoal=$("gGoal").value; $("gGoal").value=goal;
+  const savedSel=new Map(GRAPH_SELECTED); GRAPH_SELECTED.clear();
+  const body=graphBody(false);
+  savedSel.forEach((v,k)=>GRAPH_SELECTED.set(k,v)); $("gGoal").value=prevGoal;
+  if(!body){ toast("Enter a goal for the preview.","err"); return; }
+  body.goals=[goal]; body.purpose="smoke";
+  await stopCanvasPreview(false);
+  $("gPreviewLog").innerHTML=""; gPrevSeen=0;
+  gSetPreviewStatus("running","Running");
+  $("gPreviewRun").disabled=true; $("gPreviewStop").hidden=false;
+  try{
+    const res=await fetch(API()+"/runs",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+    if(!res.ok){
+      let detail=`HTTP ${res.status}`;
+      try{ const j=await res.json(); detail=j.error||j.detail||detail; }catch(_){}
+      gSetPreviewStatus("error","Error"); $("gPreviewLog").textContent=`Preview failed: ${detail}`;
+      $("gPreviewRun").disabled=false; $("gPreviewStop").hidden=true; return;
+    }
+    const data=await res.json();
+    gPrevRunId=data.run_id;
+    const finishPreview=(cls,label)=>{
+      if(gPrevPoll){ clearInterval(gPrevPoll); gPrevPoll=null; }
+      if(gPrevWs){ try{ gPrevWs.close(); }catch(_){} gPrevWs=null; }
+      gPrevRunId=null; gClearActiveNodes();
+      gSetPreviewStatus(cls,label);
+      $("gPreviewRun").disabled=false; $("gPreviewStop").hidden=true;
+    };
+    const proto=location.protocol==="https:"?"wss:":"ws:";
+    const ws=new WebSocket(`${proto}//${location.host}/runs/${gPrevRunId}/events`);
+    gPrevWs=ws;
+    ws.onmessage=(msg)=>{ try{ const ev=JSON.parse(msg.data); gAppendPreviewEvent(ev);
+      if(ev.type==="run.finished"){ finishPreview(ev.payload&&ev.payload.status==="failed"?"error":"completed", ev.payload&&ev.payload.status==="failed"?"Error":"Completed"); }
+    }catch(_){} };
+    gPrevPoll=setInterval(async()=>{
+      const rid=gPrevRunId; if(!rid) return;
+      try{
+        const r=await (await fetch(API()+"/runs/"+rid)).json();
+        if(r.status && r.status!=="running" && r.status!=="pending" && r.status!=="queued"){
+          // Give WebSocket backlog a moment to flush before closing.
+          setTimeout(()=>{ if(gPrevRunId===rid) finishPreview(r.status==="failed"?"error":"completed", r.status==="failed"?"Error":"Completed"); }, 200);
+        }
+      }catch(_){}
+    }, 400);
+  }catch(e){
+    gSetPreviewStatus("error","Error"); $("gPreviewLog").textContent="Preview failed: backend unreachable.";
+    $("gPreviewRun").disabled=false; $("gPreviewStop").hidden=true;
+  }
+}
+if($("gPreviewBtn")) $("gPreviewBtn").onclick=()=>{
+  const p=$("gPreviewPanel"); p.hidden=!p.hidden;
+  if(!p.hidden && !$("gPreviewGoal").value.trim()) $("gPreviewGoal").value=$("gGoal").value.trim();
+};
+if($("gPreviewRun")) $("gPreviewRun").onclick=startCanvasPreview;
+if($("gPreviewStop")) $("gPreviewStop").onclick=()=>{ stopCanvasPreview(false); gSetPreviewStatus("cancelled","Stopped"); };
+if($("gPreviewClose")) $("gPreviewClose").onclick=()=>stopCanvasPreview(true);
 
 // Compare: run the same attack with and without the shields, then show the ASR drop.
 async function postRunId(body){ try{ const d=await (await fetch(API()+"/runs",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json(); return d.run_id||null; }catch(e){ return null; } }
