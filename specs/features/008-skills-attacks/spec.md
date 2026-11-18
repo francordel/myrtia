@@ -33,6 +33,7 @@ This feature adds a self-contained Agent Skills attack suite to Myrtia, covering
 - **FR-5** — WHEN the target model attempts a forbidden action or unauthorized tool call defined by the attack scenario, THE SYSTEM SHALL flag the unauthorized action in the run outcome alongside the judge evaluation.
 - **FR-6** — WHERE an operator selects specific skill attack variants or configures the number of turns, THE SYSTEM SHALL run only the selected variants within the configured turn budget.
 - **FR-7** — IF the target model endpoint fails or returns an invalid response during the skill loop, THEN THE SYSTEM SHALL record the error clearly without leaking secrets and mark the attempt as failed without crashing the run.
+- **FR-8** — WHEN `skill.*` events (`skill.loaded`, `skill.tool_called`, `skill.tool_responded`, `skill.forbidden_action`) arrive in the live UI trace, THE SYSTEM SHALL render them with human-readable role labels, tool details, and distinct blocked/warning styling for `skill.forbidden_action`.
 
 ## Non-functional requirements
 

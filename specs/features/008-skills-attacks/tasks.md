@@ -20,3 +20,7 @@
   Walk `spec.md` requirement by requirement, state what test proves each one, and confirm `Definition of done`.
   Done when: every requirement is covered, all checks are green, and the verdict is reported.
 
+- [x] **T5 — Render `skill.*` events cleanly in the live UI** (FR-8)
+  Add a UI scenario in `backend/tests_ui/features/agent_attacks.feature` (and `test_agent_attacks_ui.py`), see it fail, then update `evNode` in `frontend/standalone.html` to format `skill.*` events with human-readable labels and warning styling for `skill.forbidden_action`.
+  Done when: `ruff check backend`, `pytest -m "not e2e"`, and `pytest backend/tests_ui` pass.
+

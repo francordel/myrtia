@@ -19,3 +19,7 @@
 - [x] **T4 — Validate the spec** (FR-1 … FR-7, NFR-1, NFR-2)
   Walk `spec.md` requirement by requirement, state what test proves each one, and confirm `Definition of done`.
   Done when: every requirement is covered, all checks are green, and the supervisor approves.
+
+- [x] **T5 — Render `mcp.*` events cleanly in the live UI** (FR-8)
+  Add a UI scenario in `backend/tests_ui/features/agent_attacks.feature` (and `test_agent_attacks_ui.py`), see it fail, then update `evNode` in `frontend/standalone.html` to format `mcp.*` events with human-readable labels and warning styling for `mcp.forbidden_action` and `mcp.manifest_mutated`.
+  Done when: `ruff check backend`, `pytest -m "not e2e"`, and `pytest backend/tests_ui` pass.

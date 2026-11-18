@@ -32,6 +32,7 @@ This feature adds a self-contained MCP injection attack plugin to Myrtia that si
 - **FR-5** — WHEN the target model executes a forbidden action or unauthorized MCP tool call (such as exfiltrating canary data to an external endpoint or hijacking a trusted tool), THE SYSTEM SHALL flag the unauthorized action in the run outcome alongside the judge evaluation.
 - **FR-6** — WHERE an operator selects specific MCP attack variants or configures the turn budget, THE SYSTEM SHALL run only the selected variants within the configured turn budget.
 - **FR-7** — IF the target model endpoint fails during the MCP loop, THEN THE SYSTEM SHALL record the error without leaking secrets, skip judging the error string, and mark the attempt as failed without crashing the run.
+- **FR-8** — WHEN `mcp.*` events (`mcp.manifest_loaded`, `mcp.manifest_mutated`, `mcp.tool_called`, `mcp.tool_responded`, `mcp.forbidden_action`) arrive in the live UI trace, THE SYSTEM SHALL render them with human-readable role labels, server/tool details, and distinct blocked/warning styling for `mcp.forbidden_action` and `mcp.manifest_mutated`.
 
 ## Non-functional requirements
 
