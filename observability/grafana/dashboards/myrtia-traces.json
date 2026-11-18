@@ -1,0 +1,160 @@
+{
+  "uid": "myrtia-traces",
+  "title": "Myrtia traces",
+  "tags": [
+    "myrtia"
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "graphTooltip": 0,
+  "refresh": "10s",
+  "timezone": "browser",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "description": "Each run as a trace: run, goals, turns and model calls, with what was sent and what came back. Needs Myrtia started with MYRTIA_TRACES=on.",
+  "links": [
+    {
+      "title": "Overview",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/myrtia-overview/myrtia-overview",
+      "tooltip": "Tokens, latency and activity",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": false,
+      "keepTime": true,
+      "tags": []
+    },
+    {
+      "title": "Open Myrtia",
+      "type": "link",
+      "icon": "external link",
+      "url": "__MYRTIA_URL__",
+      "tooltip": "Back to the Myrtia console",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": false,
+      "keepTime": false,
+      "tags": []
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "trace",
+        "label": "Trace ID",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "options": [
+          {
+            "text": "",
+            "value": "",
+            "selected": true
+          }
+        ],
+        "description": "Filled in when you pick a run in the list."
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Recent runs",
+      "type": "table",
+      "datasource": {
+        "type": "tempo",
+        "uid": "myrtia-tempo"
+      },
+      "description": "Click a trace ID to see that run step by step below. A run still in flight is listed before its root step arrives.",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "tempo",
+            "uid": "myrtia-tempo"
+          },
+          "queryType": "traceql",
+          "query": "{resource.service.name=\"myrtia\"}",
+          "limit": 30,
+          "tableType": "traces"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Start time",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "traceID"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Trace ID"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Show this run step by step",
+                    "url": "/d/myrtia-traces/myrtia-traces?var-trace=${__value.raw}&from=${__from}&to=${__to}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "title": "Selected run: step by step",
+      "type": "traces",
+      "datasource": {
+        "type": "tempo",
+        "uid": "myrtia-tempo"
+      },
+      "description": "The steps of the chosen trace. Open a step to read its attributes: role, model, tokens, the messages sent and the reply.",
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 24,
+        "h": 22
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "tempo",
+            "uid": "myrtia-tempo"
+          },
+          "queryType": "traceql",
+          "query": "$trace"
+        }
+      ]
+    }
+  ]
+}

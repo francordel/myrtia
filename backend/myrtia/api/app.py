@@ -14,6 +14,7 @@ Routers:
     runs       -> /runs lifecycle, /runs/{id}/export|report, /preflight, WS events
     stats      -> /stats, /audit
     approvals  -> /approvals (human-in-the-loop)
+    metrics    -> /metrics (Prometheus text format)
 
 Run with: ``uvicorn myrtia.api.app:app``.
 """
@@ -22,6 +23,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 import importlib as _importlib
+import logging
 import os
 import pkgutil as _pkgutil
 
@@ -35,11 +37,14 @@ from myrtia.api.routers import (
     chat as _chat,
     datasets as _datasets,
     meta as _meta,
+    metrics as _metrics,
     runs as _runs,
     stats as _stats,
 )
 from myrtia.store.runs import STORE
 import myrtia.plugins as _plugins_pkg
+
+_log = logging.getLogger("uvicorn.error")
 
 _PLUGIN_SKIP = {"base", "council_prompts", "council_official"}
 for _m in _pkgutil.iter_modules(_plugins_pkg.__path__):
@@ -51,7 +56,14 @@ for _m in _pkgutil.iter_modules(_plugins_pkg.__path__):
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     STORE.cleanup_orphaned_runs()
+    from myrtia import tracing
+    traces = tracing.configure()  # spec 009: on only with MYRTIA_TRACES=on
+    if traces["enabled"]:
+        _log.info("Tracing is on, exporting to %s", traces["endpoint"])
+    elif os.getenv("MYRTIA_TRACES"):
+        _log.warning("Tracing is off: %s", traces["reason"])
     yield
+    tracing.shutdown()  # flush the spans still queued
 
 
 app = FastAPI(title="Myrtia", version=APP_VERSION, lifespan=lifespan)
@@ -111,6 +123,7 @@ app.include_router(_datasets.router)
 app.include_router(_runs.router)
 app.include_router(_stats.router)
 app.include_router(_approvals.router)
+app.include_router(_metrics.router)
 
 
 # --- compatibility re-exports ---------------------------------------------------

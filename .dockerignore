@@ -10,3 +10,5 @@ steerability
 site
 docs
 backend/tests
+observability
+compose*.yaml

@@ -37,9 +37,13 @@ force Myrtia's entire service open. Also review the other vxcontrol forks before
 
 | Myrtia path | Adopted from | License | Notes |
 |---|---|---|---|
-| `backend/vendor/ares-council/` | ARES `plugins/ares-council` (own code, ARES Team) | Apache-2.0 | Vendored CouncilAttack. Additive, no-op-by-default seams added: `set_event_emitter`/`_emit` (live events) and `load_goals`. No PentAGI code; no `vxcontrol/cloud`. |
+| `backend/vendor/ares-council/` | Maintainer's own CouncilAttack plugin (ARES Team) | Apache-2.0 (`LICENSE` + `NOTICE` in folder) | Vendored CouncilAttack, authored by the maintainer. Additive, no-op-by-default seams: `set_event_emitter`/`_emit` and `load_goals`. Depends on IBM ARES (`ares-redteamer`, Apache-2.0) as an installed package. No PentAGI code; no `vxcontrol/cloud`. |
 | `backend/myrtia/plugins/council_official.py` | ARES `experiments/assets/council_system_contextual_phase0c.yaml` (ARES Team) | Apache-2.0 | Verbatim contextual proposer system prompt from the experimental artifact. |
 | `backend/myrtia/plugins/council_prompts.py` | ARES `plugins/ares-council` (ARES Team) | Apache-2.0 | Critic and chairman role instructions adapted for graph agents; placeholder examples removed. |
+| `backend/myrtia/plugins/crescendo.py` | Crescendo (Microsoft Research; ARES `ares-pyrit`) | Reimplemented; refs Apache-2.0/MIT | Our own implementation from the technique. Verified: only short, incidental phrases shared with upstream; no substantial copied text. |
+| `backend/myrtia/plugins/obfuscation.py`, `garak_probes.py` | garak encoding/probe families (NVIDIA garak) | Reimplemented; garak is Apache-2.0 | Our own implementation of the encoding/probe transforms; garak not imported. |
+| `backend/myrtia/plugins/human_jailbreak.py` | Public DAN/AIM-style persona templates (unknown authorship) | Public, unattributed | Widely circulated jailbreak persona wrappers with a `{goal}` slot; documented as public templates, no ownership claimed. |
+| `backend/myrtia/plugins/tap.py` | TAP / PAIR (arXiv:2312.02119, 2310.08419) | Reimplemented from the papers | Our own implementation; no upstream code used. |
 | `backend/myrtia/plugins/xteaming.py` | X-Teaming (Rahman et al., arXiv:2504.13203) | Engine: our own code (Apache-2.0) | **Engine reimplemented from the paper.** No code is taken from the authors' repository (github.com/salman-lui/x-teaming), which carries **no licence** (all rights reserved) and is therefore not used. |
 | `backend/myrtia/plugins/xteaming_prompts.py` | X-Teaming paper, Appendix A.4 (Rahman et al., arXiv:2504.13203, COLM 2025) | **CC BY 4.0** | Role prompt templates reproduced from the paper's appendix under CC BY 4.0, **with attribution** (cite the paper). Prompt templates only — raw model outputs are never committed. An operator may override them via `MYRTIA_XTEAMING_PROMPTS_FILE`. |
 | _(no PentAGI code adopted)_ | | | Backend is Python; PentAGI (Go) is a pattern reference only. |
@@ -59,3 +63,16 @@ The pinned revision, SHA-256 digest, and exact file URL for each download are in
 | JailbreakBench | [JBB-Behaviors](https://huggingface.co/datasets/JailbreakBench/JBB-Behaviors) | [MIT](https://huggingface.co/datasets/JailbreakBench/JBB-Behaviors/blob/main/LICENSE) | Harmful behavior goals only |
 | AdvBench | [llm-attacks](https://github.com/llm-attacks/llm-attacks) | [MIT](https://github.com/llm-attacks/llm-attacks/blob/main/LICENSE) | `harmful_behaviors.csv` |
 | StrongREJECT | [Alexandra Souly et al.](https://github.com/alexandrasouly/strongreject) | [MIT](https://github.com/alexandrasouly/strongreject/blob/main/LICENSE) | 60-row original small dataset |
+
+## Dependency licences (distributed set)
+
+The pip-installable `backend` and the Docker image pull a permissive dependency closure
+(MIT / BSD / Apache / PSF / ISC). Two notes for completeness:
+
+- **MPL-2.0 (file-level, non-viral):** `certifi`, `tqdm`, `bidict`, `orjson`. Shipped
+  unmodified; MPL obliges sharing changes only to those files, which are not modified.
+- **`docutils`** is mixed-licensed (mostly public domain + BSD, with GPL on a few
+  peripheral tool files); it arrives transitively via the ARES stack. No AGPL/GPL/LGPL is
+  imposed on Myrtia.
+
+See `docs/license-audit.md` for the full audit.

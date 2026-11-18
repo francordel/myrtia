@@ -27,6 +27,13 @@ dev = [
     "pytest-bdd",
     "httpx",  # Starlette TestClient (offline API tests in tests/test_api.py)
     "ruff",   # lint + format — `ruff check` / `ruff format` (config in [tool.ruff])
+    "myrtia[otel]",  # the trace scenarios record spans in memory
+]
+# Traces (spec 009): `uv run --extra otel myrtia` with MYRTIA_TRACES=on. Optional: without
+# these packages Myrtia runs exactly as before and reports tracing as unavailable.
+otel = [
+    "opentelemetry-sdk>=1.27",
+    "opentelemetry-exporter-otlp-proto-http>=1.27",
 ]
 # UI scenarios (tests_ui/): drive the web UI in a real browser. Kept out of `dev` so
 # backend work needs no browser. After installing: `playwright install chromium`.

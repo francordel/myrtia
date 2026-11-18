@@ -112,7 +112,7 @@ class GradedJudge:
             self._conn = build_target_connector({
                 "kind": "openai_chat", "base_url": self.endpoint,
                 "model": self.model, "api_key": self.api_key,
-                "auth_header": self.auth_header,
+                "auth_header": self.auth_header, "role": "judge",
             })
         return self._conn
 

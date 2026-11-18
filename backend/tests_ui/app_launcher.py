@@ -50,6 +50,8 @@ def app_env(base: Mapping[str, str], *, data_dir: os.PathLike[str] | str,
     env["MYRTIA_GOAL_DATA_DIR"] = str(data / "goals")
     env["MYRTIA_OLLAMA_URL"] = model_url
     env["MYRTIA_DEFAULT_MODEL"] = MODEL_NAME
+    # Never the operator's real dashboard: scenarios that need one pass their own address.
+    env["MYRTIA_GRAFANA_URL"] = "off"
     return env
 
 
@@ -57,11 +59,13 @@ class AppInstance:
     """Context manager around one application subprocess."""
 
     def __init__(self, *, model_url: str, command: Sequence[str] | None = None,
-                 ready_timeout: float = 60.0) -> None:
+                 ready_timeout: float = 60.0,
+                 extra_env: Mapping[str, str] | None = None) -> None:
         self.port = free_port()
         self.url = f"http://127.0.0.1:{self.port}/"
         self.data_dir = tempfile.mkdtemp(prefix="myrtia-ui-")
         self._model_url = model_url
+        self._extra_env = dict(extra_env or {})
         self._command = list(command) if command else [
             sys.executable, "-m", "uvicorn", "myrtia.api.app:app",
             "--host", "127.0.0.1", "--port", str(self.port), "--log-level", "warning"]
@@ -79,6 +83,7 @@ class AppInstance:
 
     def start(self) -> "AppInstance":
         env = app_env(os.environ, data_dir=self.data_dir, model_url=self._model_url)
+        env.update(self._extra_env)
         self._log = open(self._log_path, "wb")  # noqa: SIM115 - closed in stop()
         self.process = subprocess.Popen(  # noqa: S603 - fixed, local command
             self._command, cwd=str(_BACKEND), env=env,

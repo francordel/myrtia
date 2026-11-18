@@ -1,0 +1,92 @@
+# Optional observability stack for Myrtia (specs 008 and 009): Prometheus collects the
+# metrics Myrtia serves at /metrics, Tempo stores the traces Myrtia sends when tracing is
+# on, and Grafana shows both on ready-made dashboards.
+#
+#   uv run myrtia                                             # Myrtia on the host
+#   MYRTIA_TRACES=on uv run --extra otel myrtia               # ... with traces too
+#   docker compose -f compose.observability.yaml up -d
+#
+# then open http://localhost:3000/ (no login: read-only viewer on this machine only).
+#
+# With Myrtia in Docker too, start both files together and point the collector at the
+# service that publishes Myrtia's port:
+#
+#   MYRTIA_SCRAPE_TARGET=ollama:8000 \
+#     docker compose -f compose.yaml -f compose.observability.yaml up
+#
+# Settings: MYRTIA_SCRAPE_TARGET (host:port of Myrtia, default host.docker.internal:8000),
+# MYRTIA_URL (where the dashboard's "Open Myrtia" link leads, default http://localhost:8000),
+# GRAFANA_PORT (3000), PROMETHEUS_PORT (9090), TEMPO_OTLP_PORT (4318), TEMPO_PORT (3200). See docs/observability.md.
+
+# No project name here on purpose: alone it takes the folder's name, and together with
+# compose.yaml it joins that project (same network, same volumes).
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    # The scrape target is filled in at start, so one config serves both set-ups.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        sed "s|__MYRTIA_TARGET__|$${MYRTIA_SCRAPE_TARGET}|"
+        /etc/prometheus/prometheus.tmpl.yml > /tmp/prometheus.yml &&
+        exec /bin/prometheus --config.file=/tmp/prometheus.yml
+        --storage.tsdb.path=/prometheus --storage.tsdb.retention.time=15d
+    environment:
+      MYRTIA_SCRAPE_TARGET: ${MYRTIA_SCRAPE_TARGET:-host.docker.internal:8000}
+    extra_hosts:
+      - host.docker.internal:host-gateway   # lets the container reach Myrtia on the host (Linux)
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.tmpl.yml:/etc/prometheus/prometheus.tmpl.yml:ro
+      - prometheus-data:/prometheus
+
+  # Trace store. Traces carry what the models were sent and what they answered, so they
+  # stay in a Docker volume on this machine: not in the repository, not in any image.
+  tempo:
+    image: grafana/tempo:2.6.1
+    command: ["-config.file=/etc/tempo.yaml"]
+    user: "0"   # the image's default user cannot write to a fresh named volume
+    # 4318: Myrtia sends traces here (OTLP/HTTP). 3200: query API, to export a trace.
+    ports:
+      - "127.0.0.1:${TEMPO_OTLP_PORT:-4318}:4318"
+      - "127.0.0.1:${TEMPO_PORT:-3200}:3200"
+    volumes:
+      - ./observability/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    # The dashboards' "Open Myrtia" link is filled in at start from MYRTIA_URL.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        mkdir -p /tmp/dashboards &&
+        for f in /etc/myrtia/dashboards/*.json; do
+        sed "s|__MYRTIA_URL__|$${MYRTIA_URL}|" "$$f" > "/tmp/dashboards/$$(basename "$$f")";
+        done &&
+        exec /run.sh
+    environment:
+      MYRTIA_URL: ${MYRTIA_URL:-http://localhost:8000}
+      # Read-only and local: anyone on this machine can view, nobody can log in or edit.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /tmp/dashboards/myrtia-overview.json
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/etc/myrtia/dashboards:ro
+    depends_on:
+      - prometheus
+      - tempo
+
+volumes:
+  prometheus-data:
+  tempo-data:

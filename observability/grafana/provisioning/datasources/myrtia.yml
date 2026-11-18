@@ -1,0 +1,17 @@
+apiVersion: 1
+datasources:
+  - name: Myrtia metrics
+    uid: myrtia-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 5s
+  - name: Myrtia traces
+    uid: myrtia-tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    editable: false
