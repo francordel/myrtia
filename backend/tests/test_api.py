@@ -8,6 +8,7 @@ defense shields as pure units. None of them need a live model, so they run in CI
 from __future__ import annotations
 
 import asyncio
+import re
 
 import pytest
 from starlette.testclient import TestClient
@@ -21,6 +22,19 @@ client = TestClient(appmod.app)
 def test_health() -> None:
     r = client.get("/health")
     assert r.status_code == 200 and r.json()["status"] == "ok"
+
+
+def test_console_fonts_are_self_hosted() -> None:
+    # Issue #44: the console must not call Google Fonts; its typefaces ship inline.
+    r = client.get("/")
+    assert r.status_code == 200
+    html = r.text
+    assert "fonts.googleapis.com" not in html and "fonts.gstatic.com" not in html
+    inline = re.findall(
+        r'@font-face\s*\{\s*font-family:\s*"([^"]+)";[^}]*src:\s*url\(data:font/woff2;base64,',
+        html,
+    )
+    assert set(inline) == {"Roboto", "Roboto Mono", "Montserrat"}
 
 
 def test_defenses_listed() -> None:

@@ -40,6 +40,7 @@ force Myrtia's entire service open. Also review the other vxcontrol forks before
 | `backend/vendor/ares-council/` | ARES `plugins/ares-council` (own code, ARES Team) | Apache-2.0 | Vendored CouncilAttack. Additive, no-op-by-default seams added: `set_event_emitter`/`_emit` (live events) and `load_goals`. No PentAGI code; no `vxcontrol/cloud`. |
 | `backend/myrtia/plugins/council_official.py` | ARES `experiments/assets/council_system_contextual_phase0c.yaml` (ARES Team) | Apache-2.0 | Verbatim contextual proposer system prompt from the experimental artifact. |
 | `backend/myrtia/plugins/council_prompts.py` | ARES `plugins/ares-council` (ARES Team) | Apache-2.0 | Critic and chairman role instructions adapted for graph agents; placeholder examples removed. |
+| `frontend/standalone.html` (inline `@font-face`) | Roboto, Roboto Mono and Montserrat latin `woff2` files from Google Fonts | OFL-1.1 | Self-hosted console fonts (#44). Copyright notices and licence text in `frontend/fonts/OFL.txt`. |
 | _(no PentAGI code adopted)_ | | | Backend is Python; PentAGI (Go) is a pattern reference only. |
 
 ## Goal datasets
