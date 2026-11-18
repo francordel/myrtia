@@ -66,6 +66,8 @@ live. It is dual-use security tooling for authorised testing only (see `DUAL_USE
   to add one (see `CONTRIBUTING.md`).
 - Surgical changes: touch only what the task needs and keep existing comments.
 - No sugar-coating in reviews: state defects plainly, with evidence from a real run.
+- New live event types must be added to `EventType` (`backend/myrtia/events/schema.py`) so `Orchestrator` does not downgrade them to `log`; internal agent loop steps use `step` (not `turn`), and UI warning cards use `.ev.blocked`.
+- Multi-goal connectors/plugins must record per-call traces rather than overwriting a single `last_trace` across all result rows.
 
 ## Do not
 
@@ -76,8 +78,9 @@ live. It is dual-use security tooling for authorised testing only (see `DUAL_USE
 - Do not commit `.env*`, `*.private.*` files or worked harmful completions.
 - Do not commit or push unless the maintainer asks, and add no tool attribution lines.
 
-## Before finishing any task
+## Before finishing any task (and before any commit/push)
 
-- Run the lint and test commands above and report the real output.
-- For UI changes, run the UI scenarios and add one for the new behaviour.
+- After the final edit, run lint (`uv run --extra dev ruff check backend`), the offline suite (`uv run --extra dev pytest -m "not e2e"`), and the Chromium UI suite (`uv run --group ui pytest backend/tests_ui`), and report the real output.
+- For new or modified attack plugins or target connectors, also run their `@e2e` scenarios (`uv run --extra dev pytest -m e2e`) against a live local OpenAI-compatible model endpoint (Ollama or local Hugging Face server) after the final edit.
+- For UI changes, run the UI scenarios and add one in `backend/tests_ui/features/` for the new behaviour.
 - List the requirement ids (`FR-n`) the change covers and tick the task in `tasks.md`.
