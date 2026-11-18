@@ -76,8 +76,9 @@ live. It is dual-use security tooling for authorised testing only (see `DUAL_USE
 - Do not commit `.env*`, `*.private.*` files or worked harmful completions.
 - Do not commit or push unless the maintainer asks, and add no tool attribution lines.
 
-## Before finishing any task
+## Before finishing any task (and before any commit/push)
 
-- Run the lint and test commands above and report the real output.
-- For UI changes, run the UI scenarios and add one for the new behaviour.
+- Run lint (`uv run --extra dev ruff check backend`), the offline suite (`uv run --extra dev pytest -m "not e2e"`), and the Chromium UI suite (`uv run --group ui pytest backend/tests_ui`), and report the real output.
+- For new or modified attack plugins, also run their `@e2e` scenarios (`uv run --extra dev pytest -m e2e`) against a live local OpenAI-compatible model endpoint (Ollama or local Hugging Face server) and report the real output.
+- For UI changes, add a UI scenario in `backend/tests_ui/features/` for the new behaviour.
 - List the requirement ids (`FR-n`) the change covers and tick the task in `tasks.md`.
