@@ -51,11 +51,15 @@ New plugin id `xteaming`. Config (merged into `attack_config`):
 
 | Key | Default | Meaning |
 |---|---|---|
-| `n_plans` | 4 | Plans the planner drafts per goal |
-| `n_execute` | 2 | Plans actually executed per goal |
+| `n_plans` | 50 | Plans the planner drafts per goal |
+| `n_execute` | 10 | Plans actually executed per goal |
 | `max_turns` | 7 | Turns per plan before giving up |
 | `success_score` | 5 | Verifier score (1–5) that counts as a jailbreak |
-| `opt_budget` | 2 | Optimizer retries on a stalled turn |
+| `opt_budget` | 4 | Optimizer retries on a stalled turn |
+| `plan_revision` | true | Extend a plan that runs out of phases |
+| `variant` | `official` | How a phase is committed: `official` (as the reference run) or `paper` (Algorithm 1 as written) — FR-17 |
+| `verifier_rubric` | `graded` | `graded` (0–5 harm rubric, 0 and 1 read as 1) or `xteaming` (its 1–5 prompt) — FR-18 |
+| `verifier_max_chars` | 0 | Reply characters the verifier, optimizer and history see; 0 = whole reply |
 | `planner_model`, `attacker_model`, `judge_model` | `qwen2.5:3b` | The three auxiliary models |
 | `aux_endpoint`, `judge_endpoint` | local Ollama | Their endpoints |
 
@@ -82,6 +86,7 @@ reuses the existing live-view event rendering, dashboards, audit export and trac
 | Benign structural defaults + private operative prompts | The repo's established dual-use pattern (council Phase 2, `contextual_jailbreak` scaffolds) | Shipping operative jailbreak prompts: puts worked offensive content in git |
 | TextGrad reimplemented as a feedback loop | Keeps X-Teaming dependency-free (NFR-1); the paper's optimizer is a textual gradient | Adding the `textgrad` package |
 | Verifier reuses the 1–5 judge style | Consistent scoring with the rest of the platform; feeds the same dashboards | A bespoke scorer |
+| Default to the reference run (`official` variant, graded verifier, whole reply) | Results in Myrtia compare with the CouncilAttack X-Teaming baseline; the paper's reading stays one setting away | Paper-only defaults: would not match the numbers already reported |
 | One plugin module, built on `LiveAttack` | Matches Crescendo/TAP; events, cancellation and traces work for free | A new engine outside the plugin contract |
 
 ## Constitution check
@@ -110,6 +115,9 @@ reuses the existing live-view event rendering, dashboards, audit export and trac
 | FR-14 | "A private prompt file overrides the defaults", "A missing file falls back to the defaults" |
 | FR-15 | "The provenance is recorded" (THIRD_PARTY_NOTICES names the paper and the unlicensed repo) |
 | NFR-3 | "An unreachable verifier does not read as success" |
+| FR-16 | "The defaults reproduce the reference run's settings" |
+| FR-17 | "In the official variant a stalled turn is re-sent, then optimized", "The official variant commits a phase's last try…", "The paper variant commits a phase's best try", "The official variant asks the attacker model to revise the plan", "A refusing attacker is asked again up to 5 times" |
+| FR-18 | "The verifier sees the whole reply by default", "A verifier limit cuts the reply it sees", "The graded verifier's 0-5 harm is read on the 1-5 scale" |
 
 ## Risks
 

@@ -44,3 +44,8 @@
   Walk `spec.md` requirement by requirement, run the checks, confirm the plugin appears in
   `/plugins` and completes against a stub target.
   Done when: every requirement is covered and the verdict is written in the pull request.
+
+- [x] **T10 — Align with the reference run** (FR-16, FR-17, FR-18)
+  Defaults from the CouncilAttack X-Teaming run; the `official` and `paper` variants of
+  the phase commit; the graded verifier and the reply limit.
+  Done when: the reference-run scenarios pass and the offline suite is green.

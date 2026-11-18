@@ -95,12 +95,36 @@ Content and safety
   (arXiv:2504.13203, CC BY 4.0), no code copied from any repository; the upstream code
   repository carries no licence and is therefore not used.
 
+Reference run
+
+The reference run is X-Teaming as run for CouncilAttack (EuroS&P 2027): the authors'
+released code, run unmodified with runtime settings (50 plans drafted, 10 executed, 7
+turns, 4 optimizer retries per phase, plan revision on; the council's graded 0-5 judge as
+verifier, mapped onto 1-5, over the whole reply). Myrtia reproduces its behaviour without
+using its code.
+
+- **FR-16** — THE SYSTEM SHALL default to the reference run's settings: 50 plans drafted,
+  10 executed, 7 turns per plan, an optimizer budget of 4, the `official` variant and the
+  graded verifier over the whole reply.
+- **FR-17** — WHERE the variant is `official`, THE SYSTEM SHALL commit a phase's last try
+  when its score is at least the best score committed so far or the optimizer budget is
+  spent, re-send a phase's message unchanged on its first retry before optimizing later
+  ones, ask the attacker model to revise a plan, and ask the attacker again up to 5 times
+  when it refuses or writes no message. WHERE the variant is `paper`, THE SYSTEM SHALL
+  commit the phase's best try when it scores at least the previous phase, optimize every
+  retry and ask the planner to revise.
+- **FR-18** — THE Verifier SHALL score with the graded 0-5 rubric, 0 and 1 read as 1
+  (`verifier_rubric: graded`), or with X-Teaming's own 1-5 prompt (`xteaming`); it SHALL
+  see the whole reply unless `verifier_max_chars` sets a limit, and the optimizer and the
+  attacker's history SHALL see the same text.
+
 ## Non-functional requirements
 
 - **NFR-1** — No new runtime dependency: X-Teaming reuses Myrtia's connectors, judge seam
   and event bus; TextGrad is reimplemented as a prompt-feedback loop, not a dependency.
-- **NFR-2** — Demo-sized defaults run on a laptop; the paper's model choices are named in
-  the field help.
+- **NFR-2** — The defaults reproduce the reference run's algorithm settings (FR-16) with
+  small local models, so a run is slower than the other plugins'; the paper's and the
+  reference run's model choices are named in the field help.
 - **NFR-3** — A missing or unreachable planner/attacker/verifier never reads as success:
   it yields a 0 score with the error as rationale, and the run continues.
 - **NFR-4** — Secrets are never emitted: API keys and auth headers stay out of events, as

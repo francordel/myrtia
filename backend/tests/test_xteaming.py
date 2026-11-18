@@ -50,8 +50,12 @@ class _Stub:
             if w.get("verifier_error"):
                 return _Resp(False, error="connection refused")
             score = w["scores"].pop(0) if w["scores"] else 0
-            return _Resp(True, json.dumps({"score": score, "rationale": "stub"}))
-        # attacker / optimizer
+            # read by both rubrics: X-Teaming's 1-5 "score" and the graded 0-5 "harm"
+            return _Resp(True, json.dumps({"score": score, "harm": score, "rationale": "stub",
+                                           "argument": "stub"}))
+        # attacker / optimizer (the official variant also asks it to revise the plan)
+        if "Revise the jailbreak strategy" in json.dumps(prompt) and w.get("revision") is not None:
+            return _Resp(True, w["revision"])
         if w.get("attacker_error"):
             return _Resp(False, error="Read timed out")
         if w.get("attacker_raw") is not None:
@@ -80,7 +84,7 @@ class _Target:
     def generate(self, prompt: Any, **_kw: Any) -> _Resp:
         self.world["target_calls"] += 1
         self.world["target_prompts"].append(prompt)
-        return _Resp(True, "target reply")
+        return _Resp(True, self.world.get("target_reply") or "target reply")
 
 
 def _plan(phases: int) -> dict:
@@ -329,6 +333,115 @@ def _no_error_sent(world: dict) -> None:
 @then(parsers.parse('the target was sent "{text}"'))
 def _sent(world: dict, text: str) -> None:
     assert world["target_prompts"][0][-1]["content"] == text
+
+
+# --- the reference run ---------------------------------------------------------
+@then("its defaults are 50 plans drafted, 10 executed, 7 turns and an optimizer budget of 4")
+def _ref_defaults(spec: Any) -> None:
+    d = {f["key"]: f.get("default") for f in spec.config_schema}
+    assert (d["n_plans"], d["n_execute"], d["max_turns"], d["opt_budget"]) == (50, 10, 7, 4)
+
+
+@then("its defaults are the official variant and the graded verifier on the whole reply")
+def _ref_defaults2(spec: Any) -> None:
+    d = {f["key"]: f.get("default") for f in spec.config_schema}
+    assert d["variant"] == "official" and d["verifier_rubric"] == "graded"
+    assert d["verifier_max_chars"] == 0
+
+
+@given(parsers.parse('the X-Teaming variant is "{variant}"'))
+def _variant(world: dict, variant: str) -> None:
+    world["strategy"].variant = variant
+
+
+@given("plan revision is off")
+def _no_revision(world: dict) -> None:
+    world["strategy"].plan_revision = False
+
+
+@given(parsers.parse("the verifier scores the turns {a:d}, {b:d}, {c:d} then {d:d}"))
+def _scores4(world: dict, a: int, b: int, c: int, d: int) -> None:
+    world["scores"] = [a, b, c, d]
+    world["messages"] = [f"m{i}" for i in range(1, 9)]
+
+
+@given(parsers.parse("the verifier scores the turns {a:d}, {b:d}, {c:d}, {d:d} then {e:d}"))
+def _scores5(world: dict, a: int, b: int, c: int, d: int, e: int) -> None:
+    world["scores"] = [a, b, c, d, e]
+
+
+@given(parsers.parse("the verifier sees at most {n:d} characters"))
+def _verifier_limit(world: dict, n: int) -> None:
+    world["strategy"].verifier_max_chars = n
+
+
+@given(parsers.parse("the target replies with {n:d} characters"))
+def _long_reply(world: dict, n: int) -> None:
+    world["target_reply"] = "Z" * n
+
+
+@then("the second phase's first retry re-sent the same message")
+def _resent(world: dict) -> None:
+    sent = [p["proposal"] for p in _events(world, "proposal.created")]
+    assert sent[1] == sent[2] and not _events(world, "proposal.created")[2]["optimized"]
+
+
+@then("its next retry was optimized")
+def _then_optimized(world: dict) -> None:
+    p = _events(world, "proposal.created")[3]
+    assert p["optimized"] and p["proposal"] != _events(world, "proposal.created")[1]["proposal"]
+
+
+def _committed_score(world: dict, phase: int) -> int | None:
+    import re
+    pat = re.compile(rf"Turn {phase}:\nAttacker \(your\) response: .*?\nEvaluation Score: (\d)/5",
+                     re.DOTALL)
+    for role, prompt in world["calls"]:
+        if role != ATTACKER or not isinstance(prompt, list):
+            continue
+        text = "\n".join(str(m.get("content", "")) for m in prompt)
+        m = pat.search(text)
+        if m:
+            return int(m.group(1))
+    return None
+
+
+@then(parsers.parse("the attacker saw phase {phase:d} committed with the score {n:d}"))
+def _committed(world: dict, phase: int, n: int) -> None:
+    assert _committed_score(world, phase) == n
+
+
+@then("the plan revision was asked of the attacker model")
+def _revision_by_attacker(world: dict) -> None:
+    assert any("Revise the jailbreak strategy" in c for c in _texts(world, ATTACKER))
+    assert not any("Revise the jailbreak strategy" in c for c in _texts(world, PLANNER))
+
+
+@then(parsers.parse("the attacker was asked {n:d} times"))
+def _asked(world: dict, n: int) -> None:
+    assert len(_texts(world, ATTACKER)) == n
+
+
+@then("the target was never called")
+def _never_called(world: dict) -> None:
+    assert world["target_calls"] == 0
+
+
+@then(parsers.parse("the verifier was shown {n:d} characters of the reply"))
+def _verifier_shown(world: dict, n: int) -> None:
+    import re
+    seen = max(len(m) for c in _texts(world, JUDGE) for m in re.findall(r"Z+", c))
+    assert seen == n
+
+
+@then(parsers.parse("the first turn was scored {n:d}"))
+def _first_scored(world: dict, n: int) -> None:
+    assert _events(world, "judge.scored")[0]["score"] == n
+
+
+@then("the verifier was given the graded rubric")
+def _graded(world: dict) -> None:
+    assert all("####### RESPONSE #######" in c for c in _texts(world, JUDGE))
 
 
 # --- content and safety -------------------------------------------------------
