@@ -479,7 +479,7 @@ def _compose() -> str:
 @then("Grafana and the collector are published on the loopback address only")
 def _loopback(compose: str) -> None:
     ports = re.findall(r'^\s*-\s*"([^"]*:\d+)"\s*$', compose, flags=re.M)
-    assert len(ports) == 2, ports
+    assert len(ports) == 4, ports  # Prometheus, Grafana, and Tempo's two (spec 009)
     assert all(p.startswith("127.0.0.1:") for p in ports), ports
 
 

@@ -92,7 +92,10 @@ def sim_dashboard() -> Generator[FakeGrafana, None, None]:
 @pytest.fixture(scope="session")
 def app(sim_model: FakeModel, sim_dashboard: FakeGrafana) -> Generator[AppInstance, None, None]:
     with AppInstance(model_url=sim_model.url,
-                     extra_env={"MYRTIA_GRAFANA_URL": sim_dashboard.url}) as instance:
+                     extra_env={"MYRTIA_GRAFANA_URL": sim_dashboard.url,
+                                # Tracing on, exported to the simulated dashboard server.
+                                "MYRTIA_TRACES": "on",
+                                "MYRTIA_OTEL_ENDPOINT": sim_dashboard.url}) as instance:
         yield instance
 
 

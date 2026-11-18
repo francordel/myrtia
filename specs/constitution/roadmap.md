@@ -24,12 +24,12 @@ spec is validated. Detailed history before specs were adopted lives in `BACKLOG.
 | 006 | `agent-targets` | Agents built with the OpenAI Agents SDK as targets: tool calls and handoffs are traced, and forbidden actions count as attack success. Ships a sandbox agent with simulated tools. | Spec draft |
 | 007 | `mcp-injection` | Myrtia serves simulated MCP tools to an agent target and injects the attack through tool descriptions or results. Depends on 006. | Spec draft |
 | 008 | `observability-metrics` | Metrics for model calls, tokens, latency, runs, verdicts and shields at `/metrics`, and an optional Grafana dashboard that shows them in real time. | Implemented |
+| 009 | `otel-traces` | Each run emitted as an OpenTelemetry trace (run, goal, turn, model call) with content and verdicts, stored locally and shown step by step in Grafana. Off by default. Depends on 008. | Implemented |
 
 ## Backlog (unordered)
 
 - X-Teaming as a new multi-agent, multi-turn attack plugin.
-- Observability, second step: distributed traces and log shipping next to the metrics
-  of 008.
+- Observability, next steps: log shipping; a "view trace" link from a run in the console.
 - Itemised evaluation rubric: per-question judge verdicts alongside the 0–5 score.
 - Upload a custom behaviour dataset.
 - White-box attacks behind a matching target connector.

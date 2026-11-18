@@ -38,26 +38,35 @@ class Response:
 
 
 def observed(generate: Any) -> Any:
-    """Report each call of a connector's `generate()` to the metrics (spec 008): who
-    called (the connector's `role`, or a `role=` passed for this one call), the model,
-    the outcome, the duration and the tokens the reply reported."""
+    """Report each call of a connector's `generate()` to the metrics (spec 008) and,
+    when tracing is on, as a span of its run's trace (spec 009): who called (the
+    connector's `role`, or a `role=` passed for this one call), the model, the outcome,
+    the duration and the tokens the reply reported."""
 
     @functools.wraps(generate)
     def wrapper(self: Any, prompt: Any, **kwargs: Any) -> "Response":
         role = kwargs.pop("role", None) or getattr(self, "role", None) or "aux"
         before = dict(getattr(self, "tokens", None) or {})
+        span = None
+        try:
+            from myrtia import tracing
+            span = tracing.start_model_call(role, getattr(self, "model", ""), prompt)
+        except Exception:  # noqa: BLE001 - tracing must never break a model call
+            pass
         t0 = time.perf_counter()
         resp = generate(self, prompt, **kwargs)
         try:
             from myrtia import telemetry
             after = getattr(self, "tokens", None) or {}
-            telemetry.record_model_call(
-                role, getattr(self, "model", ""),
-                getattr(resp, "status", None) == Status.SUCCESS,
-                time.perf_counter() - t0,
-                after.get("prompt", 0) - before.get("prompt", 0),
-                after.get("completion", 0) - before.get("completion", 0))
-        except Exception:  # noqa: BLE001 - metrics must never break a model call
+            ok = getattr(resp, "status", None) == Status.SUCCESS
+            used = (after.get("prompt", 0) - before.get("prompt", 0),
+                    after.get("completion", 0) - before.get("completion", 0))
+            telemetry.record_model_call(role, getattr(self, "model", ""), ok,
+                                        time.perf_counter() - t0, *used)
+            if span is not None:
+                span.end(ok, getattr(resp, "error_message", ""), getattr(resp, "response", ""),
+                         *used)
+        except Exception:  # noqa: BLE001 - telemetry must never break a model call
             pass
         return resp
 

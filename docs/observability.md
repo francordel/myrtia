@@ -1,7 +1,16 @@
-# Observability: metrics and the Grafana dashboard
+# Observability: metrics, traces and the Grafana dashboards
 
-Myrtia exports what its models and runs are doing as metrics, and ships an optional
-dashboard that shows them in real time. Spec: `specs/features/008-observability-metrics`.
+Myrtia exports what its models and runs are doing as metrics, can emit each run as an
+OpenTelemetry trace, and ships an optional stack that shows both in real time. Specs:
+`specs/features/008-observability-metrics` and `specs/features/009-otel-traces`.
+
+The three pieces do different jobs:
+
+| Piece | Job | Answers |
+|---|---|---|
+| Prometheus | Collects the metrics every five seconds and keeps their history | How much, how fast, how often: tokens, latency, failures over time |
+| OpenTelemetry + Tempo | Myrtia emits each run as a trace; Tempo stores it | What happened inside this run, step by step, with content |
+| Grafana | Shows both | The same, at a glance |
 
 ## What you get
 
@@ -66,6 +75,8 @@ the stored metrics.
 | `MYRTIA_SCRAPE_TARGET` | `host.docker.internal:8000` | Where Prometheus finds Myrtia (`host:port`) |
 | `MYRTIA_URL` | `http://localhost:8000` | Where the dashboard's **Open Myrtia** link leads |
 | `GRAFANA_PORT` | `3000` | Grafana's port on this machine |
+| `TEMPO_OTLP_PORT` | `4318` | Where Tempo receives traces on this machine |
+| `TEMPO_PORT` | `3200` | Tempo's query API on this machine (trace export) |
 | `PROMETHEUS_PORT` | `9090` | Prometheus's port on this machine |
 | `MYRTIA_METRICS_RUNS` | `20` | How many recent runs keep per-run series (set on Myrtia) |
 | `MYRTIA_GRAFANA_URL` | `http://localhost:3000` | Where the console's **Dashboard** control leads (set on Myrtia); `off` hides it |
@@ -92,6 +103,67 @@ Notes:
   the `authorization` block in `observability/prometheus/prometheus.tmpl.yml`.
 - **To edit dashboards**, start Grafana with `GF_AUTH_ANONYMOUS_ORG_ROLE=Admin` and save
   your copy; the provisioned dashboard itself is read-only and is changed in git.
+
+## Traces
+
+A trace is one run as a tree of steps, each with its duration:
+
+```text
+run graph
+└─ goal 0
+   └─ turn 1                        events: proposal, critique, vote, synthesis, verdict
+      ├─ chat qwen2.5:3b            role attacker, tokens, messages sent, reply
+      ├─ chat gemma3:1b             role target
+      └─ chat qwen2.5:3b            role judge
+```
+
+Tracing is **off by default** and needs an optional extra. Switch it on when starting
+Myrtia, with the stack running:
+
+```bash
+MYRTIA_TRACES=on uv run --extra otel myrtia
+```
+
+Then press **Traces** in the console's header (or open it from the overview dashboard, or
+go to <http://localhost:3000/d/myrtia-traces/myrtia-traces>): "Recent runs" lists the runs;
+click a trace ID to see that run step by step. Open a step to read its attributes.
+
+| Setting (on Myrtia) | Default | Meaning |
+|---|---|---|
+| `MYRTIA_TRACES` | `off` | `on` switches tracing on |
+| `MYRTIA_OTEL_ENDPOINT` | `http://localhost:4318` | Where traces are sent (OTLP over HTTP) |
+| `MYRTIA_TRACE_CONTENT` | `on` | `off` leaves prompts, replies and event text out |
+| `MYRTIA_TRACE_MAX_CHARS` | `20000` | Longest piece of content kept; longer is cut and marked |
+
+What a trace contains, and where it lives:
+
+- **Full content by default**, so a run can be audited end to end: the messages sent to
+  each model, each reply, and the text of each event (proposals, critiques, verdicts).
+  That includes whatever the models produced. Treat traces as run results.
+- **Never credentials.** API keys and auth headers are not recorded, and key-shaped
+  strings are scrubbed from content.
+- **On this machine, outside the repository.** Tempo keeps traces in a Docker volume
+  (`tempo-data`, 30 days) and is bound to `127.0.0.1`. Nothing is written under the
+  repository folder, and nothing is uploaded anywhere.
+- **Structure only**, if you prefer: `MYRTIA_TRACE_CONTENT=off` keeps steps, timings,
+  roles, models, tokens and scores, without any text.
+
+Export one run's trace as a file (for an audit record, outside the repository):
+
+```bash
+curl -s http://localhost:3200/api/traces/<trace-id> > ~/myrtia-trace.json
+```
+
+Any OpenTelemetry-compatible store works instead of Tempo: point
+`MYRTIA_OTEL_ENDPOINT` at it. Model-call steps use the OpenTelemetry attribute names for
+generative AI (`gen_ai.request.model`, `gen_ai.usage.input_tokens`, …), which are still
+marked as in development upstream; Myrtia's own attributes start with `myrtia.`.
+
+If tracing is off, **Traces** says so, gives the reason and shows the command above
+instead of opening an empty list.
+
+`GET /observability` reports whether tracing is on and, if not, why (packages missing,
+address not allowed, or simply switched off).
 
 ## Metrics
 
@@ -137,7 +209,16 @@ Notes:
 - Model calls an attack makes from threads it starts itself, or through a client other
   than Myrtia's connectors (for example inside the vendored council), appear in the
   totals only if they go through a Myrtia connector, and may miss the per-run series.
-- Metrics only: traces and log shipping are not part of this feature.
+- Traces assume one goal and one turn open at a time per run, which holds for every
+  bundled attack. A run already in flight when Myrtia restarts is not traced.
+- Log shipping is not part of these features.
+
+## How traces are built
+
+`backend/myrtia/tracing.py` builds spans from the same two taps as the metrics: the event
+bus gives the structure (run, goal, turn, and the events inside them) and the connector
+wrapper gives the model calls. A new attack plugin is traced without writing any tracing
+code, as long as it emits the usual events and calls models through Myrtia's connectors.
 
 ## Adding a metric
 

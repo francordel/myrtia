@@ -23,6 +23,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 import importlib as _importlib
+import logging
 import os
 import pkgutil as _pkgutil
 
@@ -43,6 +44,8 @@ from myrtia.api.routers import (
 from myrtia.store.runs import STORE
 import myrtia.plugins as _plugins_pkg
 
+_log = logging.getLogger("uvicorn.error")
+
 _PLUGIN_SKIP = {"base", "council_prompts", "council_official"}
 for _m in _pkgutil.iter_modules(_plugins_pkg.__path__):
     if _m.name.startswith("_") or _m.name in _PLUGIN_SKIP:
@@ -53,7 +56,14 @@ for _m in _pkgutil.iter_modules(_plugins_pkg.__path__):
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     STORE.cleanup_orphaned_runs()
+    from myrtia import tracing
+    traces = tracing.configure()  # spec 009: on only with MYRTIA_TRACES=on
+    if traces["enabled"]:
+        _log.info("Tracing is on, exporting to %s", traces["endpoint"])
+    elif os.getenv("MYRTIA_TRACES"):
+        _log.warning("Tracing is off: %s", traces["reason"])
     yield
+    tracing.shutdown()  # flush the spans still queued
 
 
 app = FastAPI(title="Myrtia", version=APP_VERSION, lifespan=lifespan)

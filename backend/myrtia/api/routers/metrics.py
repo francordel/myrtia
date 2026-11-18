@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import PlainTextResponse
 import requests
 
-from myrtia import telemetry
+from myrtia import telemetry, tracing
 from myrtia.api import deps
 
 router = APIRouter()
@@ -26,6 +26,8 @@ router = APIRouter()
 # Where the console's "Dashboard" control leads. `off` hides the control.
 GRAFANA_URL = (os.getenv("MYRTIA_GRAFANA_URL") or "http://localhost:3000").strip().rstrip("/")
 _DASHBOARD_PATH = "/d/myrtia-overview/myrtia-overview"
+_TRACES_PATH = "/d/myrtia-traces/myrtia-traces"
+_TRACES_COMMAND = "MYRTIA_TRACES=on uv run --extra otel myrtia"
 _START_COMMAND = "docker compose -f compose.observability.yaml up -d"
 
 _CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
@@ -68,5 +70,9 @@ async def observability() -> dict[str, Any]:
     if not base or base.lower() in ("off", "false", "0", "none"):
         return {"enabled": False}
     reachable = await asyncio.get_running_loop().run_in_executor(None, _dashboard_answers, base)
+    traces = tracing.status()
     return {"enabled": True, "url": base, "dashboard_url": base + _DASHBOARD_PATH,
-            "reachable": reachable, "start_command": _START_COMMAND}
+            "traces_url": base + _TRACES_PATH,
+            "reachable": reachable, "start_command": _START_COMMAND,
+            "tracing": {"enabled": traces["enabled"], "reason": traces["reason"],
+                        "start_command": _TRACES_COMMAND}}

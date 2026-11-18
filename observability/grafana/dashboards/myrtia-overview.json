@@ -970,6 +970,18 @@
   ],
   "links": [
     {
+      "title": "Traces",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/myrtia-traces/myrtia-traces",
+      "tooltip": "Each run step by step (needs tracing on)",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": false,
+      "keepTime": true,
+      "tags": []
+    },
+    {
       "title": "Open Myrtia",
       "type": "link",
       "icon": "external link",

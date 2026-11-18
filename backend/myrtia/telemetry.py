@@ -180,6 +180,11 @@ def bind_run(run_id: str, attack: str) -> None:
     _RUN.set((str(run_id), str(attack or "unknown")))
 
 
+def current_run() -> tuple[str, str] | None:
+    """(run id, attack) of the run the current context is bound to, if any."""
+    return _RUN.get()
+
+
 @contextmanager
 def run_context(run_id: str, attack: str) -> Iterator[None]:
     token = _RUN.set((str(run_id), str(attack or "unknown")))
