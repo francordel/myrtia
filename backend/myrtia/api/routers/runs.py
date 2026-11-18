@@ -280,7 +280,7 @@ async def preflight(body: PreflightRequest) -> dict[str, Any]:
         return {"ok": False, "error": f"blocked base_url: {url_block_reason(tb)}"}
     try:
         from myrtia.connectors.factory import build_target_connector
-        conn = build_target_connector(target)
+        conn = build_target_connector({**target, "role": "preflight"})
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e)}
     loop = asyncio.get_running_loop()

@@ -13,8 +13,10 @@ plugins only ever compare against SUCCESS.
 
 from __future__ import annotations
 
+import functools
 import json as _json
 import re
+import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
@@ -33,6 +35,33 @@ class Response:
     status: Status
     response: str = ""
     error_message: str = ""
+
+
+def observed(generate: Any) -> Any:
+    """Report each call of a connector's `generate()` to the metrics (spec 008): who
+    called (the connector's `role`, or a `role=` passed for this one call), the model,
+    the outcome, the duration and the tokens the reply reported."""
+
+    @functools.wraps(generate)
+    def wrapper(self: Any, prompt: Any, **kwargs: Any) -> "Response":
+        role = kwargs.pop("role", None) or getattr(self, "role", None) or "aux"
+        before = dict(getattr(self, "tokens", None) or {})
+        t0 = time.perf_counter()
+        resp = generate(self, prompt, **kwargs)
+        try:
+            from myrtia import telemetry
+            after = getattr(self, "tokens", None) or {}
+            telemetry.record_model_call(
+                role, getattr(self, "model", ""),
+                getattr(resp, "status", None) == Status.SUCCESS,
+                time.perf_counter() - t0,
+                after.get("prompt", 0) - before.get("prompt", 0),
+                after.get("completion", 0) - before.get("completion", 0))
+        except Exception:  # noqa: BLE001 - metrics must never break a model call
+            pass
+        return resp
+
+    return wrapper
 
 
 @runtime_checkable
@@ -74,12 +103,14 @@ class OpenAIChatConnector:
         self.config: dict[str, Any] = {"name": name or f"myrtia-target-{model}",
                                         "model": model, "base_url": self.base_url}
         self.tokens = {"prompt": 0, "completion": 0, "total": 0, "calls": 0}
+        self.role = "aux"  # who is calling this model, for the metrics (spec 008)
 
     def _messages(self, prompt: Any) -> list[dict]:
         if isinstance(prompt, list) and prompt and isinstance(prompt[0], dict):
             return prompt  # a conversation passed straight through
         return [{"role": "user", "content": str(prompt)}]
 
+    @observed
     def generate(self, prompt: Any, **_kwargs: Any) -> Response:
         headers = {"Content-Type": "application/json", **self.extra_headers}
         if self.api_key:
@@ -158,6 +189,7 @@ class AnthropicMessagesConnector:
         self.config: dict[str, Any] = {"name": name or f"myrtia-target-{model}",
                                         "model": model, "base_url": self.base_url}
         self.tokens = {"prompt": 0, "completion": 0, "total": 0, "calls": 0}
+        self.role = "aux"  # who is calling this model, for the metrics (spec 008)
 
     def _messages(self, prompt: Any) -> list[dict]:
         if isinstance(prompt, list) and prompt and isinstance(prompt[0], dict):
@@ -166,6 +198,7 @@ class AnthropicMessagesConnector:
                     for m in prompt if m.get("role") in ("user", "assistant")] or [{"role": "user", "content": ""}]
         return [{"role": "user", "content": str(prompt)}]
 
+    @observed
     def generate(self, prompt: Any, **_kwargs: Any) -> Response:
         headers = {"Content-Type": "application/json", "anthropic-version": self.version}
         if self.api_key:
@@ -243,6 +276,7 @@ class HTTPAgentConnector:
         self.config: dict[str, Any] = {"name": name or f"myrtia-agent-{model or 'target'}",
                                        "model": model, "base_url": self.base_url}
         self.tokens = {"prompt": 0, "completion": 0, "total": 0, "calls": 0}
+        self.role = "aux"  # who is calling this model, for the metrics (spec 008)
 
     def _prompt_text(self, prompt: Any) -> str:
         if isinstance(prompt, list) and prompt and isinstance(prompt[0], dict):
@@ -252,6 +286,7 @@ class HTTPAgentConnector:
             return str(prompt[-1].get("content", ""))
         return str(prompt)
 
+    @observed
     def generate(self, prompt: Any, **_kwargs: Any) -> Response:
         headers = {"Content-Type": "application/json", **self.extra_headers}
         if self.api_key:

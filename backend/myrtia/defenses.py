@@ -155,7 +155,7 @@ class DefendedConnector:
             self._aux_conn = build_target_connector({
                 "kind": "openai_chat", "base_url": self._aux_endpoint or OLLAMA_V1,
                 "model": self._aux_model, "api_key": self._aux_key,
-                "auth_header": self._aux_auth_header,
+                "auth_header": self._aux_auth_header, "role": "defense",
             })
 
         def call(prompt: str) -> str:

@@ -12,7 +12,9 @@ Myrtia target spec:
         "api_key": null,                            # optional
         "auth_header": null,                        # optional: send the key in this header
                                                     # (e.g. "RITS_API_KEY") instead of Bearer
-        "headers": {}                               # optional extra request headers
+        "headers": {},                              # optional extra request headers
+        "role": "aux"                               # optional: who calls this model, for the
+                                                    # metrics (target, judge, defense, ...)
     }
 """
 
@@ -54,8 +56,18 @@ def role_auth(config: dict[str, Any], role: str, endpoint: str | None) -> tuple[
     return config.get("api_key"), config.get("auth_header") or None
 
 
+_ROLE_RE = re.compile(r"^[a-z][a-z0-9_]{0,23}$")
+
+
 def build_target_connector(spec: dict[str, Any]) -> Connector:
     """Return a Myrtia connector for the given target spec."""
+    conn = _build(spec)
+    role = str(spec.get("role") or "aux")
+    conn.role = role if _ROLE_RE.match(role) else "aux"  # a metrics label: keep it bounded
+    return conn
+
+
+def _build(spec: dict[str, Any]) -> Connector:
     kind = spec.get("kind", "openai_chat")
     if kind not in _KINDS:
         raise ValueError(f"Unsupported target kind: {kind!r} (supported: {sorted(_KINDS)})")

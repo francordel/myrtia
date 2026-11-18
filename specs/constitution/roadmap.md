@@ -23,12 +23,13 @@ spec is validated. Detailed history before specs were adopted lives in `BACKLOG.
 | 005 | `guardrails-shields` | Checks from the OpenAI open-source guardrails library, and whole guardrails configurations, run as shields in the same pipeline as the literature shields. | Spec clarified |
 | 006 | `agent-targets` | Agents built with the OpenAI Agents SDK as targets: tool calls and handoffs are traced, and forbidden actions count as attack success. Ships a sandbox agent with simulated tools. | Spec draft |
 | 007 | `mcp-injection` | Myrtia serves simulated MCP tools to an agent target and injects the attack through tool descriptions or results. Depends on 006. | Spec draft |
+| 008 | `observability-metrics` | Metrics for model calls, tokens, latency, runs, verdicts and shields at `/metrics`, and an optional Grafana dashboard that shows them in real time. | Implemented |
 
 ## Backlog (unordered)
 
 - X-Teaming as a new multi-agent, multi-turn attack plugin.
-- Observability dashboards (Grafana): real-time token consumption, latency and activity
-  per agent and per run, fed by exported metrics and traces.
+- Observability, second step: distributed traces and log shipping next to the metrics
+  of 008.
 - Itemised evaluation rubric: per-question judge verdicts alongside the 0–5 score.
 - Upload a custom behaviour dataset.
 - White-box attacks behind a matching target connector.
