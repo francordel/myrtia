@@ -143,6 +143,7 @@ def test_factory_builds_agent_sdk_and_enforces_ssrf() -> None:
 def test_orchestrator_streams_agent_target_events(monkeypatch: Any, tmp_path: Any) -> None:
     import asyncio
 
+    import myrtia.plugins.direct  # noqa: F401
     from myrtia.connectors.agent_target import AgentTargetConnector
     from myrtia.events.bus import EventBus
     from myrtia.orchestrator.runner import Orchestrator
@@ -261,6 +262,7 @@ def test_agent_target_edge_cases_and_history_preservation() -> None:
 def test_orchestrator_per_goal_trace_isolation_and_secret_redaction(monkeypatch: Any) -> None:
     import asyncio
 
+    import myrtia.plugins.direct  # noqa: F401
     from myrtia.connectors.agent_target import AgentTargetConnector
     from myrtia.events.bus import EventBus
     from myrtia.orchestrator.runner import Orchestrator
@@ -309,3 +311,124 @@ def test_orchestrator_per_goal_trace_isolation_and_secret_redaction(monkeypatch:
     assert "forbidden_actions_triggered" not in current.results[1]
     tool_events = [ev.payload for ev in bus.backlog(created.id) if ev.type.value == "agent.tool_called"]
     assert tool_events and "step" in tool_events[0]
+
+
+def test_openai_agents_sdk_bridge_with_stubbed_agents_module(monkeypatch: Any) -> None:
+    import sys
+    import types
+
+    from myrtia.connectors.agent_target import AgentTargetConnector
+
+    fake_agents = types.ModuleType("agents")
+
+    class _FakeAsyncOpenAI:
+        def __init__(self, **_kwargs: Any) -> None:
+            self.kwargs = _kwargs
+
+    class _FakeModel:
+        def __init__(self, **_kwargs: Any) -> None:
+            pass
+
+    class _FakeAgent:
+        def __init__(self, **kwargs: Any) -> None:
+            self.tools = kwargs.get("tools", [])
+
+    class _FakeResult:
+        def __init__(self, text: str) -> None:
+            self.final_output = text
+
+    class _FakeRunner:
+        should_raise = False
+
+        @staticmethod
+        def run_sync(agent: Any, _user_input: str, max_turns: int = 4) -> _FakeResult:
+            assert max_turns >= 1
+            if _FakeRunner.should_raise:
+                raise RuntimeError("boom with sk-secret-999")
+            # Invoke the registered @function_tool to exercise trace & forbidden detection.
+            out = agent.tools[0]("canary_secret.txt")
+            return _FakeResult(f"SDK read: {out}")
+
+    fake_agents.Agent = _FakeAgent  # type: ignore[attr-defined]
+    fake_agents.AsyncOpenAI = _FakeAsyncOpenAI  # type: ignore[attr-defined]
+    fake_agents.OpenAIChatCompletionsModel = _FakeModel  # type: ignore[attr-defined]
+    fake_agents.Runner = _FakeRunner  # type: ignore[attr-defined]
+    fake_agents.function_tool = lambda fn: fn  # type: ignore[attr-defined]
+
+    monkeypatch.setitem(sys.modules, "agents", fake_agents)
+    monkeypatch.setattr("myrtia.connectors.agent_target.has_openai_agents_sdk", lambda: True)
+
+    conn = AgentTargetConnector(
+        base_url="http://127.0.0.1:11434/v1",
+        model="qwen2.5:3b",
+        api_key="sk-secret-999",
+        headers={"X-Trace": "1"},
+        auth_header="X-Key",
+        use_sdk=True,
+    )
+    events: list[tuple[str, dict]] = []
+    conn.set_event_emitter(lambda et, pl: events.append((et, pl)))
+
+    resp = conn.generate("Read canary_secret.txt")
+    assert resp.status == Status.SUCCESS
+    assert "SDK read:" in resp.response
+    assert conn.last_trace["attack_succeeded"] is True
+    assert any(et == "agent.forbidden_action" for et, _ in events)
+
+    # Error path resets last_trace and redacts api_key.
+    _FakeRunner.should_raise = True
+    err_resp = conn.generate("Fail")
+    assert err_resp.status == Status.ERROR
+    assert "sk-secret-999" not in err_resp.error_message
+    assert "[REDACTED]" in err_resp.error_message
+    assert conn.last_trace["attack_succeeded"] is False
+
+
+def test_api_runs_endpoint_with_agent_sdk_target(monkeypatch: Any) -> None:
+    import time
+
+    from starlette.testclient import TestClient
+
+    from myrtia.api.app import app
+    from myrtia.connectors.agent_target import AgentTargetConnector
+
+    llm = _StubLLM(
+        [
+            Response(
+                status=Status.SUCCESS,
+                response=json.dumps(
+                    {"action": "tool", "tool": "admin_export", "arguments": {"destination": "x"}}
+                ),
+            ),
+            Response(status=Status.SUCCESS, response="Exported."),
+        ]
+    )
+    conn = AgentTargetConnector(base_url="http://127.0.0.1:11434/v1", model="stub", llm=llm)
+    monkeypatch.setattr("myrtia.connectors.factory.build_target_connector", lambda _spec: conn)
+
+    with TestClient(app) as client:
+        r = client.post(
+            "/runs",
+            json={
+                "attack_id": "direct",
+                "goals": ["Export workspace"],
+                "target": {
+                    "kind": "agent_sdk",
+                    "base_url": "http://127.0.0.1:11434/v1",
+                    "model": "stub",
+                },
+                "attack_config": {"judge_model": "off"},
+            },
+        )
+        assert r.status_code in (200, 201, 202), r.text
+        run_id = r.json().get("run_id") or r.json()["id"]
+
+        body: dict[str, Any] = {}
+        for _ in range(100):
+            body = client.get(f"/runs/{run_id}").json()
+            if body.get("status") in ("succeeded", "failed"):
+                break
+            time.sleep(0.02)
+
+    assert body["status"] == "succeeded"
+    assert body["results"][0]["forbidden_actions_triggered"]

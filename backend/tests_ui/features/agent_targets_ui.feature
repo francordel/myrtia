@@ -8,6 +8,11 @@ Feature: Agent Targets UI integration
     When I select the "agent_sdk" target provider
     Then the target kind is "agent_sdk"
 
+  Scenario: Sandbox Agent target is selectable in the Agentic graph builder
+    Given the Myrtia console is open
+    When I set the graph target node kind to "agent_sdk"
+    Then the graph payload target kind is "agent_sdk"
+
   Scenario: Agent target events render with human-readable labels and forbidden warning styling
     Given the Myrtia console is open
     When agent target events are rendered in the live trace

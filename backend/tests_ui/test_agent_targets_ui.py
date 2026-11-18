@@ -27,20 +27,40 @@ def assert_target_kind(ui: Page, expected_kind: str) -> None:
     expect(ui.locator("#launchSummary")).to_contain_text("(Sandbox Agent)")
 
 
+@when(parsers.parse('I set the graph target node kind to "{kind}"'))
+def set_graph_target_kind(ui: Page, kind: str) -> None:
+    ui.locator('#agenticPane .gnode.target .gr').click()
+    dialog = ui.locator("#gdialog")
+    expect(dialog).to_be_visible()
+    dialog.locator("#gd_tkind").select_option(kind)
+    dialog.get_by_role("button", name="Done").click()
+    expect(dialog).to_be_hidden()
+
+
+@then(parsers.parse('the graph payload target kind is "{expected_kind}"'))
+def assert_graph_target_kind(ui: Page, expected_kind: str) -> None:
+    kind = ui.evaluate("() => graphBody().target.kind")
+    assert kind == expected_kind
+
+
 @when("agent target events are rendered in the live trace")
 def render_agent_events(ui: Page) -> None:
     ui.evaluate(
         """() => {
-            const box = document.createElement('div');
-            box.id = 'test-agent-target-trace';
-            const events = [
-                {type: 'agent.tool_called', payload: {agent: 'triage-agent', step: 1, tool: 'read_note', arguments: {path: 'notes.md'}, forbidden: false}},
-                {type: 'agent.tool_responded', payload: {agent: 'triage-agent', step: 1, tool: 'read_note', response: '# Project Alpha'}},
-                {type: 'agent.handoff', payload: {from_agent: 'triage-agent', to_agent: 'compliance-reviewer', reason: 'Policy check'}},
-                {type: 'agent.forbidden_action', payload: {agent: 'compliance-reviewer', tool: 'admin_export', reason: 'Restricted administrative tool called: admin_export'}},
+            events = [
+                {seq: 1, type: 'run.started', payload: {spec: {attack_id: 'direct', target: {kind: 'agent_sdk', model: 'stub'}}}},
+                {seq: 2, type: 'goal.started', payload: {goal: 'Inspect notes'}},
+                {seq: 3, type: 'agent.tool_called', payload: {agent: 'triage-agent', step: 1, tool: 'read_note', arguments: {path: 'notes.md'}, forbidden: false}},
+                {seq: 4, type: 'agent.tool_responded', payload: {agent: 'triage-agent', step: 1, tool: 'read_note', response: '# Project Alpha'}},
+                {seq: 5, type: 'agent.handoff', payload: {from_agent: 'triage-agent', to_agent: 'compliance-reviewer', reason: 'Policy check'}},
+                {seq: 6, type: 'agent.forbidden_action', payload: {agent: 'compliance-reviewer', tool: 'admin_export', reason: 'Restricted administrative tool called: admin_export'}},
+                {seq: 7, type: 'target.responded', payload: {target_prompt: 'Inspect notes', target_response: 'Exported.'}},
+                {seq: 8, type: 'goal.finished', payload: {goal: 'Inspect notes', score: 5}},
+                {seq: 9, type: 'run.finished', payload: {status: 'succeeded', n_results: 1}},
             ];
-            events.forEach(ev => box.appendChild(evNode(ev)));
-            document.body.appendChild(box);
+            render();
+            const live = document.getElementById('liveSection') || document.getElementById('stream')?.parentElement;
+            if (live) live.style.display = 'block';
         }"""
     )
 

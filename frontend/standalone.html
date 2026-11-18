@@ -3225,7 +3225,7 @@ async function preflightTarget(spec,btn){
   finally{ if(btn){ btn.disabled=false; btn.textContent=label; } }
 }
 if($("stdPreflight")) $("stdPreflight").onclick=()=>preflightTarget({kind:targetKind(),base_url:$("turl").value.trim(),model:$("tmodel").value.trim(),api_key:$("apikey").value.trim()||undefined,auth_header:authHeader()},$("stdPreflight"));
-if($("gPreflight")) $("gPreflight").onclick=()=>preflightTarget({kind:"openai_chat",base_url:$("gTurl").value.trim(),model:$("gTmodel").value.trim(),api_key:(gKey||"").trim()||undefined},$("gPreflight"));
+if($("gPreflight")) $("gPreflight").onclick=()=>preflightTarget({kind:GS.target.kind||"openai_chat",base_url:$("gTurl").value.trim(),model:$("gTmodel").value.trim(),api_key:(gKey||"").trim()||undefined},$("gPreflight"));
 // Pull a local model via Ollama, streaming progress (issue #4).
 async function pullModel(base_url, name, btn){
   if(!name){ toast("Enter a model name to pull.","err"); return; }
@@ -3515,7 +3515,9 @@ function openGDialog(kind,id,nodeEl,focusSel){
         +f("System prompt","gd_sys",c.system,"e.g. Merge the strongest ideas into one prompt.","textarea");
   } else if(kind==="target"){
     title="Target";
-    html=f("Target model","gd_model",GS.target.model,"gemma3:1b")
+    const tk=GS.target.kind||"openai_chat";
+    html=`<div class="gd-f"><label>Target kind</label><select id="gd_tkind"><option value="openai_chat"${tk==="openai_chat"?" selected":""}>OpenAI-compatible LLM</option><option value="agent_sdk"${tk==="agent_sdk"?" selected":""}>Sandbox Agent (tools &amp; handoffs)</option></select></div>`
+        +f("Target model","gd_model",GS.target.model,"gemma3:1b")
         +f("Base URL","gd_ep",GS.target.url,OLLAMA_V1)
         +f("API key (blank for local)","gd_key",gKey,"sk-… / sk-ant-…");
   } else {
@@ -3559,6 +3561,7 @@ function openGDialog(kind,id,nodeEl,focusSel){
     set("#gd_ep",v=>{c.endpoint=v.trim(); gsSave();});
     set("#gd_sys",v=>{c.system=v; gsSave(); renderGraph();});
   } else if(kind==="target"){
+    const tkSel=d.querySelector("#gd_tkind"); if(tkSel) tkSel.onchange=()=>{GS.target.kind=tkSel.value; gsSave();};
     set("#gd_model",v=>{GS.target.model=v.trim(); $("gTmodel").value=GS.target.model; gNodeText(id,".gm",GS.target.model||"—"); gsSave();});
     set("#gd_ep",v=>{GS.target.url=v.trim(); $("gTurl").value=GS.target.url; gNodeText(id,".gp",GS.target.url.replace(/^https?:\/\//,"")); gsSave();});
     set("#gd_key",v=>{gKey=v;});
@@ -3610,7 +3613,7 @@ function graphBody(withDefenses){
   if(td.showRounds) attack_config.rounds=GS.rounds;
   if(GS.topo==="custom") attack_config.edges=gCustomEdges();
   if((GS.evaluator.endpoint||"").trim()) attack_config.evaluator.endpoint=GS.evaluator.endpoint.trim();
-  const target={ kind:"openai_chat", base_url:GS.target.url.trim(), model:GS.target.model.trim() };
+  const target={ kind:GS.target.kind||"openai_chat", base_url:GS.target.url.trim(), model:GS.target.model.trim() };
   if((gKey||"").trim()){ target.api_key=gKey.trim(); attack_config.api_key=gKey.trim(); }
   const body={ attack_id:"graph", title:$("gTitle").value.trim(), attack_config, theme:"", target, goals,
     purpose:$("gRunPurpose").value,
