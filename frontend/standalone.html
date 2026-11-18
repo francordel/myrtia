@@ -603,6 +603,16 @@
   .gnode .gx:hover { color:var(--danger); border-color:var(--danger); }
   /* attack tools on an attacker node (single-turn attacks it can run) */
   .gnode .gtools { display:flex; gap:4px; margin-top:7px; flex-wrap:wrap; }
+  .gc-carries { margin-top:6px; border-top:1px solid var(--border); padding-top:5px; display:flex; flex-direction:column; gap:4px; }
+  .gc-label { font-size:9px; font-weight:700; letter-spacing:.5px; color:var(--text-3); text-transform:uppercase; }
+  .gc-chips { display:flex; flex-wrap:wrap; gap:3px; }
+  .gc-chip { display:inline-flex; align-items:center; gap:3px; font-size:10px; padding:1px 6px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border); color:var(--text-2); max-width:100%; }
+  .gc-chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gc-rm { border:0; background:none; color:var(--text-3); cursor:pointer; padding:0 1px; font-size:11px; line-height:1; }
+  .gc-rm:hover { color:var(--danger); }
+  .gc-acts { display:flex; gap:4px; margin-top:2px; flex-wrap:wrap; }
+  .gc-act { font-size:10px; padding:1px 6px; border-radius:6px; border:1px dashed var(--border); background:transparent; color:var(--text-2); cursor:pointer; }
+  .gc-act:hover { border-color:var(--accent); color:var(--accent); }
   .gbubble { display:inline-flex; align-items:center; gap:3px; background:color-mix(in srgb,var(--role-proposal) 16%,transparent); color:var(--role-proposal); border:1px solid var(--role-proposal); border-radius:var(--r-pill); padding:1px 8px 1px 6px; font-size:11px; line-height:1.5; cursor:pointer; }
   .gbubble b { font-weight:700; } .gbubble:hover { background:var(--role-proposal); color:#fff; }
   .gchat { position:absolute; top:-10px; right:-10px; width:24px; height:24px; border-radius:50%; border:1px solid var(--border); background:var(--surface-2); color:var(--text-2); font-size:12px; line-height:22px; text-align:center; cursor:pointer; padding:0; display:block; box-shadow:var(--shadow-1); }
@@ -3050,7 +3060,7 @@ function renderGraph(){
     d.innerHTML=`<div class="gr"><i></i>${esc(role)}</div><div class="gm">${esc(model||"—")}</div>${sub!==null?`<div class="gp">${esc(sub)}</div>`:""}${removable?'<span class="gx" title="Remove">×</span>':""}`;
     { const port=document.createElement("button"); port.type="button"; port.className="gport"; port.title="Drag to connect"; port.textContent="+"; d.appendChild(port); }
     d.onpointerdown=ev=>{
-      if(ev.target.classList.contains("gx")) return;
+      if(ev.target.classList.contains("gx") || ev.target.closest(".gc-rm, .gc-act")) return;
       const r=$("gcanvas").getBoundingClientRect();
       if(ev.target.closest(".gport")){
         gEdgeDrag={from:id,x:ev.clientX-r.left,y:ev.clientY-r.top,clientX:ev.clientX,clientY:ev.clientY,moved:false};
@@ -3073,7 +3083,7 @@ function renderGraph(){
     d.onkeydown=(ev)=>{ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); openGDialog(kind,id,d); } };
     nodes.appendChild(d); return d;
   };
-  GS.attackers.forEach((a,i)=>{ const el=mk("attacker",a.id,pos[a.id].x,pos[a.id].y,`Attacker ${i+1}`,a.model,a.system?("✎ "+a.system):"paper red-team prompt (default)",GS.attackers.length>1); gAttachTools(el,a); });
+  GS.attackers.forEach((a,i)=>{ const el=mk("attacker",a.id,pos[a.id].x,pos[a.id].y,`Attacker ${i+1}`,a.model,a.system?("✎ "+a.system):"paper red-team prompt (default)",GS.attackers.length>1); gAttachTools(el,a); gAttachAgentCard(el,a); });
   chP.forEach(cp=>{ const c=GS.chairmen.find(x=>x.id===cp.id); if(!c) return; const idx=GS.chairmen.indexOf(c); const _td=topoDef();
     const role=_td.chairmanRole?_td.chairmanRole(idx,GS.chairmen.length):(GS.chairmen.length>1?("Chairman "+(idx+1)):"Chairman");
     const rem=_td.chairmanRemovable?_td.chairmanRemovable(GS.chairmen.length):(GS.chairmen.length>1);
@@ -3178,6 +3188,45 @@ function gAttachTools(el,a){
   const sw=document.createElement("button"); sw.className="gsword"; sw.title="Attack tools — grant single-turn attacks this agent can wield"; sw.setAttribute("aria-label","Attack tools"); sw.innerHTML="🗡";
   sw.onclick=(ev)=>{ ev.stopPropagation(); openToolPicker(a.id,sw); };
   el.appendChild(sw);
+}
+function gAttachAgentCard(el,a){
+  const wrap=document.createElement("div"); wrap.className="gc-carries";
+  wrap.innerHTML='<div class="gc-label">Carries</div><div class="gc-chips"></div><div class="gc-acts"></div>';
+  const chips=wrap.querySelector(".gc-chips"), acts=wrap.querySelector(".gc-acts");
+  const addChip=(kind,label,onRemove)=>{
+    const c=document.createElement("span"); c.className="gc-chip"; c.dataset.gc=kind;
+    c.innerHTML=`<span>${esc(label)}</span>`+(onRemove?'<button type="button" class="gc-rm" title="Remove" aria-label="Remove">×</button>':"");
+    if(onRemove){ const b=c.querySelector(".gc-rm"); b.onclick=(ev)=>{ ev.stopPropagation(); onRemove(); }; }
+    chips.appendChild(c);
+  };
+  if((a.system||"").trim()){
+    addChip("prompt","Custom prompt",()=>{ gCheckpoint(); a.system=""; gsSave(); renderGraph(); });
+  } else {
+    addChip("prompt","Default prompt",null);
+  }
+  (a.tools||[]).forEach(tid=>{
+    addChip("tool",tid,()=>{ gCheckpoint(); a.tools=(a.tools||[]).filter(t=>t!==tid); if(a.tool_cfg) delete a.tool_cfg[tid]; gsSave(); renderGraph(); });
+  });
+  if(a.priming && a.priming.mode==="contextual"){
+    addChip("priming","Few-shot priming",()=>{ gCheckpoint(); a.priming={mode:"single",context:a.priming.context||""}; gsSave(); renderGraph(); });
+  }
+  const addBtn=(act,label,fn)=>{
+    const b=document.createElement("button"); b.type="button"; b.className="gc-act"; b.dataset.act=act; b.textContent=label;
+    b.onclick=(ev)=>{ ev.stopPropagation(); fn(b); };
+    acts.appendChild(b);
+  };
+  addBtn("add-tool","+ Tool",(b)=>openToolPicker(a.id,b));
+  if(!(a.priming && a.priming.mode==="contextual")){
+    addBtn("add-priming","+ Priming",()=>{ gCheckpoint(); a.priming={mode:"contextual",context:(a.priming&&a.priming.context)||""}; gsSave(); renderGraph(); });
+  }
+  addBtn("add-agent","+ Agent",()=>{
+    if(GS.attackers.length>=8){ toast("Eight attackers is the canvas limit for now.","info"); return; }
+    gCheckpoint();
+    const id=gNextId();
+    GS.attackers.push({id,model:a.model||"qwen2.5:3b",system:"",endpoint:""});
+    gsSave(); renderGraph();
+  });
+  el.appendChild(wrap);
 }
 function gUpdatePrimeBadge(id){ const el=document.querySelector(`.gnode[data-id="${id}"] .gchat`); const a=GS.attackers.find(x=>x.id===id); if(el&&a){ const on=a.priming&&a.priming.mode==="contextual"; el.classList.toggle("on",!!on); el.title=on?"Attacker priming set — edit":"Attacker priming: single prompt (click to add context)"; } }
 function gFloatPos(d,anchor){
