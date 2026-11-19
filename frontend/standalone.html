@@ -533,6 +533,12 @@
   #libwrap .libctl { grid-template-columns:minmax(0,2fr) repeat(2,minmax(160px,1fr)); }
   @media (max-width:760px){ #libwrap .libctl { grid-template-columns:1fr; } }
   #runBody.standard #agenticPane { display:none; }
+  /* X-Teaming mode: its own tab, laid out like Standard but with the attack fixed to xteaming. */
+  #runBody.xteaming { grid-template-columns:minmax(0,1fr); }
+  #runBody.xteaming:not(.replaying) #sec-launch { max-width:980px; width:100%; margin:0 auto; }
+  #runBody.xteaming:not(.replaying) .run-right { display:none; }
+  #runBody.xteaming #agenticPane { display:none; }
+  #runBody.xteaming #attackRow { display:none; }
   @media (max-width:1100px){ #runBody.standard { grid-template-columns:340px minmax(0,1fr); } }
   @media (max-width:820px){ #runBody.standard { grid-template-columns:1fr; } }
 
@@ -776,6 +782,7 @@
   <input type="hidden" id="base" value="" />
   <div id="runModes" role="tablist" aria-label="Run configuration mode">
     <button class="rmode active" data-mode="agentic" role="tab" aria-selected="true">◇ Agentic · graph builder</button>
+    <button class="rmode" data-mode="xteaming" role="tab" aria-selected="false" title="X-Teaming: a planner drafts multi-turn plans, an attacker executes them, a verifier scores and an optimizer revises stalled turns">⚡ X-Teaming · multi-agent</button>
     <button class="rmode" data-mode="standard" role="tab" aria-selected="false">≣ Standard · single &amp; multi-turn</button>
   </div>
   <div id="runBody" class="agentic">
@@ -861,8 +868,10 @@
       <label for="runTitle">Experiment title <span class="hint">(optional · shown in History and reports)</span></label>
       <input id="runTitle" maxlength="120" placeholder="e.g. Baseline · Qwen 2.5 · selected goals">
       <div class="fsec-h"><span class="n">1</span><h2>Attack</h2><span class="caption" id="sum1"></span></div>
-      <label for="attack">Attack plugin</label>
-      <select id="attack"></select>
+      <div id="attackRow">
+        <label for="attack">Attack plugin</label>
+        <select id="attack"></select>
+      </div>
       <div class="desc" id="attackdesc"></div>
       <a href="#" id="attackInfo" class="infolink">ⓘ How this attack works</a>
       <div id="evalBlock" style="display:none">
@@ -2873,6 +2882,7 @@ function setRunMode(m){
   const body=$("runBody"); body.className=m;
   document.querySelectorAll("#runModes .rmode").forEach(b=>{ const on=b.dataset.mode===m; b.classList.toggle("active",on); b.setAttribute("aria-selected",String(on)); });
   try{ localStorage.setItem("myrtia-runmode",m); }catch(e){}
+  if(m==="xteaming"){ const a=$("attack"); if(a){ if(a.value!=="xteaming") a.value="xteaming"; onAttackChange(); } }
   if(m==="agentic"){ renderGraph(); updGraphLibCount(); }
   else if(!RUN) renderEmpty();
   syncRunPane();
