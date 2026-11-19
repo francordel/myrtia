@@ -1,4 +1,4 @@
-# Spec 011 — MCP tool shadowing and the canonical MCP attack set
+# Spec 013 — MCP tool shadowing and the canonical MCP attack set
 
 > What and why. No stack, architecture or file names: those belong in `plan.md`.
 
