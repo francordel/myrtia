@@ -309,7 +309,7 @@
   .ev.judge { border-left-color:var(--role-judge); } .ev.judge .role { color:var(--role-judge); }
   .ev.agent { border-left-color:var(--role-critique); } .ev.agent .role { color:var(--role-critique); }
   .ev.defense { border-left-color:var(--role-defense); } .ev.defense .role { color:var(--role-defense); }
-  .ev.defense.blocked { border-left-color:var(--danger); background:color-mix(in srgb,var(--danger) 8%,var(--surface-2)); } .ev.defense.blocked .role { color:var(--danger); }
+  .ev.blocked { border-left-color:var(--danger); background:color-mix(in srgb,var(--danger) 8%,var(--surface-2)); } .ev.blocked .role { color:var(--danger); }
   .ev.log { border-left-color:var(--border); } .ev.log .role { color:var(--text-2); }
   .ev .body.log { font-size:12px; color:var(--text-2); }
   .rank { margin-top:8px; display:flex; flex-direction:column; gap:6px; }
@@ -906,6 +906,7 @@
         <option value="custom">Custom (OpenAI-compatible)</option>
         <option value="rits">IBM RITS (RITS_API_KEY header)</option>
         <option value="agent">HTTP agent (custom endpoint)</option>
+        <option value="agent_sdk">Sandbox Agent (tools &amp; handoffs)</option>
       </select>
       <label for="tmodel">Target model</label>
       <input id="tmodel" value="gemma3:1b" data-models="1" autocomplete="off" />
@@ -1296,8 +1297,8 @@ function statusPill(st){ return `<span class="status ${STATUS_CLS[st]||""}"><i><
 // ---- provider presets + per-provider API key (stored only in this browser) ----
 // Default Ollama endpoint; the backend may override it (MYRTIA_OLLAMA_URL), see applyOllamaUrl.
 const DEF_OLLAMA="http://127.0.0.1:11434/v1"; let OLLAMA_V1=DEF_OLLAMA;
-const PROVIDERS={ollama:OLLAMA_V1,openai:"https://api.openai.com/v1",anthropic:"https://api.anthropic.com",custom:"",rits:"",agent:""};
-const KIND_FOR={ollama:"openai_chat",openai:"openai_chat",anthropic:"anthropic",custom:"openai_chat",rits:"openai_chat",agent:"http_agent"};
+const PROVIDERS={ollama:OLLAMA_V1,openai:"https://api.openai.com/v1",anthropic:"https://api.anthropic.com",custom:"",rits:"",agent:"",agent_sdk:OLLAMA_V1};
+const KIND_FOR={ollama:"openai_chat",openai:"openai_chat",anthropic:"anthropic",custom:"openai_chat",rits:"openai_chat",agent:"http_agent",agent_sdk:"agent_sdk"};
 // Providers that send the key in a custom header instead of `Authorization: Bearer`.
 const AUTH_HEADER_FOR={rits:"RITS_API_KEY"};
 function authHeader(){ try{ return $("authheader").value.trim()||undefined; }catch(e){ return undefined; } }
@@ -1306,7 +1307,7 @@ function ahGet(p){try{const v=localStorage.getItem("myrtia-authhdr-"+p); return 
 function targetKind(){ try{ return KIND_FOR[$("provider").value]||"openai_chat"; }catch(e){ return "openai_chat"; } }
 function keyGet(p){try{return localStorage.getItem("myrtia-key-"+p)||"";}catch(e){return "";}}
 function keySet(p,v){try{localStorage.setItem("myrtia-key-"+p,v);}catch(e){}}
-function onProvider(){const p=$("provider").value; if(PROVIDERS[p]) $("turl").value=PROVIDERS[p]; $("apikey").value=keyGet(p); $("authheader").value=ahGet(p); updSummary();}
+function onProvider(){const p=$("provider").value; if(PROVIDERS[p] && (p!=="agent_sdk" || !$("turl").value.trim())) $("turl").value=PROVIDERS[p]; $("apikey").value=keyGet(p); $("authheader").value=ahGet(p); updSummary();}
 $("provider").addEventListener("change",onProvider);
 $("apikey").addEventListener("input",()=>keySet($("provider").value,$("apikey").value));
 $("authheader").addEventListener("input",()=>{try{localStorage.setItem("myrtia-authhdr-"+$("provider").value,$("authheader").value.trim());}catch(e){}});
@@ -1439,12 +1440,13 @@ function goalCount(){ return SELECTED.size ? SELECTED.size : ($("goal").value.tr
 function updSummary(){
   const p=currentPlugin();
   $("sum1").textContent = p ? p.id : "";
-  $("sum2").textContent = $("tmodel").value.trim() || "";
+  const tm = $("tmodel").value.trim() || "";
+  $("sum2").textContent = tm + (targetKind()==="agent_sdk" ? " (Sandbox Agent)" : "");
   const n=goalCount(); $("sum3").textContent = n ? `${n} goal${n!==1?"s":""}` : "no goal";
   const cm=$("cmodels").value.split(",").map(s=>s.trim()).filter(Boolean);
   $("sum4").textContent = cm.length ? `${cm.length} agent${cm.length!==1?"s":""}` : "";
   const source=SELECTED.size ? `library · ${[...new Set([...SELECTED.values()].map(v=>v.dataset))].join(", ")}` : "manual fallback";
-  const parts=[`<b>${esc(p?p.id:"—")}</b>`, `${n} goal${n!==1?"s":""} (${esc(source)})`, esc($("runPurpose").value), `→ <b>${esc($("tmodel").value.trim()||"?")}</b>`];
+  const parts=[`<b>${esc(p?p.id:"—")}</b>`, `${n} goal${n!==1?"s":""} (${esc(source)})`, esc($("runPurpose").value), `→ <b>${esc($("tmodel").value.trim()||"?")}${targetKind()==="agent_sdk"?" (Sandbox Agent)":""}</b>`];
   if($("runTitle").value.trim()) parts.unshift(`Experiment: <b>${esc($("runTitle").value.trim())}</b>`);
   if(isCouncil(p) && cm.length) parts.splice(1,0,`${cm.length} agent${cm.length!==1?"s":""}`);
   $("launchSummary").innerHTML = parts.join(" · ");
@@ -1849,6 +1851,10 @@ function evNode(ev){
   else if(ev.type==="defense.blocked"){ d.classList.add("blocked"); head=`<span class="role">🛡 Blocked</span> <span class="who">${esc(p.name||p.id||"?")}</span> <span class="who">· ${esc(p.stage||"input")}</span>`; body=p.reason||"blocked"; }
   else if(ev.type==="target.responded"){ head=`<span class="role">Target</span>${p.model?` <span class="who mono">${esc(p.model)}</span>`:""}${p.variant?` <span class="who">· ${esc(p.variant)}</span>`:""}`; body=p.target_response||""; }
   else if(ev.type==="judge.scored"){ const sc=(p.score>=0&&p.score<=5)?p.score:null; head=`<span class="role">Judge</span>${p.model?` <span class="who mono">${esc(p.model)}</span>`:""} ${sc!==null?scorePill(sc):'<span class="who">no score</span>'}`; body=p.rationale||""; }
+  else if(ev.type==="agent.tool_called"){ const st=p.step||p.turn; head=`<span class="role">Agent tool</span> <span class="who mono">${esc((p.agent?p.agent+".":"")+(p.tool||"?"))}</span>${st?` <span class="who">· step ${esc(st)}</span>`:""}${p.forbidden?' <span class="who">· forbidden</span>':""}`; body=JSON.stringify(p.arguments||{}); mono=true; }
+  else if(ev.type==="agent.tool_responded"){ const st=p.step||p.turn; head=`<span class="role">Agent tool output</span> <span class="who mono">${esc((p.agent?p.agent+".":"")+(p.tool||"?"))}</span>${st?` <span class="who">· step ${esc(st)}</span>`:""}`; body=p.response||""; }
+  else if(ev.type==="agent.handoff"){ head=`<span class="role">Agent handoff</span> <span class="who mono">${esc((p.from_agent||"?")+" → "+(p.to_agent||"?"))}</span>`; body=p.reason||""; }
+  else if(ev.type==="agent.forbidden_action"){ d.classList.add("blocked"); head=`<span class="role">Forbidden agent action</span> <span class="who mono">${esc((p.agent?p.agent+".":"")+(p.tool||"?"))}</span>`; body=p.reason||"forbidden"; }
   else { body=typeof p==="string"?p:JSON.stringify(p); logish=true; }
   d.innerHTML=`<div class="lab">${head}</div>`+(body?`<div class="body${mono?" mono":""}${logish?" log":""}"></div>`:"");
   if(ev.type==="target.responded" && p.target_prompt){
@@ -2660,7 +2666,7 @@ let SYS=null; const DEF_MODEL="qwen2.5:3b";
 // a Docker or remote setup (MYRTIA_OLLAMA_URL) works without editing each node.
 function applyOllamaUrl(u){
   if(!u||u===DEF_OLLAMA) return;
-  OLLAMA_V1=u; PROVIDERS.ollama=u;
+  OLLAMA_V1=u; PROVIDERS.ollama=u; PROVIDERS.agent_sdk=u;
   ["gTurl","turl"].forEach(id=>{ const f=$(id); if(f && f.value.trim()===DEF_OLLAMA) f.value=u; });
   const je=$("adv_judge_endpoint"); if(je) je.placeholder=u;
   if(GS.target&&GS.target.url===DEF_OLLAMA){ GS.target.url=u; gsSave(); try{ renderGraph(); }catch(e){} }
@@ -3229,7 +3235,7 @@ async function preflightTarget(spec,btn){
   finally{ if(btn){ btn.disabled=false; btn.textContent=label; } }
 }
 if($("stdPreflight")) $("stdPreflight").onclick=()=>preflightTarget({kind:targetKind(),base_url:$("turl").value.trim(),model:$("tmodel").value.trim(),api_key:$("apikey").value.trim()||undefined,auth_header:authHeader()},$("stdPreflight"));
-if($("gPreflight")) $("gPreflight").onclick=()=>preflightTarget({kind:"openai_chat",base_url:$("gTurl").value.trim(),model:$("gTmodel").value.trim(),api_key:(gKey||"").trim()||undefined},$("gPreflight"));
+if($("gPreflight")) $("gPreflight").onclick=()=>preflightTarget({kind:GS.target.kind||"openai_chat",base_url:$("gTurl").value.trim(),model:$("gTmodel").value.trim(),api_key:(gKey||"").trim()||undefined},$("gPreflight"));
 // Pull a local model via Ollama, streaming progress (issue #4).
 async function pullModel(base_url, name, btn){
   if(!name){ toast("Enter a model name to pull.","err"); return; }
@@ -3519,7 +3525,9 @@ function openGDialog(kind,id,nodeEl,focusSel){
         +f("System prompt","gd_sys",c.system,"e.g. Merge the strongest ideas into one prompt.","textarea");
   } else if(kind==="target"){
     title="Target";
-    html=f("Target model","gd_model",GS.target.model,"gemma3:1b")
+    const tk=GS.target.kind||"openai_chat";
+    html=`<div class="gd-f"><label>Target kind</label><select id="gd_tkind"><option value="openai_chat"${tk==="openai_chat"?" selected":""}>OpenAI-compatible LLM</option><option value="agent_sdk"${tk==="agent_sdk"?" selected":""}>Sandbox Agent (tools &amp; handoffs)</option></select></div>`
+        +f("Target model","gd_model",GS.target.model,"gemma3:1b")
         +f("Base URL","gd_ep",GS.target.url,OLLAMA_V1)
         +f("API key (blank for local)","gd_key",gKey,"sk-… / sk-ant-…");
   } else {
@@ -3563,6 +3571,7 @@ function openGDialog(kind,id,nodeEl,focusSel){
     set("#gd_ep",v=>{c.endpoint=v.trim(); gsSave();});
     set("#gd_sys",v=>{c.system=v; gsSave(); renderGraph();});
   } else if(kind==="target"){
+    const tkSel=d.querySelector("#gd_tkind"); if(tkSel) tkSel.onchange=()=>{GS.target.kind=tkSel.value; gsSave();};
     set("#gd_model",v=>{GS.target.model=v.trim(); $("gTmodel").value=GS.target.model; gNodeText(id,".gm",GS.target.model||"—"); gsSave();});
     set("#gd_ep",v=>{GS.target.url=v.trim(); $("gTurl").value=GS.target.url; gNodeText(id,".gp",GS.target.url.replace(/^https?:\/\//,"")); gsSave();});
     set("#gd_key",v=>{gKey=v;});
@@ -3614,7 +3623,7 @@ function graphBody(withDefenses){
   if(td.showRounds) attack_config.rounds=GS.rounds;
   if(GS.topo==="custom") attack_config.edges=gCustomEdges();
   if((GS.evaluator.endpoint||"").trim()) attack_config.evaluator.endpoint=GS.evaluator.endpoint.trim();
-  const target={ kind:"openai_chat", base_url:GS.target.url.trim(), model:GS.target.model.trim() };
+  const target={ kind:GS.target.kind||"openai_chat", base_url:GS.target.url.trim(), model:GS.target.model.trim() };
   if((gKey||"").trim()){ target.api_key=gKey.trim(); attack_config.api_key=gKey.trim(); }
   const body={ attack_id:"graph", title:$("gTitle").value.trim(), attack_config, theme:"", target, goals,
     purpose:$("gRunPurpose").value,
