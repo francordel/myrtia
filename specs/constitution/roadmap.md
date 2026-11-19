@@ -26,6 +26,7 @@ spec is validated. Detailed history before specs were adopted lives in `BACKLOG.
 | 008 | `observability-metrics` | Metrics for model calls, tokens, latency, runs, verdicts and shields at `/metrics`, and an optional Grafana dashboard that shows them in real time. | Implemented |
 | 009 | `otel-traces` | Each run emitted as an OpenTelemetry trace (run, goal, turn, model call) with content and verdicts, stored locally and shown step by step in Grafana. Off by default. Depends on 008. | Implemented |
 | 010 | `xteaming` | X-Teaming (arXiv:2504.13203) reimplemented as a plugin: a planner drafts diverse multi-turn plans, an attacker executes them, a verifier scores 1-5 and an optimizer revises turns whose score drops. Prompts reproduced from the paper's Appendix A.4 (CC BY 4.0); operators can override them via `MYRTIA_XTEAMING_PROMPTS_FILE`. | Implemented |
+| 012 | `xteaming-run-mode` | X-Teaming gets its own run-mode tab beside the agentic graph builder: one click selects the `xteaming` plugin and shows its configuration, with the attack selector and the graph canvas hidden. Presentation only. | Implemented |
 
 ## Backlog (unordered)
 
