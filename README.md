@@ -279,6 +279,7 @@ Something not working? See [Troubleshooting](#troubleshooting).
 - [Roadmap](#roadmap)
 - [Built On](#built-on)
 - [Responsible Use](#responsible-use)
+- [Acknowledgements](#acknowledgements)
 - [License](#license)
 
 ## Overview
@@ -633,6 +634,13 @@ work of ARES (IBM) and [garak](https://github.com/NVIDIA/garak) (NVIDIA).
 Myrtia is intended for **authorised** AI safety and security testing: evaluating models and
 agents you own or have explicit permission to test. Do not use it to produce or distribute
 harmful content, or to attack systems without authorisation.
+
+## Acknowledgements
+
+Experiments and tests were run on the [GAIA Lab](https://ants.inf.um.es/gaialab.html) cluster
+of the Department of Information and Communications Engineering, Faculty of Computer Science,
+University of Murcia, partially funded by the project 6G Computing Continuum Network
+Infrastructure (TSI-064100-2023-0013), NextGenerationEU funds.
 
 ## License
 
