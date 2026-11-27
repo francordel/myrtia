@@ -21,7 +21,7 @@ spec is validated. Detailed history before specs were adopted lives in `BACKLOG.
 | 003 | `canvas-preview` | Try the current graph against one goal from a panel docked on the canvas, with the active agent highlighted, without leaving the builder. | Not started |
 | 004 | `execution-trace` | Each turn shows its steps with durations, so the operator can see where time goes and which agent or tool acted. | Not started |
 | 005 | `guardrails-shields` | Checks from the OpenAI open-source guardrails library, and whole guardrails configurations, run as shields in the same pipeline as the literature shields. | Spec clarified |
-| 006 | `agent-targets` | Agents built with the OpenAI Agents SDK as targets: tool calls and handoffs are traced, and forbidden actions count as attack success. Ships a sandbox agent with simulated tools. | Spec draft |
+| 006 | `agent-targets` | Agents built with the OpenAI Agents SDK as targets: tool calls and handoffs are traced, and forbidden actions count as attack success. Ships a sandbox agent with simulated tools. | Implemented |
 | 007 | `mcp-injection` | Myrtia serves simulated MCP tools to an agent target and injects the attack through tool descriptions or results. Depends on 006. | Spec draft |
 | 008 | `observability-metrics` | Metrics for model calls, tokens, latency, runs, verdicts and shields at `/metrics`, and an optional Grafana dashboard that shows them in real time. | Implemented |
 | 009 | `otel-traces` | Each run emitted as an OpenTelemetry trace (run, goal, turn, model call) with content and verdicts, stored locally and shown step by step in Grafana. Off by default. Depends on 008. | Implemented |

@@ -121,6 +121,8 @@ class Orchestrator:
                     "target_base_url", (run.spec.target or {}).get("base_url"))
 
             target = build_target_connector({**(run.spec.target or {}), "role": "target"})
+            if hasattr(target, "set_event_emitter"):
+                target.set_event_emitter(emit_sync)
             # Optional shield pipeline in front of the target (defense evaluation).
             defenses = getattr(run.spec, "defenses", None)
             if defenses:
@@ -151,6 +153,19 @@ class Orchestrator:
             ctx.run(telemetry.bind_run, run.id, run.spec.attack_id)
             results = await loop.run_in_executor(None, ctx.run, strategy.attack)
             run.results = results or []
+            traces = getattr(target, "traces", None)
+            if isinstance(traces, list) and traces:
+                for idx, row in enumerate(run.results):
+                    if isinstance(row, dict) and idx < len(traces):
+                        fa = traces[idx].get("forbidden_actions") or []
+                        if fa and "forbidden_actions_triggered" not in row:
+                            row["forbidden_actions_triggered"] = list(fa)
+            else:
+                trace = getattr(target, "last_trace", None)
+                if isinstance(trace, dict) and trace.get("forbidden_actions"):
+                    for row in run.results:
+                        if isinstance(row, dict) and "forbidden_actions_triggered" not in row:
+                            row["forbidden_actions_triggered"] = list(trace["forbidden_actions"])
             tk = getattr(target, "tokens", None)
             if isinstance(tk, dict) and tk.get("total"):
                 run.token_usage = {"target": dict(tk)}

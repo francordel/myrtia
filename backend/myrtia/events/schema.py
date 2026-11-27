@@ -32,6 +32,10 @@ class EventType(str, Enum):
     TARGET_RESPONDED = "target.responded"      # {target_prompt, target_response}
     JUDGE_SCORED = "judge.scored"              # {score: 0-5, rationale}
     AGENT_MESSAGE = "agent.message"            # {round, model, sender, message} — debate topology
+    AGENT_TOOL_CALLED = "agent.tool_called"    # {agent, step, tool, arguments, forbidden}
+    AGENT_TOOL_RESPONDED = "agent.tool_responded"  # {agent, step, tool, response}
+    AGENT_HANDOFF = "agent.handoff"            # {from_agent, to_agent, reason}
+    AGENT_FORBIDDEN_ACTION = "agent.forbidden_action"  # {agent, tool, reason}
     DEFENSE_APPLIED = "defense.applied"        # {id, name, stage, note} — a shield transformed the prompt/response
     DEFENSE_BLOCKED = "defense.blocked"        # {id, name, stage, reason} — a shield blocked it
     # human-in-the-loop

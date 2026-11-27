@@ -23,6 +23,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from myrtia.connectors.agent_target import AgentTargetConnector
 from myrtia.connectors.base import (
     AnthropicMessagesConnector,
     Connector,
@@ -32,8 +33,9 @@ from myrtia.connectors.base import (
 
 # Supported target kinds. "openai_chat" (default) covers Ollama / vLLM / OpenAI and any
 # OpenAI-compatible proxy; "anthropic" speaks the native Messages API; "http_agent" is a
-# guarded, configurable connector for arbitrary agent endpoints (issue #31).
-_KINDS = {"openai_chat", "openai", "anthropic", "http_agent"}
+# guarded, configurable connector for arbitrary agent endpoints (issue #31); "agent_sdk"
+# drives a multi-step sandbox agent target with tool and handoff tracing (spec 006).
+_KINDS = {"openai_chat", "openai", "anthropic", "http_agent", "agent_sdk"}
 
 
 _HEADER_NAME_RE = re.compile(r"^[A-Za-z0-9-_]{1,64}$")
@@ -96,6 +98,22 @@ def _build(spec: dict[str, Any]) -> Connector:
     auth_header = spec.get("auth_header") or None
     if auth_header is not None and not _HEADER_NAME_RE.match(str(auth_header)):
         raise ValueError(f"invalid auth_header name: {auth_header!r}")
+    if kind == "agent_sdk":
+        try:
+            max_turns = max(1, int(spec.get("max_turns") or 4))
+        except (TypeError, ValueError):
+            max_turns = 4
+        try:
+            timeout = max(1, int(spec.get("timeout") or 120))
+        except (TypeError, ValueError):
+            timeout = 120
+        return AgentTargetConnector(
+            base_url=base_url, model=model, api_key=api_key,
+            timeout=timeout,
+            headers=spec.get("headers") or {}, auth_header=auth_header,
+            max_turns=max_turns,
+            use_sdk=bool(spec.get("use_sdk", False)),
+            name=f"myrtia-agent-{model}")
     return OpenAIChatConnector(
         base_url=base_url, model=model, api_key=api_key,
         headers=spec.get("headers") or {}, auth_header=auth_header,
